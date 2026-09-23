@@ -466,6 +466,27 @@ function normalizeState(s){
   if(!Array.isArray(s.stages) || s.stages.length===0) s.stages = DEFAULT_STAGES.map(x=>({...x}));
   if(!Array.isArray(s.sdaOptions) || s.sdaOptions.length===0) s.sdaOptions = KNOWN_SDA.slice();
   if(typeof s.terceirosNotes !== 'string') s.terceirosNotes = '';
+  /* O Google Sheets devolve células que parecem número (ex: código "14037")
+     como number, não string — isso quebra .localeCompare(), .toLowerCase()
+     etc. Força string nesses campos sempre que o estado é carregado, de
+     onde quer que venha (Sheets, localStorage ou backup restaurado). */
+  const str = v => (v==null ? '' : String(v));
+  s.clients.forEach(c=>{ c.id = str(c.id); c.nome = str(c.nome); c.modalidade = str(c.modalidade); });
+  s.processes.forEach(p=>{
+    p.id = str(p.id);
+    p.codigo = str(p.codigo);
+    p.clienteId = str(p.clienteId);
+    p.modalidade = str(p.modalidade);
+    p.status = str(p.status);
+    p.local = str(p.local);
+    p.transp = str(p.transp);
+    p.despesa = str(p.despesa);
+    p.observacao = str(p.observacao);
+    p.archivedAt = p.archivedAt==null ? null : str(p.archivedAt);
+    p.createdAt = str(p.createdAt);
+  });
+  s.stages.forEach(st=>{ st.id = str(st.id); st.label = str(st.label); st.color = str(st.color); });
+  s.sdaOptions = s.sdaOptions.map(str);
   return s;
 }
 function loadLocal(){
