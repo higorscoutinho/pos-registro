@@ -102,13 +102,12 @@
   .alert-pill:hover{background:#FFF1F1;}
 
   /* ---------- Board ---------- */
-  .stage-nav{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:4px;}
-  .stage-nav-btn{flex-shrink:0;display:flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--border);border-radius:20px;padding:6px 12px;font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;transition:.15s;}
-  .stage-nav-btn:hover{border-color:var(--gold);background:#FDF8ED;}
-  .stage-nav-btn .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
-  .stage-nav-btn .count{color:var(--muted);font-weight:600;}
-  .board{display:flex;gap:14px;overflow-x:auto;overflow-y:hidden;padding-bottom:14px;align-items:flex-start;max-height:calc(100vh - 270px);scroll-behavior:smooth;}
-  .col{min-width:250px;max-width:270px;flex-shrink:0;background:#EAEEF5;border-radius:12px;padding:12px;display:flex;flex-direction:column;max-height:100%;}
+  .board-scrollbar{height:10px;background:#E2E8F0;border-radius:5px;margin-bottom:12px;position:relative;cursor:pointer;}
+  .board-scrollbar-thumb{position:absolute;top:0;left:0;height:100%;min-width:30px;background:var(--gold);border-radius:5px;cursor:grab;}
+  .board-scrollbar-thumb:active{cursor:grabbing;}
+  .board{display:flex;gap:14px;overflow-x:auto;overflow-y:hidden;padding-bottom:14px;align-items:flex-start;height:calc(100vh - 280px);scroll-behavior:smooth;scrollbar-width:none;-ms-overflow-style:none;}
+  .board::-webkit-scrollbar{display:none;}
+  .col{min-width:250px;max-width:270px;flex-shrink:0;background:#EAEEF5;border-radius:12px;padding:12px;display:flex;flex-direction:column;height:100%;}
   .col-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:0 2px;gap:6px;}
   .col-head .dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:7px;flex-shrink:0;}
   .col-title{font-size:12.5px;font-weight:700;display:flex;align-items:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
@@ -247,7 +246,9 @@
         </div>
       </div>
       <div id="alertBanner" style="display:none;"></div>
-      <div class="stage-nav" id="stageNav"></div>
+      <div class="board-scrollbar" id="boardScrollbar">
+        <div class="board-scrollbar-thumb" id="boardScrollbarThumb"></div>
+      </div>
       <div class="board" id="board"></div>
     </section>
 
@@ -621,7 +622,6 @@ function renderBoard(){
   const active = state.processes.filter(p=>!p.archived);
 
   renderAlertBanner(active.filter(p=>p.alerta));
-  renderStageNav(active);
 
   state.stages.forEach(stage=>{
     let list = active.filter(p=>p.status===stage.id);
@@ -649,19 +649,78 @@ function renderBoard(){
     }
     board.appendChild(col);
   });
+  updateBoardScrollbar();
 }
 
-function renderStageNav(active){
-  const nav = document.getElementById('stageNav');
-  nav.innerHTML = state.stages.map(s=>{
-    const count = active.filter(p=>p.status===s.id).length;
-    return `<button class="stage-nav-btn" data-goto="${s.id}"><span class="dot" style="background:${s.color}"></span>${esc(s.label)} <span class="count">${count}</span></button>`;
-  }).join('');
-  nav.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click', ()=>{
-    const col = document.querySelector(`.col[data-stage-id="${b.dataset.goto}"]`);
-    if(col) col.scrollIntoView({behavior:'smooth', inline:'start', block:'nearest'});
-  }));
+function updateBoardScrollbar(){
+  const board = document.getElementById('board');
+  const track = document.getElementById('boardScrollbar');
+  const thumb = document.getElementById('boardScrollbarThumb');
+  if(!board || !track || !thumb) return;
+  const trackWidth = track.clientWidth;
+  const contentWidth = board.scrollWidth;
+  const visibleWidth = board.clientWidth;
+  if(contentWidth <= visibleWidth + 1){
+    track.style.display = 'none';
+    return;
+  }
+  track.style.display = '';
+  const ratio = visibleWidth / contentWidth;
+  const thumbWidth = Math.max(30, ratio * trackWidth);
+  const maxThumbLeft = trackWidth - thumbWidth;
+  const maxScroll = contentWidth - visibleWidth;
+  const scrollRatio = maxScroll > 0 ? board.scrollLeft / maxScroll : 0;
+  thumb.style.width = thumbWidth + 'px';
+  thumb.style.left = (scrollRatio * maxThumbLeft) + 'px';
 }
+
+(function setupBoardScrollbar(){
+  const board = document.getElementById('board');
+  const track = document.getElementById('boardScrollbar');
+  const thumb = document.getElementById('boardScrollbarThumb');
+  let dragging = false, startX = 0, startScrollLeft = 0;
+
+  function dragTo(clientX){
+    const trackWidth = track.clientWidth;
+    const thumbWidth = thumb.offsetWidth;
+    const maxThumbLeft = trackWidth - thumbWidth;
+    const maxScroll = board.scrollWidth - board.clientWidth;
+    if(maxThumbLeft<=0 || maxScroll<=0) return;
+    const dx = clientX - startX;
+    const scrollDelta = (dx / maxThumbLeft) * maxScroll;
+    board.scrollLeft = Math.max(0, Math.min(maxScroll, startScrollLeft + scrollDelta));
+  }
+
+  board.addEventListener('scroll', updateBoardScrollbar);
+  window.addEventListener('resize', updateBoardScrollbar);
+
+  thumb.addEventListener('mousedown', e=>{
+    dragging = true; startX = e.clientX; startScrollLeft = board.scrollLeft;
+    document.body.style.userSelect = 'none';
+    e.preventDefault();
+  });
+  window.addEventListener('mousemove', e=>{ if(dragging) dragTo(e.clientX); });
+  window.addEventListener('mouseup', ()=>{ if(dragging){ dragging=false; document.body.style.userSelect=''; } });
+
+  thumb.addEventListener('touchstart', e=>{
+    dragging = true; startX = e.touches[0].clientX; startScrollLeft = board.scrollLeft;
+  }, {passive:true});
+  window.addEventListener('touchmove', e=>{ if(dragging) dragTo(e.touches[0].clientX); }, {passive:true});
+  window.addEventListener('touchend', ()=>{ dragging=false; });
+
+  track.addEventListener('click', e=>{
+    if(e.target===thumb) return;
+    const rect = track.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const thumbWidth = thumb.offsetWidth;
+    const trackWidth = track.clientWidth;
+    const maxThumbLeft = trackWidth - thumbWidth;
+    const maxScroll = board.scrollWidth - board.clientWidth;
+    if(maxThumbLeft<=0) return;
+    const targetLeft = Math.max(0, Math.min(maxThumbLeft, clickX - thumbWidth/2));
+    board.scrollLeft = (targetLeft / maxThumbLeft) * maxScroll;
+  });
+})();
 
 function renderAlertBanner(alerts){
   const wrap = document.getElementById('alertBanner');
