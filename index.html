@@ -188,9 +188,8 @@
   .stage-label-input:focus{outline:none;border-bottom:1px solid var(--gold);border-radius:0;}
 
   /* ---------- Export page ---------- */
-  .export-box{min-height:480px;padding:16px 18px;font-size:13.5px;line-height:1.7;outline:none;white-space:normal;}
+  .export-box{min-height:480px;padding:16px 18px;font-size:13.5px;line-height:1.5;outline:none;white-space:normal;}
   .export-box b{font-weight:700;}
-  .export-box > div:last-child{border-bottom:none;}
 
   /* ---------- Status Terceiros ---------- */
   .rte-toolbar{display:flex;gap:8px;padding:10px;border-bottom:1px solid var(--border);flex-wrap:wrap;align-items:center;}
@@ -1195,22 +1194,14 @@ function buildExportBox(){
       const mod = modalidadeOf(p);
       const paid = isSdaPago(p);
       const retira = clientRetiraOriginais(p.clienteId);
-      const modSpan = paid
-        ? `<span style="background-color:#16A34A;color:#ffffff;padding:1px 7px;border-radius:4px;">${esc(mod)}</span>`
-        : `<span>${esc(mod)}</span>`;
       const yellow = retira && p.originais;
-      const yellowStyle = 'background-color:#F59E0B;color:#111827;padding:1px 7px;border-radius:4px;';
-      const codigoSpan = yellow
-        ? `<span style="${yellowStyle}">${esc(p.codigo)}</span>`
-        : `<span>${esc(p.codigo)}</span>`;
-      const clienteSpan = yellow
-        ? `<span style="${yellowStyle}">${esc(cli?cli.nome:'?')}</span>`
-        : `<span>${esc(cli?cli.nome:'?')}</span>`;
-      let block = `<div style="padding:10px 0;border-bottom:1px solid #E2E8F0;">`
-            + `<div style="font-weight:700;">${codigoSpan} – ${clienteSpan} – ${modSpan}</div>`
-            + `<div style="margin-top:2px;">${esc(statusDescription(p))}</div>`;
-      if(p.observacao) block += `<div style="margin-top:2px;color:#64748B;">${esc(p.observacao)}</div>`;
-      block += `</div>`;
+      const codigoCliente = `${esc(p.codigo)} – ${esc(cli?cli.nome:'?')}`;
+      const codigoClienteHtml = yellow ? `<span style="background:yellow;">${codigoCliente}</span>` : codigoCliente;
+      const modHtml = paid ? `<span style="background:lime;">${esc(mod)}</span>` : esc(mod);
+      let block = `<div><b>${codigoClienteHtml} – ${modHtml}</b></div>`
+            + `<div>${esc(statusDescription(p))}</div>`;
+      if(p.observacao) block += `<div style="color:#64748B;">${esc(p.observacao)}</div>`;
+      block += `<div>&nbsp;</div>`;
       blocks.push(block);
     });
   });
