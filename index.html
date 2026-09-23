@@ -980,8 +980,7 @@ function updateConditionalFields(){
   document.getElementById('cond_carregamento').classList.toggle('show', stage==='carregamento');
   document.getElementById('cond_despesas').classList.toggle('show', stage==='despesas');
   const hasId = !!document.getElementById('p_id').value;
-  const lastStageId = state.stages.length ? state.stages[state.stages.length-1].id : null;
-  document.getElementById('btnArchiveProcess').style.display = (hasId && stage===lastStageId) ? '' : 'none';
+  document.getElementById('btnArchiveProcess').style.display = hasId ? '' : 'none';
 }
 
 function openProcessModal(id){
