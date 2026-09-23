@@ -1223,7 +1223,7 @@ function buildExportBox(){
         const mod = modalidadeOf(p);
         const paid = isSdaPago(p);
         const retira = clientRetiraOriginais(p.clienteId);
-        const yellow = retira && p.originais;
+        const yellow = !retira || p.originais;
         const codigoCliente = `${esc(p.codigo)} – ${esc(cli?cli.nome:'?')}`;
         const codigoClienteHtml = yellow ? `<span style="background:yellow;">${codigoCliente}</span>` : codigoCliente;
         const modHtml = paid ? `<span style="background:lime;">${esc(mod)}</span>` : esc(mod);
