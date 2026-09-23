@@ -487,13 +487,13 @@ const STORAGE_KEY = 'posRegistroSVSLOG_v1';
 const API_URL = 'https://script.google.com/macros/s/AKfycbwVwR_4tBXstbY3Ni9tj7tbMrIweHKCmj7cbfyUWytSk5NbQc5Y9VeW5leH5sBHO3luzA/exec';
 
 const DEFAULT_STAGES = [
-  {id:'desembaraco', label:'Aguardando desembaraço', color:'#94A3B8'},
-  {id:'notafiscal',  label:'Aguardando nota fiscal',  color:'#38BDF8'},
-  {id:'carregamento',label:'Aguardando carregamento', color:'#8B5CF6'},
-  {id:'despesas',    label:'Aguardando outras despesas', color:'#F97316'},
-  {id:'faturamento', label:'Aguardando faturamento',  color:'#C9A227'},
-  {id:'vidotti',     label:'Aguardando Vidotti conferir', color:'#14B8A6'},
-  {id:'jaque',       label:'Aguardando Jaque faturar', color:'#16A34A'},
+  {id:'desembaraco', label:'Aguardando desembaraço', color:'#94A3B8', section:2},
+  {id:'notafiscal',  label:'Aguardando nota fiscal',  color:'#38BDF8', section:2},
+  {id:'carregamento',label:'Aguardando carregamento', color:'#8B5CF6', section:2},
+  {id:'despesas',    label:'Aguardando outras despesas', color:'#F97316', section:2},
+  {id:'faturamento', label:'Aguardando faturamento',  color:'#C9A227', section:2},
+  {id:'vidotti',     label:'Aguardando Vidotti conferir', color:'#14B8A6', section:1},
+  {id:'jaque',       label:'Aguardando Jaque faturar', color:'#16A34A', section:1},
 ];
 const STAGE_PALETTE = ['#94A3B8','#38BDF8','#8B5CF6','#F97316','#C9A227','#14B8A6','#16A34A','#EC4899','#0EA5E9','#F43F5E','#6366F1','#84CC16'];
 const KNOWN_SDA = ['T','150','350','X'];
@@ -1139,9 +1139,14 @@ function renderStagesModal(){
         <button class="btn btn-sm btn-ghost" data-down="${s.id}" ${i===state.stages.length-1?'disabled':''} title="Mover para baixo">↓</button>
         <button class="btn btn-sm btn-ghost btn-danger" data-del="${s.id}" title="Excluir">✕</button>
       </div>
-      <div style="display:flex;gap:14px;padding-left:18px;flex-wrap:wrap;">
-        <label style="display:flex;align-items:center;gap:5px;font-size:11.5px;font-weight:500;color:var(--muted);cursor:pointer;">
-          <input type="checkbox" data-break="${s.id}" ${s.sectionBreakAfter?'checked':''} style="width:auto;"> Linha divisória depois
+      <div style="display:flex;align-items:center;gap:14px;padding-left:18px;flex-wrap:wrap;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:500;color:var(--muted);">
+          Parte do e-mail:
+          <select data-section="${s.id}" style="width:auto;font-size:11.5px;padding:3px 6px;">
+            <option value="1" ${(s.section||2)===1?'selected':''}>1ª (topo)</option>
+            <option value="2" ${(s.section||2)===2?'selected':''}>2ª (meio)</option>
+            <option value="3" ${(s.section||2)===3?'selected':''}>3ª (final)</option>
+          </select>
         </label>
         <label style="display:flex;align-items:center;gap:5px;font-size:11.5px;font-weight:500;color:var(--muted);cursor:pointer;">
           <input type="checkbox" data-noteonly="${s.id}" ${s.noteOnly?'checked':''} style="width:auto;"> Etapa de anotação (não repete o nome)
@@ -1159,9 +1164,9 @@ function renderStagesModal(){
       }
     });
   });
-  wrap.querySelectorAll('[data-break]').forEach(cb=>cb.addEventListener('change', ()=>{
-    const s = stageById(cb.dataset.break);
-    if(s){ s.sectionBreakAfter = cb.checked; save(); }
+  wrap.querySelectorAll('[data-section]').forEach(sel=>sel.addEventListener('change', ()=>{
+    const s = stageById(sel.dataset.section);
+    if(s){ s.section = parseInt(sel.value, 10) || 2; save(); }
   }));
   wrap.querySelectorAll('[data-noteonly]').forEach(cb=>cb.addEventListener('change', ()=>{
     const s = stageById(cb.dataset.noteonly);
@@ -1203,28 +1208,36 @@ document.getElementById('btnAddStage').addEventListener('click', ()=>{
 /* ============ EXPORT / STATUS DO DIA ============ */
 function buildExportBox(){
   const active = state.processes.filter(p=>!p.archived);
-  const order = state.stages.slice().reverse();
+  const sec1 = state.stages.filter(s=>(s.section||2)===1).reverse();
+  const sec2 = state.stages.filter(s=>(s.section||2)===2).reverse();
+  const sec3 = state.stages.filter(s=>(s.section||2)===3).reverse();
   const blocks = [];
-  order.forEach(stage=>{
-    const items = active.filter(p=>p.status===stage.id).sort((a,b)=>(a.codigo||'').localeCompare(b.codigo||''));
-    if(items.length===0) return;
-    if(stage.noteOnly) blocks.push(`<div><b>${esc(stage.label)}:</b></div>`);
-    items.forEach(p=>{
-      const cli = clientById(p.clienteId);
-      const mod = modalidadeOf(p);
-      const paid = isSdaPago(p);
-      const retira = clientRetiraOriginais(p.clienteId);
-      const yellow = retira && p.originais;
-      const codigoCliente = `${esc(p.codigo)} – ${esc(cli?cli.nome:'?')}`;
-      const codigoClienteHtml = yellow ? `<span style="background:yellow;">${codigoCliente}</span>` : codigoCliente;
-      const modHtml = paid ? `<span style="background:lime;">${esc(mod)}</span>` : esc(mod);
-      let block = `<div><b>${codigoClienteHtml} – ${modHtml}</b></div>`;
-      if(!stage.noteOnly) block += `<div>${esc(statusDescription(p))}</div>`;
-      if(p.observacao) block += `<div style="color:#64748B;">${esc(p.observacao)}</div>`;
-      block += `<div>&nbsp;</div>`;
-      blocks.push(block);
+  [sec1, sec2, sec3].forEach(sectionStages=>{
+    const sectionBlocks = [];
+    sectionStages.forEach(stage=>{
+      const items = active.filter(p=>p.status===stage.id).sort((a,b)=>(a.codigo||'').localeCompare(b.codigo||''));
+      if(items.length===0) return;
+      if(stage.noteOnly) sectionBlocks.push(`<div><b>${esc(stage.label)}:</b></div>`);
+      items.forEach(p=>{
+        const cli = clientById(p.clienteId);
+        const mod = modalidadeOf(p);
+        const paid = isSdaPago(p);
+        const retira = clientRetiraOriginais(p.clienteId);
+        const yellow = retira && p.originais;
+        const codigoCliente = `${esc(p.codigo)} – ${esc(cli?cli.nome:'?')}`;
+        const codigoClienteHtml = yellow ? `<span style="background:yellow;">${codigoCliente}</span>` : codigoCliente;
+        const modHtml = paid ? `<span style="background:lime;">${esc(mod)}</span>` : esc(mod);
+        let block = `<div><b>${codigoClienteHtml} – ${modHtml}</b></div>`;
+        if(!stage.noteOnly) block += `<div>${esc(statusDescription(p))}</div>`;
+        if(p.observacao) block += `<div style="color:#64748B;">${esc(p.observacao)}</div>`;
+        block += `<div>&nbsp;</div>`;
+        sectionBlocks.push(block);
+      });
     });
-    if(stage.sectionBreakAfter) blocks.push(`<hr style="border:none;border-top:2px solid #94A3B8;margin:8px 0 18px;">`);
+    if(sectionBlocks.length){
+      if(blocks.length) blocks.push(`<hr style="border:none;border-top:2px solid #94A3B8;margin:8px 0 18px;">`);
+      blocks.push(...sectionBlocks);
+    }
   });
   document.getElementById('exportBox').innerHTML = blocks.length
     ? blocks.join('')
