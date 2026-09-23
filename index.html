@@ -80,8 +80,9 @@
   .nav-parent .chevron{margin-left:auto;width:13px;height:13px;transition:transform .15s;opacity:.7;flex-shrink:0;}
   .nav-group.collapsed .nav-children{display:none;}
   .nav-group.collapsed .chevron{transform:rotate(-90deg);}
-  .nav-children{display:flex;flex-direction:column;gap:2px;margin:2px 0 6px 10px;padding-left:10px;border-left:1px solid rgba(255,255,255,.08);}
-  .nav-children .nav-btn{font-size:12.6px;padding:8px 10px;}
+  .nav-children{display:flex;flex-direction:column;gap:2px;margin:2px 0 6px 0;padding-left:0;border-left:none;}
+  .sidebar:hover .nav-children{margin:2px 0 6px 10px;padding-left:10px;border-left:1px solid rgba(255,255,255,.08);}
+  .nav-children .nav-btn{font-size:12.6px;padding:8px 12px;}
   .nav-top{margin-top:4px;}
 
   .sidebar-foot{border-top:1px solid rgba(255,255,255,.08);padding-top:14px;margin-top:10px;font-size:11px;color:#6B7DA0;}
@@ -187,9 +188,9 @@
   .stage-label-input:focus{outline:none;border-bottom:1px solid var(--gold);border-radius:0;}
 
   /* ---------- Export page ---------- */
-  .export-box{min-height:480px;padding:16px 18px;font-size:13.5px;line-height:1.7;outline:none;white-space:pre-wrap;}
+  .export-box{min-height:480px;padding:16px 18px;font-size:13.5px;line-height:1.7;outline:none;white-space:normal;}
   .export-box b{font-weight:700;}
-  .export-box hr{border:none;border-top:1px solid #CBD5E1;margin:14px 0;}
+  .export-box > div:last-child{border-bottom:none;}
 
   /* ---------- Status Terceiros ---------- */
   .rte-toolbar{display:flex;gap:8px;padding:10px;border-bottom:1px solid var(--border);flex-wrap:wrap;align-items:center;}
@@ -1196,20 +1197,20 @@ function buildExportBox(){
       const retira = clientRetiraOriginais(p.clienteId);
       const modSpan = paid
         ? `<span style="background-color:#16A34A;color:#ffffff;padding:1px 7px;border-radius:4px;">${esc(mod)}</span>`
-        : `<span style="color:#C9A227;">${esc(mod)}</span>`;
+        : `<span>${esc(mod)}</span>`;
       const codigoSpan = (retira && p.originais)
         ? `<span style="background-color:#F59E0B;color:#111827;padding:1px 7px;border-radius:4px;">${esc(p.codigo)}</span>`
-        : `<span style="color:#C9A227;">${esc(p.codigo)}</span>`;
-      let block = `<div style="background-color:#111827;color:#FFFFFF;border-radius:8px;padding:10px 14px;">`
-            + `<div style="font-weight:700;">${codigoSpan}<span style="color:#C9A227;"> – </span><span style="color:#C9A227;">${esc(cli?cli.nome:'?')}</span><span style="color:#C9A227;"> – </span>${modSpan}</div>`
-            + `<div style="margin-top:2px;"><span style="color:#FFFFFF;">${esc(statusDescription(p))}</span></div>`;
-      if(p.observacao) block += `<div style="margin-top:2px;"><span style="color:#9CA3AF;">${esc(p.observacao)}</span></div>`;
+        : `<span>${esc(p.codigo)}</span>`;
+      let block = `<div style="padding:10px 0;border-bottom:1px solid #E2E8F0;">`
+            + `<div style="font-weight:700;">${codigoSpan} – ${esc(cli?cli.nome:'?')} – ${modSpan}</div>`
+            + `<div style="margin-top:2px;">${esc(statusDescription(p))}</div>`;
+      if(p.observacao) block += `<div style="margin-top:2px;color:#64748B;">${esc(p.observacao)}</div>`;
       block += `</div>`;
       blocks.push(block);
     });
   });
   document.getElementById('exportBox').innerHTML = blocks.length
-    ? blocks.join('<br>')
+    ? blocks.join('')
     : '<div style="color:#94A3B8;">Nenhum processo ativo no momento.</div>';
 }
 document.getElementById('btnRegen').addEventListener('click', buildExportBox);
