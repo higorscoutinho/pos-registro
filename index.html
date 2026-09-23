@@ -289,11 +289,12 @@
       <div class="topbar">
         <div>
           <h2>Status do dia</h2>
-          <div class="sub">Gera o texto pronto pra colar no e-mail — código, cliente e SDA em negrito.</div>
+          <div class="sub">Gera o texto pronto pra colar no e-mail — código, cliente e SDA em negrito. Envio automático seg-sex às 19h.</div>
         </div>
         <div class="actions">
           <button class="btn" id="btnRegen">Atualizar</button>
-          <button class="btn btn-gold" id="btnCopy">Copiar texto</button>
+          <button class="btn" id="btnCopy">Copiar texto</button>
+          <button class="btn btn-gold" id="btnSendEmail">📧 Enviar</button>
         </div>
       </div>
       <div class="panel">
@@ -1197,11 +1198,16 @@ function buildExportBox(){
       const modSpan = paid
         ? `<span style="background-color:#16A34A;color:#ffffff;padding:1px 7px;border-radius:4px;">${esc(mod)}</span>`
         : `<span>${esc(mod)}</span>`;
-      const codigoSpan = (retira && p.originais)
-        ? `<span style="background-color:#F59E0B;color:#111827;padding:1px 7px;border-radius:4px;">${esc(p.codigo)}</span>`
+      const yellow = retira && p.originais;
+      const yellowStyle = 'background-color:#F59E0B;color:#111827;padding:1px 7px;border-radius:4px;';
+      const codigoSpan = yellow
+        ? `<span style="${yellowStyle}">${esc(p.codigo)}</span>`
         : `<span>${esc(p.codigo)}</span>`;
+      const clienteSpan = yellow
+        ? `<span style="${yellowStyle}">${esc(cli?cli.nome:'?')}</span>`
+        : `<span>${esc(cli?cli.nome:'?')}</span>`;
       let block = `<div style="padding:10px 0;border-bottom:1px solid #E2E8F0;">`
-            + `<div style="font-weight:700;">${codigoSpan} – ${esc(cli?cli.nome:'?')} – ${modSpan}</div>`
+            + `<div style="font-weight:700;">${codigoSpan} – ${clienteSpan} – ${modSpan}</div>`
             + `<div style="margin-top:2px;">${esc(statusDescription(p))}</div>`;
       if(p.observacao) block += `<div style="margin-top:2px;color:#64748B;">${esc(p.observacao)}</div>`;
       block += `</div>`;
@@ -1227,6 +1233,18 @@ document.getElementById('btnCopy').addEventListener('click', ()=>{
     toast('Não foi possível copiar automaticamente — selecione o texto na tela e copie manualmente');
   }
   sel.removeAllRanges();
+});
+document.getElementById('btnSendEmail').addEventListener('click', async ()=>{
+  if(!API_URL){ toast('Configure a URL do Google Sheets primeiro (API_URL)'); return; }
+  toast('Enviando e-mail...');
+  try{
+    const resp = await fetch(API_URL + '?action=sendEmail');
+    const res = await resp.json();
+    if(res && res.ok) toast('E-mail enviado para departamentooperacional@svslog.com.br');
+    else toast('Falha ao enviar e-mail' + (res && res.error ? (': ' + res.error) : ''));
+  }catch(e){
+    toast('Não consegui enviar o e-mail (sem conexão)');
+  }
 });
 
 /* ============ STATUS TERCEIROS ============ */
