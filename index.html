@@ -233,7 +233,9 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
             <input id="searchBox" placeholder="Buscar código ou cliente...">
           </div>
-          <button class="btn" id="btnBackup">Backup</button>
+          <button class="btn" id="btnBackup">Exportar backup</button>
+          <button class="btn" id="btnRestore">Restaurar backup</button>
+          <input type="file" id="restoreFile" accept="application/json" style="display:none;">
           <button class="btn" id="btnManageStages">⚙ Etapas</button>
           <button class="btn btn-gold" id="btnNewProcess">+ Novo processo</button>
         </div>
@@ -332,10 +334,6 @@
   <div class="modal">
     <h3 id="processModalTitle">Novo processo</h3>
     <input type="hidden" id="p_id">
-    <div class="field">
-      <label>Status atual</label>
-      <div class="stagepick" id="p_stagepick"></div>
-    </div>
     <div class="row">
       <div class="field"><label>Código</label><input id="p_codigo" placeholder="Ex: 14037"></div>
       <div class="field">
@@ -346,6 +344,10 @@
     <div class="field">
       <label>Modalidade de SDA neste processo</label>
       <select id="p_modalidade"></select>
+    </div>
+    <div class="field">
+      <label>Status atual</label>
+      <div class="stagepick" id="p_stagepick"></div>
     </div>
     <div class="cond" id="cond_carregamento">
       <div class="row">
@@ -435,7 +437,7 @@ const STORAGE_KEY = 'posRegistroSVSLOG_v1';
 /* Cole aqui a URL do seu Web App do Google Apps Script depois de publicar
    (veja o README). Enquanto ficar vazio, o app funciona só localmente
    (localStorage), exatamente como no teste local. */
-const API_URL = '';
+const API_URL = 'https://script.google.com/macros/s/AKfycbwVwR_4tBXstbY3Ni9tj7tbMrIweHKCmj7cbfyUWytSk5NbQc5Y9VeW5leH5sBHO3luzA/exec';
 
 const DEFAULT_STAGES = [
   {id:'desembaraco', label:'Aguardando desembaraço', color:'#94A3B8'},
@@ -733,7 +735,8 @@ document.getElementById('p_cliente').addEventListener('change', ()=>{ updateSdaA
 function updateSdaAutoLock(){
   const clienteId = document.getElementById('p_cliente').value;
   const overrideVal = document.getElementById('p_modalidade').value;
-  const effective = overrideVal || (clientById(clienteId)||{}).modalidade || 'X';
+  const cliMod = clienteId ? (clientById(clienteId)||{}).modalidade : undefined;
+  const effective = overrideVal || cliMod;
   const sel = document.getElementById('p_sdapago');
   if(effective === 'X'){
     sel.value = '1';
@@ -1083,6 +1086,26 @@ document.getElementById('btnBackup').addEventListener('click', ()=>{
   a.download = `backup-pos-registro-${d}.json`;
   a.click();
   toast('Backup baixado');
+});
+document.getElementById('btnRestore').addEventListener('click', ()=>{
+  document.getElementById('restoreFile').click();
+});
+document.getElementById('restoreFile').addEventListener('change', function(e){
+  const input = e.target;
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt){
+    input.value = '';
+    let parsed;
+    try{ parsed = JSON.parse(evt.target.result); }
+    catch(err){ toast('Arquivo inválido — não consegui ler esse backup'); return; }
+    if(!confirm('Isso substitui os dados atuais do app pelos deste backup (clientes, processos, etapas). Continuar?')) return;
+    state = normalizeState(parsed);
+    save();
+    toast('Backup restaurado com sucesso');
+  };
+  reader.readAsText(file);
 });
 
 /* ============ INIT ============ */
