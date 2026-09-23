@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pós Registro · SVS LOG</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0F172A;
+    --navy-2:#16213A;
+    --navy-3:#1E2C4D;
+    --gold:#C9A227;
+    --gold-light:#E8C766;
+    --bg:#F3F5F9;
+    --card:#FFFFFF;
+    --text:#1E293B;
+    --muted:#64748B;
+    --border:#E4E8F0;
+    --green:#16A34A;
+    --green-bg:#DCFCE7;
+    --amber:#B7791F;
+    --amber-bg:#FEF3C7;
+    --red:#DC2626;
+    --red-bg:#FEF2F2;
+    --shadow: 0 1px 2px rgba(15,23,42,.06), 0 1px 1px rgba(15,23,42,.04);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);}
+  a{color:inherit;}
+  button{font-family:inherit;cursor:pointer;}
+  ::-webkit-scrollbar{width:8px;height:8px;}
+  ::-webkit-scrollbar-thumb{background:#CBD5E1;border-radius:4px;}
+
+  .app{display:flex;min-height:100vh;}
+
+  /* ---------- Sidebar ---------- */
+  .sidebar{
+    width:250px;flex-shrink:0;background:var(--navy);color:#CBD5E1;
+    display:flex;flex-direction:column;padding:22px 16px;
+  }
+  .brand{padding:0 8px 22px 8px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:18px;}
+  .brand .mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--gold-light),var(--gold));display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--navy);font-size:15px;margin-bottom:10px;}
+  .brand h1{font-size:15px;margin:0;color:#fff;font-weight:700;line-height:1.3;}
+  .brand p{margin:2px 0 0;font-size:11.5px;color:#8EA0C2;}
+
+  .nav{display:flex;flex-direction:column;gap:2px;flex:1;}
+  .nav-btn{
+    display:flex;align-items:center;gap:10px;background:none;border:none;color:#B7C3DC;
+    padding:10px 12px;border-radius:8px;font-size:13.5px;font-weight:500;text-align:left;width:100%;
+    transition:background .15s, color .15s;
+  }
+  .nav-btn svg{width:16px;height:16px;flex-shrink:0;opacity:.8;}
+  .nav-btn:hover{background:var(--navy-2);color:#fff;}
+  .nav-btn.active{background:var(--navy-3);color:#fff;box-shadow:inset 3px 0 0 var(--gold);}
+  .nav-btn .count{margin-left:auto;background:rgba(255,255,255,.08);color:#CBD5E1;font-size:11px;padding:1px 7px;border-radius:20px;font-weight:600;}
+  .nav-parent .chevron{margin-left:auto;width:13px;height:13px;transition:transform .15s;opacity:.7;flex-shrink:0;}
+  .nav-group.collapsed .nav-children{display:none;}
+  .nav-group.collapsed .chevron{transform:rotate(-90deg);}
+  .nav-children{display:flex;flex-direction:column;gap:2px;margin:2px 0 6px 10px;padding-left:10px;border-left:1px solid rgba(255,255,255,.08);}
+  .nav-children .nav-btn{font-size:12.6px;padding:8px 10px;}
+  .nav-top{margin-top:4px;}
+
+  .sidebar-foot{border-top:1px solid rgba(255,255,255,.08);padding-top:14px;margin-top:10px;font-size:11px;color:#6B7DA0;}
+
+  /* ---------- Main ---------- */
+  .main{flex:1;padding:26px 30px 60px;max-width:100%;overflow-x:hidden;}
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;gap:16px;flex-wrap:wrap;}
+  .topbar h2{margin:0;font-size:21px;font-weight:700;}
+  .topbar .sub{color:var(--muted);font-size:13px;margin-top:3px;}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;}
+
+  .btn{border:1px solid var(--border);background:#fff;color:var(--text);padding:9px 14px;border-radius:8px;font-size:13.5px;font-weight:600;display:inline-flex;align-items:center;gap:7px;transition:.15s;}
+  .btn:hover{border-color:#C7D0E0;background:#F8FAFC;}
+  .btn-gold{background:var(--navy);border-color:var(--navy);color:#fff;}
+  .btn-gold:hover{background:var(--navy-2);}
+  .btn-danger{color:var(--red);}
+  .btn-sm{padding:5px 10px;font-size:12.5px;border-radius:6px;}
+  .btn-ghost{border-color:transparent;background:transparent;}
+  .btn-ghost:hover{background:#EEF1F6;}
+
+  input,select,textarea{
+    font-family:inherit;font-size:13.5px;padding:8px 10px;border-radius:7px;border:1px solid var(--border);
+    background:#fff;color:var(--text);width:100%;
+  }
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--gold-light);outline-offset:0;border-color:var(--gold);}
+  label{font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px;}
+  .field{margin-bottom:12px;}
+  .row{display:flex;gap:10px;}
+  .row>*{flex:1;}
+
+  .search{position:relative;max-width:280px;flex:1;min-width:170px;}
+  .search input{padding-left:32px;}
+  .search svg{position:absolute;left:9px;top:9px;width:15px;height:15px;color:var(--muted);}
+
+  /* ---------- Alert banner ---------- */
+  .alert-banner{background:var(--red-bg);border:1px solid #FCA5A5;border-radius:10px;padding:12px 14px;margin-bottom:14px;}
+  .alert-banner-title{font-size:12.5px;font-weight:700;color:#B91C1C;margin-bottom:8px;}
+  .alert-pills{display:flex;flex-wrap:wrap;gap:6px;}
+  .alert-pill{background:#fff;border:1px solid #FCA5A5;color:#B91C1C;padding:5px 11px;border-radius:20px;font-size:12px;font-weight:600;}
+  .alert-pill:hover{background:#FFF1F1;}
+
+  /* ---------- Board ---------- */
+  .board{display:flex;gap:14px;overflow-x:auto;padding-bottom:14px;align-items:flex-start;}
+  .col{min-width:250px;max-width:270px;flex-shrink:0;background:#EAEEF5;border-radius:12px;padding:12px;}
+  .col-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:0 2px;gap:6px;}
+  .col-head .dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:7px;flex-shrink:0;}
+  .col-title{font-size:12.5px;font-weight:700;display:flex;align-items:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
+  .col-count{font-size:11px;color:var(--muted);background:#fff;padding:1px 8px;border-radius:20px;font-weight:600;flex-shrink:0;}
+  .col-cards{display:flex;flex-direction:column;gap:8px;min-height:6px;}
+
+  .card{background:var(--card);border-radius:10px;padding:11px 12px;box-shadow:var(--shadow);border:1px solid var(--border);cursor:pointer;transition:.12s;}
+  .card:hover{border-color:#C7D0E0;transform:translateY(-1px);}
+  .card.alert{border-left:3px solid var(--red);}
+  .card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;gap:6px;}
+  .card-code{font-weight:700;font-size:13.5px;display:flex;align-items:center;}
+  .alert-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--red);margin-right:5px;flex-shrink:0;}
+  .badge{font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:5px;letter-spacing:.2px;flex-shrink:0;}
+  .badge-T{background:#E0E7FF;color:#3730A3;}
+  .badge-150{background:#FCE7F3;color:#9D174D;}
+  .badge-350{background:#FFEDD5;color:#9A3412;}
+  .badge-X{background:var(--green-bg);color:var(--green);}
+  .badge-custom{background:#EDE9FE;color:#5B21B6;}
+  .badge-paid{background:var(--green-bg);color:var(--green);}
+  .badge-yellow{background:var(--amber-bg);color:var(--amber);}
+  .card-badges{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;}
+  .card-client{font-size:12.5px;color:var(--muted);margin-bottom:6px;}
+  .card-detail{font-size:11.5px;color:var(--muted);margin-bottom:7px;line-height:1.4;}
+  .card-obs{font-size:11px;color:var(--amber);background:var(--amber-bg);padding:4px 7px;border-radius:6px;margin-bottom:7px;line-height:1.4;}
+  .empty{color:var(--muted);font-size:12.5px;text-align:center;padding:16px 6px;border:1.5px dashed #D7DEE9;border-radius:8px;}
+
+  /* ---------- Table (clients / archive) ---------- */
+  .panel{background:var(--card);border-radius:12px;border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden;}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  th{text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);background:#F8FAFC;padding:10px 14px;border-bottom:1px solid var(--border);}
+  td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:#FAFBFD;}
+
+  /* ---------- Modal ---------- */
+  .overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:flex-start;justify-content:center;padding:5vh 16px;z-index:50;overflow-y:auto;}
+  .overlay.show{display:flex;}
+  .modal{background:#fff;border-radius:14px;width:100%;max-width:440px;padding:22px;box-shadow:0 20px 50px rgba(15,23,42,.25);}
+  .modal h3{margin:0 0 16px;font-size:16px;}
+  .modal-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;}
+  .cond{display:none;}
+  .cond.show{display:block;}
+
+  .stagepick{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+  .stagepick label.opt{display:flex;align-items:center;gap:7px;border:1px solid var(--border);border-radius:8px;padding:7px 9px;font-size:12.5px;font-weight:500;color:var(--text);cursor:pointer;}
+  .stagepick input{width:auto;}
+  .stagepick label.opt:has(input:checked){border-color:var(--gold);background:#FDF8ED;}
+
+  .stage-row{display:flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:8px;padding:7px 9px;}
+  .stage-row .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+  .stage-label-input{flex:1;border:none;background:transparent;padding:3px 4px;min-width:0;}
+  .stage-label-input:focus{outline:none;border-bottom:1px solid var(--gold);border-radius:0;}
+
+  /* ---------- Export page ---------- */
+  .export-box{min-height:480px;padding:16px 18px;font-size:13.5px;line-height:1.7;outline:none;white-space:pre-wrap;}
+  .export-box b{font-weight:700;}
+  .export-box hr{border:none;border-top:1px solid #CBD5E1;margin:14px 0;}
+
+  /* ---------- Status Terceiros ---------- */
+  .rte-toolbar{display:flex;gap:8px;padding:10px;border-bottom:1px solid var(--border);flex-wrap:wrap;align-items:center;}
+  .rte-toolbar select{width:auto;}
+  .rte-box{min-height:440px;padding:18px;outline:none;font-size:14px;line-height:1.7;}
+
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:.2s;z-index:99;}
+  .toast.show{opacity:1;transform:translate(-50%,-4px);}
+
+  @media(max-width:820px){
+    .app{flex-direction:column;}
+    .sidebar{width:100%;flex-direction:row;overflow-x:auto;padding:12px;}
+    .brand{display:none;}
+    .nav{flex-direction:row;}
+    .nav-group{display:flex;}
+    .nav-children{flex-direction:row;margin:0 0 0 6px;padding-left:6px;}
+    .sidebar-foot{display:none;}
+    .main{padding:18px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="mark">PR</div>
+      <h1>Pós Registro</h1>
+      <p>SVS LOG · controle diário</p>
+    </div>
+    <nav class="nav" id="nav">
+      <div class="nav-group" id="navGroupProcessos">
+        <button class="nav-btn nav-parent active" data-view="board">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="7" height="16" rx="1.5"/><rect x="14" y="4" width="7" height="9" rx="1.5"/></svg>
+          <span>Processos</span>
+          <span class="count" id="cnt-active">0</span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="nav-children">
+          <button class="nav-btn" data-view="export">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/><path d="M7 9l5-5 5 5"/><path d="M12 4v12"/></svg>
+            Status do dia
+          </button>
+          <button class="nav-btn" data-view="terceiros">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3v5h5"/><path d="M6 3h8l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M8 13h8M8 17h5"/></svg>
+            Status Terceiros
+          </button>
+          <button class="nav-btn" data-view="clients">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 19c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="18" cy="8.5" r="2.4"/><path d="M15.5 13.3c2.6.3 4.5 2.3 4.5 5.2"/></svg>
+            Clientes <span class="count" id="cnt-clients">0</span>
+          </button>
+          <button class="nav-btn" data-view="archive">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9"/><path d="M10 13h4"/></svg>
+            Arquivados <span class="count" id="cnt-archived">0</span>
+          </button>
+        </div>
+      </div>
+    </nav>
+    <div class="sidebar-foot" id="sidebarFoot">Dados salvos só neste navegador (localStorage). Exporte/backupe pelo botão "Backup" se trocar de PC.</div>
+  </aside>
+
+  <main class="main">
+
+    <!-- BOARD VIEW -->
+    <section id="view-board">
+      <div class="topbar">
+        <div>
+          <h2>Processos ativos</h2>
+          <div class="sub">Clique num card para editar. Etapas são configuráveis em "Etapas".</div>
+        </div>
+        <div class="actions">
+          <div class="search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+            <input id="searchBox" placeholder="Buscar código ou cliente...">
+          </div>
+          <button class="btn" id="btnBackup">Backup</button>
+          <button class="btn" id="btnManageStages">⚙ Etapas</button>
+          <button class="btn btn-gold" id="btnNewProcess">+ Novo processo</button>
+        </div>
+      </div>
+      <div id="alertBanner" style="display:none;"></div>
+      <div class="board" id="board"></div>
+    </section>
+
+    <!-- EXPORT VIEW -->
+    <section id="view-export" style="display:none;">
+      <div class="topbar">
+        <div>
+          <h2>Status do dia</h2>
+          <div class="sub">Gera o texto pronto pra colar no e-mail — código, cliente e SDA em negrito.</div>
+        </div>
+        <div class="actions">
+          <button class="btn" id="btnRegen">Atualizar</button>
+          <button class="btn btn-gold" id="btnCopy">Copiar texto</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div id="exportBox" class="export-box" contenteditable="true" spellcheck="false"></div>
+      </div>
+    </section>
+
+    <!-- CLIENTS VIEW -->
+    <section id="view-clients" style="display:none;">
+      <div class="topbar">
+        <div>
+          <h2>Clientes</h2>
+          <div class="sub">Modalidade de SDA padrão de cada cliente (pode ser ajustada por processo).</div>
+        </div>
+        <div class="actions">
+          <button class="btn btn-gold" id="btnNewClient">+ Novo cliente</button>
+        </div>
+      </div>
+      <div class="panel">
+        <table>
+          <thead><tr><th>Cliente</th><th>Modalidade SDA</th><th>Retira originais</th><th style="width:110px;"></th></tr></thead>
+          <tbody id="clientsTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ARCHIVE VIEW -->
+    <section id="view-archive" style="display:none;">
+      <div class="topbar">
+        <div>
+          <h2>Arquivados</h2>
+          <div class="sub">Processos finalizados (depois de concluídos na última etapa).</div>
+        </div>
+      </div>
+      <div class="panel">
+        <table>
+          <thead><tr><th>Código</th><th>Cliente</th><th>Modalidade</th><th>Arquivado em</th><th style="width:150px;"></th></tr></thead>
+          <tbody id="archiveTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TERCEIROS VIEW -->
+    <section id="view-terceiros" style="display:none;">
+      <div class="topbar">
+        <div>
+          <h2>Status Terceiros</h2>
+          <div class="sub">Anotações livres para seu controle — negrito, marca-texto e tamanho de fonte.</div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="rte-toolbar">
+          <button type="button" class="btn btn-sm" data-cmd="bold"><b>N</b></button>
+          <button type="button" class="btn btn-sm" data-cmd="highlight">🖍 Marca-texto</button>
+          <select id="rte_size">
+            <option value="2">Pequeno</option>
+            <option value="3" selected>Normal</option>
+            <option value="5">Grande</option>
+            <option value="7">Enorme</option>
+          </select>
+        </div>
+        <div id="terceirosBox" class="rte-box" contenteditable="true"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- MODAL: process -->
+<div class="overlay" id="processOverlay">
+  <div class="modal">
+    <h3 id="processModalTitle">Novo processo</h3>
+    <input type="hidden" id="p_id">
+    <div class="row">
+      <div class="field"><label>Código</label><input id="p_codigo" placeholder="Ex: 14037"></div>
+      <div class="field">
+        <label>Cliente</label>
+        <select id="p_cliente"></select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Modalidade de SDA neste processo</label>
+      <select id="p_modalidade"></select>
+    </div>
+    <div class="field">
+      <label>Status atual</label>
+      <div class="stagepick" id="p_stagepick"></div>
+    </div>
+    <div class="cond" id="cond_carregamento">
+      <div class="row">
+        <div class="field"><label>Local</label>
+          <select id="p_local"><option>VCP</option><option>GRU</option><option>SC</option><option>STS</option><option>LIBRA</option></select>
+        </div>
+        <div class="field"><label>Transportadora</label><input id="p_transp" placeholder="Ex: IMPERIAL"></div>
+      </div>
+    </div>
+    <div class="cond" id="cond_despesas">
+      <div class="field"><label>O que falta pagar</label><input id="p_despesa" placeholder="Ex: TRANSP NAC + PAGTO ARM LIBRA"></div>
+    </div>
+    <div class="field">
+      <label>Observação (opcional)</label>
+      <textarea id="p_observacao" rows="2" placeholder="Ex: ARMAZENAGEM OK / AVERBAR: JP CARGO..."></textarea>
+    </div>
+    <div class="row" style="margin-top:2px;">
+      <div class="field">
+        <label>Retirada dos originais</label>
+        <select id="p_originais"><option value="0">Pendente</option><option value="1">Retirados</option></select>
+      </div>
+      <div class="field">
+        <label>Pagamento do SDA</label>
+        <select id="p_sdapago"><option value="0">Pendente</option><option value="1">Pago</option></select>
+      </div>
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;margin:2px 0 4px;cursor:pointer;">
+      <input type="checkbox" id="p_alerta" style="width:auto;">
+      <span style="font-size:13px;font-weight:500;color:var(--text);">🔺 Marcar este processo em alerta</span>
+    </label>
+    <div class="modal-foot">
+      <button class="btn btn-danger btn-ghost" id="btnDeleteProcess" style="display:none;margin-right:auto;">Excluir</button>
+      <button class="btn" id="btnArchiveProcess" style="display:none;">Concluir e arquivar</button>
+      <button class="btn btn-ghost" id="btnCancelProcess">Cancelar</button>
+      <button class="btn btn-gold" id="btnSaveProcess">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: client -->
+<div class="overlay" id="clientOverlay">
+  <div class="modal">
+    <h3 id="clientModalTitle">Novo cliente</h3>
+    <input type="hidden" id="c_id">
+    <div class="field"><label>Nome do cliente</label><input id="c_nome" placeholder="Ex: FLIR"></div>
+    <div class="field">
+      <label>Modalidade de SDA padrão</label>
+      <select id="c_modalidade"></select>
+    </div>
+    <div class="field">
+      <label>Esse cliente retira os originais?</label>
+      <select id="c_retiraOriginais">
+        <option value="1">Sim</option>
+        <option value="0">Não</option>
+      </select>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-danger btn-ghost" id="btnDeleteClient" style="display:none;margin-right:auto;">Excluir</button>
+      <button class="btn btn-ghost" id="btnCancelClient">Cancelar</button>
+      <button class="btn btn-gold" id="btnSaveClient">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: stages -->
+<div class="overlay" id="stagesOverlay">
+  <div class="modal" style="max-width:480px;">
+    <h3>Gerenciar etapas</h3>
+    <div class="sub" style="color:var(--muted);font-size:12.5px;margin:-10px 0 14px;">Reordene, renomeie ou crie novas etapas. A ordem aqui também define a ordem no Status do dia.</div>
+    <div id="stagesList" style="display:flex;flex-direction:column;gap:8px;max-height:48vh;overflow-y:auto;margin-bottom:14px;"></div>
+    <div class="row">
+      <input id="newStageLabel" placeholder="Nome da nova etapa (ex: Aguardando dossiê)">
+      <button class="btn" id="btnAddStage" style="flex:0 0 auto;">+ Adicionar</button>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-gold" id="btnCloseStages">Concluído</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ CONFIG ============ */
+const STORAGE_KEY = 'posRegistroSVSLOG_v1';
+
+/* Cole aqui a URL do seu Web App do Google Apps Script depois de publicar
+   (veja o README). Enquanto ficar vazio, o app funciona só localmente
+   (localStorage), exatamente como no teste local. */
+const API_URL = 'https://script.google.com/macros/s/AKfycbwVwR_4tBXstbY3Ni9tj7tbMrIweHKCmj7cbfyUWytSk5NbQc5Y9VeW5leH5sBHO3luzA/exec';
+
+const DEFAULT_STAGES = [
+  {id:'desembaraco', label:'Aguardando desembaraço', color:'#94A3B8'},
+  {id:'notafiscal',  label:'Aguardando nota fiscal',  color:'#38BDF8'},
+  {id:'carregamento',label:'Aguardando carregamento', color:'#8B5CF6'},
+  {id:'despesas',    label:'Aguardando outras despesas', color:'#F97316'},
+  {id:'faturamento', label:'Aguardando faturamento',  color:'#C9A227'},
+  {id:'vidotti',     label:'Aguardando Vidotti conferir', color:'#14B8A6'},
+  {id:'jaque',       label:'Aguardando Jaque faturar', color:'#16A34A'},
+];
+const STAGE_PALETTE = ['#94A3B8','#38BDF8','#8B5CF6','#F97316','#C9A227','#14B8A6','#16A34A','#EC4899','#0EA5E9','#F43F5E','#6366F1','#84CC16'];
+const KNOWN_SDA = ['T','150','350','X'];
+
+/* ============ STATE ============ */
+function normalizeState(s){
+  if(!s || typeof s !== 'object') s = {};
+  if(!Array.isArray(s.clients)) s.clients = [];
+  if(!Array.isArray(s.processes)) s.processes = [];
+  if(!Array.isArray(s.stages) || s.stages.length===0) s.stages = DEFAULT_STAGES.map(x=>({...x}));
+  if(!Array.isArray(s.sdaOptions) || s.sdaOptions.length===0) s.sdaOptions = KNOWN_SDA.slice();
+  if(typeof s.terceirosNotes !== 'string') s.terceirosNotes = '';
+  return s;
+}
+function loadLocal(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw) return normalizeState(JSON.parse(raw));
+  }catch(e){}
+  return normalizeState({});
+}
+let state = loadLocal();
+
+/* persist(): grava local sempre (rápido, nunca falha) e, se o Google Sheets
+   estiver configurado, tenta sincronizar em segundo plano — sem travar a
+   tela e sem apagar nada localmente se a rede falhar. */
+function persist(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  if(!API_URL) return;
+  fetch(API_URL, {
+    method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'}, // evita preflight CORS no Apps Script
+    body: JSON.stringify(state)
+  }).then(r=>r.json()).then(res=>{
+    if(!res || res.ok===false) toast('Falha ao sincronizar com o Google Sheets — dados ficaram salvos só localmente');
+  }).catch(()=>{
+    toast('Sem conexão com o Google Sheets — dados ficaram salvos só localmente');
+  });
+}
+function save(){ persist(); renderAll(); }
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+
+async function init(){
+  if(API_URL){
+    document.getElementById('sidebarFoot').textContent = 'Sincronizando com o Google Sheets — sempre com uma cópia local de segurança.';
+  }
+  renderAll();
+  if(!API_URL) return;
+  try{
+    const resp = await fetch(API_URL, {method:'GET'});
+    const remote = await resp.json();
+    state = normalizeState(remote);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    renderAll();
+  }catch(e){
+    toast('Não consegui carregar do Google Sheets — mostrando os dados salvos localmente');
+  }
+}
+
+/* ============ HELPERS ============ */
+function esc(s){ return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escAttr(s){ return esc(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function clientById(id){ return state.clients.find(c=>c.id===id); }
+function stageById(id){ return state.stages.find(s=>s.id===id); }
+function modalidadeOf(p){ return p.modalidade || (clientById(p.clienteId)||{}).modalidade || 'X'; }
+function isSdaPago(p){ return !!p.sdaPago || modalidadeOf(p)==='X'; }
+function clientRetiraOriginais(clienteId){ const c = clientById(clienteId); return !(c && c.retiraOriginais===false); }
+function badgeClass(mod){ return KNOWN_SDA.includes(mod) ? 'badge-'+mod : 'badge-custom'; }
+function fmtDate(iso){ if(!iso) return ''; const d=new Date(iso); return d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); }
+
+function statusDescription(p){
+  const st = p.status;
+  if(st==='carregamento'){
+    const local = p.local || '?';
+    const transp = p.transp ? ` - ${p.transp}` : '';
+    return `Aguardando carregamento – ${local}${transp}`;
+  }
+  if(st==='despesas'){
+    const d = p.despesa ? p.despesa : 'outras despesas';
+    return `Aguardando ${d} para faturar`;
+  }
+  const s = stageById(st);
+  return s ? s.label : (st || '—');
+}
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t=setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* ============ NAV ============ */
+const views = ['board','export','clients','archive','terceiros'];
+document.getElementById('nav').addEventListener('click', e=>{
+  const btn = e.target.closest('.nav-btn');
+  if(!btn) return;
+  const view = btn.dataset.view;
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  views.forEach(v=>{ const el=document.getElementById('view-'+v); if(el) el.style.display = (v===view?'':'none'); });
+  if(btn.classList.contains('nav-parent')){
+    document.getElementById('navGroupProcessos').classList.toggle('collapsed');
+  }
+  if(view==='export') buildExportBox();
+  if(view==='terceiros') loadTerceiros();
+});
+
+/* ============ RENDER: BOARD ============ */
+function renderBoard(){
+  const board = document.getElementById('board');
+  board.innerHTML='';
+  const q = (document.getElementById('searchBox').value||'').toLowerCase().trim();
+  const active = state.processes.filter(p=>!p.archived);
+
+  renderAlertBanner(active.filter(p=>p.alerta));
+
+  state.stages.forEach(stage=>{
+    let list = active.filter(p=>p.status===stage.id);
+    if(q){
+      list = list.filter(p=>{
+        const cli = clientById(p.clienteId);
+        return (p.codigo||'').toLowerCase().includes(q) || (cli && cli.nome.toLowerCase().includes(q));
+      });
+    }
+    const col = document.createElement('div');
+    col.className='col';
+    col.innerHTML = `
+      <div class="col-head">
+        <span class="col-title" title="${escAttr(stage.label)}"><span class="dot" style="background:${stage.color}"></span>${esc(stage.label)}</span>
+        <span class="col-count">${list.length}</span>
+      </div>
+      <div class="col-cards"></div>`;
+    const cardsWrap = col.querySelector('.col-cards');
+    if(list.length===0){
+      cardsWrap.innerHTML = `<div class="empty">Nada aqui</div>`;
+    } else {
+      list.sort((a,b)=>(a.codigo||'').localeCompare(b.codigo||''));
+      list.forEach(p=>cardsWrap.appendChild(renderCard(p)));
+    }
+    board.appendChild(col);
+  });
+}
+
+function renderAlertBanner(alerts){
+  const wrap = document.getElementById('alertBanner');
+  if(!alerts || alerts.length===0){ wrap.style.display='none'; wrap.innerHTML=''; return; }
+  wrap.style.display='';
+  wrap.innerHTML = `<div class="alert-banner">
+    <div class="alert-banner-title">🔺 ${alerts.length} processo${alerts.length>1?'s':''} em alerta</div>
+    <div class="alert-pills">${alerts.map(p=>{
+      const cli = clientById(p.clienteId);
+      const snippet = p.observacao ? esc(p.observacao).slice(0,44) : esc(statusDescription(p)).slice(0,44);
+      return `<button class="alert-pill" data-open="${p.id}">${esc(p.codigo)} · ${cli?esc(cli.nome):'?'} — ${snippet}</button>`;
+    }).join('')}</div>
+  </div>`;
+  wrap.querySelectorAll('[data-open]').forEach(b=>b.addEventListener('click', ()=>openProcessModal(b.dataset.open)));
+}
+
+function renderCard(p){
+  const cli = clientById(p.clienteId);
+  const mod = modalidadeOf(p);
+  const paid = isSdaPago(p);
+  const retira = clientRetiraOriginais(p.clienteId);
+  const sdaCls = mod==='X' ? 'badge-X' : (paid ? 'badge-paid' : badgeClass(mod));
+  const showOriginaisTag = retira && p.originais;
+  const div = document.createElement('div');
+  div.className = 'card' + (p.alerta ? ' alert' : '');
+  div.innerHTML = `
+    <div class="card-top">
+      <span class="card-code">${p.alerta?'<span class="alert-dot"></span>':''}${esc(p.codigo)||'—'}</span>
+      <span class="card-badges">
+        <span class="badge ${sdaCls}">${esc(mod)}</span>
+        ${showOriginaisTag ? '<span class="badge badge-yellow">ORIGINAIS RETIRADOS</span>' : ''}
+      </span>
+    </div>
+    <div class="card-client">${cli?esc(cli.nome):'(cliente removido)'}</div>
+    <div class="card-detail">${esc(statusDescription(p))}</div>
+    ${p.observacao ? `<div class="card-obs">${esc(p.observacao)}</div>` : ''}`;
+  div.addEventListener('click', ()=>openProcessModal(p.id));
+  return div;
+}
+
+document.getElementById('searchBox').addEventListener('input', renderBoard);
+
+/* ============ RENDER: CLIENTS ============ */
+function renderClients(){
+  const tbody = document.getElementById('clientsTable');
+  tbody.innerHTML='';
+  if(state.clients.length===0){
+    tbody.innerHTML = `<tr><td colspan="3"><div class="empty">Nenhum cliente cadastrado ainda</div></td></tr>`;
+    return;
+  }
+  state.clients.slice().sort((a,b)=>a.nome.localeCompare(b.nome)).forEach(c=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${esc(c.nome)}</td><td><span class="badge ${badgeClass(c.modalidade)}">${esc(c.modalidade)}</span></td>
+      <td>${c.retiraOriginais===false?'Não':'Sim'}</td>
+      <td><button class="btn btn-sm btn-ghost" data-edit="${c.id}">Editar</button></td>`;
+    tbody.appendChild(tr);
+  });
+  tbody.querySelectorAll('[data-edit]').forEach(b=>b.addEventListener('click', ()=>openClientModal(b.dataset.edit)));
+}
+
+/* ============ RENDER: ARCHIVE ============ */
+function renderArchive(){
+  const tbody = document.getElementById('archiveTable');
+  tbody.innerHTML='';
+  const list = state.processes.filter(p=>p.archived);
+  if(list.length===0){
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty">Nenhum processo arquivado</div></td></tr>`;
+    return;
+  }
+  list.sort((a,b)=>(b.archivedAt||'').localeCompare(a.archivedAt||''));
+  list.forEach(p=>{
+    const cli = clientById(p.clienteId);
+    const mod = modalidadeOf(p);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${esc(p.codigo)}</td><td>${cli?esc(cli.nome):'—'}</td><td><span class="badge ${badgeClass(mod)}">${esc(mod)}</span></td>
+      <td>${fmtDate(p.archivedAt)}</td>
+      <td>
+        <button class="btn btn-sm" data-restore="${p.id}">Reabrir</button>
+        <button class="btn btn-sm btn-danger btn-ghost" data-del="${p.id}">Excluir</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+  tbody.querySelectorAll('[data-restore]').forEach(b=>b.addEventListener('click', ()=>{
+    const p = state.processes.find(x=>x.id===b.dataset.restore);
+    p.archived=false;
+    p.status = state.stages.length ? state.stages[state.stages.length-1].id : p.status;
+    save(); toast('Processo reaberto');
+  }));
+  tbody.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click', ()=>{
+    if(!confirm('Excluir definitivamente este processo?')) return;
+    state.processes = state.processes.filter(x=>x.id!==b.dataset.del);
+    save(); toast('Processo excluído');
+  }));
+}
+
+/* ============ COUNTS ============ */
+function renderCounts(){
+  document.getElementById('cnt-active').textContent = state.processes.filter(p=>!p.archived).length;
+  document.getElementById('cnt-clients').textContent = state.clients.length;
+  document.getElementById('cnt-archived').textContent = state.processes.filter(p=>p.archived).length;
+}
+
+function renderAll(){ renderBoard(); renderClients(); renderArchive(); renderCounts(); }
+
+/* ============ SDA OPTIONS (select with "+ novo valor") ============ */
+function sdaDisplayText(v){
+  if(v==='T') return 'T · Tabela';
+  if(v==='X') return 'X · Sem SDA';
+  if(/^\d+([.,]\d+)?$/.test(v)) return 'R$ '+v;
+  return v;
+}
+function populateSdaSelect(selectEl, allowDefault, selectedValue){
+  if(selectedValue && !state.sdaOptions.includes(selectedValue)){
+    state.sdaOptions.push(selectedValue);
+    persist();
+  }
+  let html = '';
+  if(allowDefault) html += `<option value="">Usar padrão do cliente</option>`;
+  state.sdaOptions.forEach(v=>{
+    html += `<option value="${escAttr(v)}">${esc(sdaDisplayText(v))}</option>`;
+  });
+  html += `<option value="__new__">+ Novo valor...</option>`;
+  selectEl.innerHTML = html;
+  selectEl.value = (selectedValue!==undefined && selectedValue!==null) ? selectedValue : (allowDefault?'':state.sdaOptions[0]);
+  selectEl.dataset.prev = selectEl.value;
+}
+function onSdaSelectChange(selectEl, allowDefault){
+  if(selectEl.value === '__new__'){
+    const val = prompt('Novo valor de SDA (ex: 200, 80, ou outro texto curto):');
+    const trimmed = (val||'').trim();
+    if(trimmed){
+      populateSdaSelect(selectEl, allowDefault, trimmed);
+    } else {
+      selectEl.value = selectEl.dataset.prev || (allowDefault?'':state.sdaOptions[0]);
+    }
+  }
+  selectEl.dataset.prev = selectEl.value;
+}
+document.getElementById('p_modalidade').addEventListener('change', function(){ onSdaSelectChange(this, true); updateSdaAutoLock(); });
+document.getElementById('c_modalidade').addEventListener('change', function(){ onSdaSelectChange(this, false); });
+document.getElementById('p_cliente').addEventListener('change', ()=>{ updateSdaAutoLock(); updateOriginaisLock(); });
+
+function updateSdaAutoLock(){
+  const clienteId = document.getElementById('p_cliente').value;
+  const overrideVal = document.getElementById('p_modalidade').value;
+  const effective = overrideVal || (clientById(clienteId)||{}).modalidade || 'X';
+  const sel = document.getElementById('p_sdapago');
+  if(effective === 'X'){
+    sel.value = '1';
+    sel.disabled = true;
+  } else {
+    sel.disabled = false;
+  }
+}
+function updateOriginaisLock(){
+  const clienteId = document.getElementById('p_cliente').value;
+  document.getElementById('p_originais').disabled = !clientRetiraOriginais(clienteId);
+}
+
+/* ============ PROCESS MODAL ============ */
+const processOverlay = document.getElementById('processOverlay');
+function fillClienteSelect(){
+  const sel = document.getElementById('p_cliente');
+  sel.innerHTML = state.clients.slice().sort((a,b)=>a.nome.localeCompare(b.nome))
+    .map(c=>`<option value="${c.id}">${esc(c.nome)}</option>`).join('') || '<option value="">Cadastre um cliente primeiro</option>';
+}
+function buildStagePicker(selected){
+  const wrap = document.getElementById('p_stagepick');
+  wrap.innerHTML = state.stages.map(s=>`
+    <label class="opt"><input type="radio" name="p_stage" value="${s.id}" ${s.id===selected?'checked':''}> ${esc(s.label)}</label>
+  `).join('');
+  wrap.querySelectorAll('input').forEach(i=>i.addEventListener('change', updateConditionalFields));
+}
+function updateConditionalFields(){
+  const checked = document.querySelector('input[name="p_stage"]:checked');
+  const stage = checked ? checked.value : '';
+  document.getElementById('cond_carregamento').classList.toggle('show', stage==='carregamento');
+  document.getElementById('cond_despesas').classList.toggle('show', stage==='despesas');
+  const hasId = !!document.getElementById('p_id').value;
+  const lastStageId = state.stages.length ? state.stages[state.stages.length-1].id : null;
+  document.getElementById('btnArchiveProcess').style.display = (hasId && stage===lastStageId) ? '' : 'none';
+}
+
+function openProcessModal(id){
+  if(state.clients.length===0){
+    toast('Cadastre um cliente antes de criar um processo');
+    return;
+  }
+  fillClienteSelect();
+  const p = id ? state.processes.find(x=>x.id===id) : null;
+  document.getElementById('processModalTitle').textContent = p ? `Processo ${p.codigo}` : 'Novo processo';
+  document.getElementById('p_id').value = p ? p.id : '';
+  document.getElementById('p_codigo').value = p ? p.codigo : '';
+  document.getElementById('p_cliente').value = p ? p.clienteId : state.clients[0].id;
+  populateSdaSelect(document.getElementById('p_modalidade'), true, p ? (p.modalidade||'') : '');
+  document.getElementById('p_local').value = p && p.local ? p.local : 'VCP';
+  document.getElementById('p_transp').value = p ? (p.transp||'') : '';
+  document.getElementById('p_despesa').value = p ? (p.despesa||'') : '';
+  document.getElementById('p_observacao').value = p ? (p.observacao||'') : '';
+  document.getElementById('p_originais').value = p && p.originais ? '1':'0';
+  document.getElementById('p_sdapago').value = (p && isSdaPago(p)) ? '1':'0';
+  document.getElementById('p_alerta').checked = !!(p && p.alerta);
+  buildStagePicker(p ? p.status : (state.stages[0] ? state.stages[0].id : ''));
+  updateConditionalFields();
+  updateSdaAutoLock();
+  updateOriginaisLock();
+  document.getElementById('btnDeleteProcess').style.display = p ? '' : 'none';
+  processOverlay.classList.add('show');
+}
+document.getElementById('btnNewProcess').addEventListener('click', ()=>openProcessModal(null));
+document.getElementById('btnCancelProcess').addEventListener('click', ()=>processOverlay.classList.remove('show'));
+processOverlay.addEventListener('click', e=>{ if(e.target===processOverlay) processOverlay.classList.remove('show'); });
+
+document.getElementById('btnSaveProcess').addEventListener('click', ()=>{
+  const codigo = document.getElementById('p_codigo').value.trim();
+  if(!codigo){ toast('Informe o código do processo'); return; }
+  const id = document.getElementById('p_id').value || uid();
+  const existing = state.processes.find(x=>x.id===id);
+  const stageEl = document.querySelector('input[name="p_stage"]:checked');
+  const clienteId = document.getElementById('p_cliente').value;
+  const modalidade = document.getElementById('p_modalidade').value;
+  const effectiveMod = modalidade || (clientById(clienteId)||{}).modalidade || 'X';
+  let sdaPago = document.getElementById('p_sdapago').value==='1';
+  if(effectiveMod === 'X') sdaPago = true;
+  const data = {
+    id,
+    codigo,
+    clienteId,
+    modalidade,
+    status: stageEl ? stageEl.value : (state.stages[0] ? state.stages[0].id : ''),
+    local: document.getElementById('p_local').value,
+    transp: document.getElementById('p_transp').value.trim(),
+    despesa: document.getElementById('p_despesa').value.trim(),
+    observacao: document.getElementById('p_observacao').value.trim(),
+    originais: document.getElementById('p_originais').value==='1',
+    sdaPago,
+    alerta: document.getElementById('p_alerta').checked,
+    archived: false,
+    archivedAt: null,
+    createdAt: existing ? existing.createdAt : new Date().toISOString(),
+  };
+  if(existing) Object.assign(existing, data);
+  else state.processes.push(data);
+  processOverlay.classList.remove('show');
+  save();
+  toast('Processo salvo');
+});
+
+document.getElementById('btnArchiveProcess').addEventListener('click', ()=>{
+  const id = document.getElementById('p_id').value;
+  if(!id) return;
+  const p = state.processes.find(x=>x.id===id);
+  if(!p) return;
+  p.archived = true;
+  p.archivedAt = new Date().toISOString();
+  processOverlay.classList.remove('show');
+  save();
+  toast('Processo arquivado');
+});
+
+document.getElementById('btnDeleteProcess').addEventListener('click', ()=>{
+  const id = document.getElementById('p_id').value;
+  if(!id) return;
+  if(!confirm('Excluir este processo definitivamente?')) return;
+  state.processes = state.processes.filter(x=>x.id!==id);
+  processOverlay.classList.remove('show');
+  save();
+  toast('Processo excluído');
+});
+
+/* ============ CLIENT MODAL ============ */
+const clientOverlay = document.getElementById('clientOverlay');
+function openClientModal(id){
+  const c = id ? state.clients.find(x=>x.id===id) : null;
+  document.getElementById('clientModalTitle').textContent = c ? 'Editar cliente' : 'Novo cliente';
+  document.getElementById('c_id').value = c ? c.id : '';
+  document.getElementById('c_nome').value = c ? c.nome : '';
+  populateSdaSelect(document.getElementById('c_modalidade'), false, c ? c.modalidade : undefined);
+  document.getElementById('c_retiraOriginais').value = (c && c.retiraOriginais===false) ? '0' : '1';
+  document.getElementById('btnDeleteClient').style.display = c ? '' : 'none';
+  clientOverlay.classList.add('show');
+}
+document.getElementById('btnNewClient').addEventListener('click', ()=>openClientModal(null));
+document.getElementById('btnCancelClient').addEventListener('click', ()=>clientOverlay.classList.remove('show'));
+clientOverlay.addEventListener('click', e=>{ if(e.target===clientOverlay) clientOverlay.classList.remove('show'); });
+
+document.getElementById('btnSaveClient').addEventListener('click', ()=>{
+  const nome = document.getElementById('c_nome').value.trim();
+  if(!nome){ toast('Informe o nome do cliente'); return; }
+  const id = document.getElementById('c_id').value || uid();
+  const existing = state.clients.find(x=>x.id===id);
+  const data = { id, nome, modalidade: document.getElementById('c_modalidade').value, retiraOriginais: document.getElementById('c_retiraOriginais').value==='1' };
+  if(existing) Object.assign(existing, data);
+  else state.clients.push(data);
+  clientOverlay.classList.remove('show');
+  save();
+  toast('Cliente salvo');
+});
+document.getElementById('btnDeleteClient').addEventListener('click', ()=>{
+  const id = document.getElementById('c_id').value;
+  if(!id) return;
+  const inUse = state.processes.some(p=>p.clienteId===id && !p.archived);
+  if(inUse && !confirm('Este cliente tem processos ativos vinculados. Excluir mesmo assim?')) return;
+  state.clients = state.clients.filter(x=>x.id!==id);
+  clientOverlay.classList.remove('show');
+  save();
+  toast('Cliente excluído');
+});
+
+/* ============ STAGE MANAGER ============ */
+const stagesOverlay = document.getElementById('stagesOverlay');
+document.getElementById('btnManageStages').addEventListener('click', ()=>{ renderStagesModal(); stagesOverlay.classList.add('show'); });
+document.getElementById('btnCloseStages').addEventListener('click', ()=>{ stagesOverlay.classList.remove('show'); });
+stagesOverlay.addEventListener('click', e=>{ if(e.target===stagesOverlay) stagesOverlay.classList.remove('show'); });
+
+function renderStagesModal(){
+  const wrap = document.getElementById('stagesList');
+  wrap.innerHTML = state.stages.map((s,i)=>`
+    <div class="stage-row">
+      <span class="dot" style="background:${s.color}"></span>
+      <input class="stage-label-input" data-id="${s.id}" value="${escAttr(s.label)}">
+      <button class="btn btn-sm btn-ghost" data-up="${s.id}" ${i===0?'disabled':''} title="Mover para cima">↑</button>
+      <button class="btn btn-sm btn-ghost" data-down="${s.id}" ${i===state.stages.length-1?'disabled':''} title="Mover para baixo">↓</button>
+      <button class="btn btn-sm btn-ghost btn-danger" data-del="${s.id}" title="Excluir">✕</button>
+    </div>
+  `).join('');
+  wrap.querySelectorAll('.stage-label-input').forEach(inp=>{
+    inp.addEventListener('change', ()=>{
+      const s = stageById(inp.dataset.id);
+      if(s){
+        const v = inp.value.trim();
+        if(v) s.label = v; else inp.value = s.label;
+        save();
+      }
+    });
+  });
+  wrap.querySelectorAll('[data-up]').forEach(b=>b.addEventListener('click', ()=>moveStage(b.dataset.up, -1)));
+  wrap.querySelectorAll('[data-down]').forEach(b=>b.addEventListener('click', ()=>moveStage(b.dataset.down, 1)));
+  wrap.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click', ()=>deleteStage(b.dataset.del)));
+}
+function moveStage(id, dir){
+  const idx = state.stages.findIndex(s=>s.id===id);
+  const newIdx = idx+dir;
+  if(idx<0 || newIdx<0 || newIdx>=state.stages.length) return;
+  const [item] = state.stages.splice(idx,1);
+  state.stages.splice(newIdx,0,item);
+  save();
+  renderStagesModal();
+}
+function deleteStage(id){
+  if(state.stages.length<=1){ toast('Precisa manter ao menos uma etapa'); return; }
+  const inUse = state.processes.some(p=>p.status===id);
+  if(inUse){ toast('Existem processos nessa etapa — mude o status deles antes de excluir'); return; }
+  if(!confirm('Excluir esta etapa?')) return;
+  state.stages = state.stages.filter(s=>s.id!==id);
+  save();
+  renderStagesModal();
+}
+document.getElementById('btnAddStage').addEventListener('click', ()=>{
+  const inp = document.getElementById('newStageLabel');
+  const label = inp.value.trim();
+  if(!label){ toast('Digite o nome da etapa'); return; }
+  const color = STAGE_PALETTE[state.stages.length % STAGE_PALETTE.length];
+  state.stages.push({id:uid(), label, color});
+  inp.value='';
+  save();
+  renderStagesModal();
+});
+
+/* ============ EXPORT / STATUS DO DIA ============ */
+function buildExportBox(){
+  const active = state.processes.filter(p=>!p.archived);
+  const order = state.stages.slice().reverse();
+  let html = '';
+  order.forEach(stage=>{
+    const items = active.filter(p=>p.status===stage.id).sort((a,b)=>(a.codigo||'').localeCompare(b.codigo||''));
+    items.forEach(p=>{
+      const cli = clientById(p.clienteId);
+      const mod = modalidadeOf(p);
+      const paid = isSdaPago(p);
+      const retira = clientRetiraOriginais(p.clienteId);
+      const modSpan = paid
+        ? `<span style="background-color:#16A34A;color:#ffffff;padding:1px 7px;border-radius:4px;">${esc(mod)}</span>`
+        : `<span style="color:#C9A227;">${esc(mod)}</span>`;
+      const codigoSpan = (retira && p.originais)
+        ? `<span style="background-color:#F59E0B;color:#111827;padding:1px 7px;border-radius:4px;">${esc(p.codigo)}</span>`
+        : `<span>${esc(p.codigo)}</span>`;
+      html += `<div style="background-color:#111827;color:#E5E7EB;border-radius:8px;padding:10px 14px;margin-bottom:10px;">`
+            + `<div style="font-weight:700;color:#C9A227;">${codigoSpan} – ${esc(cli?cli.nome:'?')} – ${modSpan}</div>`
+            + `<div style="margin-top:2px;color:#E5E7EB;">${esc(statusDescription(p))}</div>`;
+      if(p.observacao) html += `<div style="margin-top:2px;color:#9CA3AF;">${esc(p.observacao)}</div>`;
+      html += `</div>`;
+    });
+  });
+  document.getElementById('exportBox').innerHTML = html || '<div style="color:#94A3B8;">Nenhum processo ativo no momento.</div>';
+}
+document.getElementById('btnRegen').addEventListener('click', buildExportBox);
+document.getElementById('btnCopy').addEventListener('click', ()=>{
+  const box = document.getElementById('exportBox');
+  const range = document.createRange();
+  range.selectNodeContents(box);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+  try{
+    document.execCommand('copy');
+    toast('Texto copiado (com negrito)');
+  }catch(e){
+    toast('Não foi possível copiar automaticamente — selecione o texto na tela e copie manualmente');
+  }
+  sel.removeAllRanges();
+});
+
+/* ============ STATUS TERCEIROS ============ */
+function loadTerceiros(){
+  document.getElementById('terceirosBox').innerHTML = state.terceirosNotes || '';
+}
+let terceirosTimer;
+function saveTerceirosDebounced(){
+  clearTimeout(terceirosTimer);
+  terceirosTimer = setTimeout(()=>{
+    state.terceirosNotes = document.getElementById('terceirosBox').innerHTML;
+    persist();
+  }, 400);
+}
+document.getElementById('terceirosBox').addEventListener('input', saveTerceirosDebounced);
+document.querySelectorAll('[data-cmd]').forEach(b=>b.addEventListener('click', ()=>{
+  document.getElementById('terceirosBox').focus();
+  const cmd = b.dataset.cmd;
+  try{
+    if(cmd==='highlight') document.execCommand('hiliteColor', false, '#FDE68A');
+    else document.execCommand(cmd, false, null);
+  }catch(e){}
+  saveTerceirosDebounced();
+}));
+document.getElementById('rte_size').addEventListener('change', e=>{
+  document.getElementById('terceirosBox').focus();
+  try{ document.execCommand('fontSize', false, e.target.value); }catch(err){}
+  saveTerceirosDebounced();
+});
+
+/* ============ BACKUP ============ */
+document.getElementById('btnBackup').addEventListener('click', ()=>{
+  const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  const d = new Date().toISOString().slice(0,10);
+  a.download = `backup-pos-registro-${d}.json`;
+  a.click();
+  toast('Backup baixado');
+});
+
+/* ============ INIT ============ */
+init();
+</script>
+</body>
+</html>
