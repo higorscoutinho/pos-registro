@@ -102,7 +102,12 @@
   .alert-pill:hover{background:#FFF1F1;}
 
   /* ---------- Board ---------- */
-  .board{display:flex;gap:14px;overflow-x:auto;overflow-y:hidden;padding-bottom:14px;align-items:flex-start;max-height:calc(100vh - 230px);}
+  .stage-nav{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:4px;}
+  .stage-nav-btn{flex-shrink:0;display:flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--border);border-radius:20px;padding:6px 12px;font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;transition:.15s;}
+  .stage-nav-btn:hover{border-color:var(--gold);background:#FDF8ED;}
+  .stage-nav-btn .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+  .stage-nav-btn .count{color:var(--muted);font-weight:600;}
+  .board{display:flex;gap:14px;overflow-x:auto;overflow-y:hidden;padding-bottom:14px;align-items:flex-start;max-height:calc(100vh - 270px);scroll-behavior:smooth;}
   .col{min-width:250px;max-width:270px;flex-shrink:0;background:#EAEEF5;border-radius:12px;padding:12px;display:flex;flex-direction:column;max-height:100%;}
   .col-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:0 2px;gap:6px;}
   .col-head .dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:7px;flex-shrink:0;}
@@ -116,12 +121,12 @@
   .card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;gap:6px;}
   .card-code{font-weight:700;font-size:13.5px;display:flex;align-items:center;}
   .alert-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--red);margin-right:5px;flex-shrink:0;}
-  .badge{font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:5px;letter-spacing:.2px;flex-shrink:0;}
+  .badge{font-size:10px;font-weight:700;padding:1px 6px;border-radius:5px;letter-spacing:.2px;flex-shrink:0;white-space:nowrap;}
   .badge-X{background:var(--green-bg);color:var(--green);}
   .badge-paid{background:var(--green-bg);color:var(--green);}
   .badge-neutral{background:#F1F5F9;color:#475569;}
   .badge-yellow{background:var(--amber-bg);color:var(--amber);}
-  .card-badges{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;}
+  .card-badges{display:flex;gap:4px;flex-wrap:nowrap;justify-content:flex-end;flex-shrink:0;}
   .card-client{font-size:12.5px;color:var(--muted);margin-bottom:6px;font-weight:700;}
   .card-detail{font-size:11.5px;color:var(--muted);margin-bottom:7px;line-height:1.4;}
   .card-obs{font-size:11px;color:var(--amber);margin-bottom:7px;line-height:1.4;}
@@ -236,11 +241,13 @@
           <button class="btn" id="btnBackup">Exportar backup</button>
           <button class="btn" id="btnRestore">Restaurar backup</button>
           <input type="file" id="restoreFile" accept="application/json" style="display:none;">
+          <button class="btn" id="btnPushSheets">⬆ Enviar p/ Sheets</button>
           <button class="btn" id="btnManageStages">⚙ Etapas</button>
           <button class="btn btn-gold" id="btnNewProcess">+ Novo processo</button>
         </div>
       </div>
       <div id="alertBanner" style="display:none;"></div>
+      <div class="stage-nav" id="stageNav"></div>
       <div class="board" id="board"></div>
     </section>
 
@@ -476,32 +483,62 @@ let state = loadLocal();
 function persist(){
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   if(!API_URL) return;
+  setSyncStatus('syncing');
   fetch(API_URL, {
     method:'POST',
     headers:{'Content-Type':'text/plain;charset=utf-8'}, // evita preflight CORS no Apps Script
     body: JSON.stringify(state)
   }).then(r=>r.json()).then(res=>{
-    if(!res || res.ok===false) toast('Falha ao sincronizar com o Google Sheets — dados ficaram salvos só localmente');
+    if(!res || res.ok===false){
+      setSyncStatus('error', res && res.error);
+      toast('Falha ao sincronizar com o Google Sheets — dados ficaram salvos só localmente');
+    } else {
+      setSyncStatus('ok');
+    }
   }).catch(()=>{
+    setSyncStatus('error', 'sem conexão');
     toast('Sem conexão com o Google Sheets — dados ficaram salvos só localmente');
   });
 }
 function save(){ persist(); renderAll(); }
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 
-async function init(){
-  if(API_URL){
-    document.getElementById('sidebarFoot').textContent = 'Sincronizando com o Google Sheets — sempre com uma cópia local de segurança.';
+function setSyncStatus(status, detail){
+  const el = document.getElementById('sidebarFoot');
+  if(!API_URL){
+    el.textContent = 'Dados salvos só neste navegador (localStorage). Exporte/backupe pelo botão "Exportar backup" se trocar de PC.';
+    el.style.color = '';
+    return;
   }
+  const time = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  if(status==='syncing'){
+    el.textContent = '🔄 Sincronizando com o Google Sheets...';
+    el.style.color = '#8EA0C2';
+  } else if(status==='ok'){
+    el.textContent = `✅ Sincronizado com o Google Sheets às ${time}`;
+    el.style.color = '#4ADE80';
+  } else if(status==='error'){
+    el.textContent = `❌ Falha ao sincronizar${detail?` (${detail})`:''} — dados seguros aqui no navegador`;
+    el.style.color = '#FCA5A5';
+  } else {
+    el.textContent = 'Conectado ao Google Sheets — sempre com uma cópia local de segurança.';
+    el.style.color = '';
+  }
+}
+
+async function init(){
   renderAll();
-  if(!API_URL) return;
+  if(!API_URL){ setSyncStatus(); return; }
+  setSyncStatus('syncing');
   try{
     const resp = await fetch(API_URL, {method:'GET'});
     const remote = await resp.json();
     state = normalizeState(remote);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     renderAll();
+    setSyncStatus('ok');
   }catch(e){
+    setSyncStatus('error', 'sem conexão');
     toast('Não consegui carregar do Google Sheets — mostrando os dados salvos localmente');
   }
 }
@@ -563,6 +600,7 @@ function renderBoard(){
   const active = state.processes.filter(p=>!p.archived);
 
   renderAlertBanner(active.filter(p=>p.alerta));
+  renderStageNav(active);
 
   state.stages.forEach(stage=>{
     let list = active.filter(p=>p.status===stage.id);
@@ -574,6 +612,7 @@ function renderBoard(){
     }
     const col = document.createElement('div');
     col.className='col';
+    col.dataset.stageId = stage.id;
     col.innerHTML = `
       <div class="col-head">
         <span class="col-title" title="${escAttr(stage.label)}"><span class="dot" style="background:${stage.color}"></span>${esc(stage.label)}</span>
@@ -589,6 +628,18 @@ function renderBoard(){
     }
     board.appendChild(col);
   });
+}
+
+function renderStageNav(active){
+  const nav = document.getElementById('stageNav');
+  nav.innerHTML = state.stages.map(s=>{
+    const count = active.filter(p=>p.status===s.id).length;
+    return `<button class="stage-nav-btn" data-goto="${s.id}"><span class="dot" style="background:${s.color}"></span>${esc(s.label)} <span class="count">${count}</span></button>`;
+  }).join('');
+  nav.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click', ()=>{
+    const col = document.querySelector(`.col[data-stage-id="${b.dataset.goto}"]`);
+    if(col) col.scrollIntoView({behavior:'smooth', inline:'start', block:'nearest'});
+  }));
 }
 
 function renderAlertBanner(alerts){
@@ -619,8 +670,8 @@ function renderCard(p){
     <div class="card-top">
       <span class="card-code">${p.alerta?'<span class="alert-dot"></span>':''}${esc(p.codigo)||'—'}</span>
       <span class="card-badges">
+        ${showOriginaisTag ? '<span class="badge badge-yellow">ORIGINAIS OK</span>' : ''}
         <span class="badge ${sdaCls}">${esc(mod)}</span>
-        ${showOriginaisTag ? '<span class="badge badge-yellow">ORIGINAIS RETIRADOS</span>' : ''}
       </span>
     </div>
     <div class="card-client">${cli?esc(cli.nome):'(cliente removido)'}</div>
@@ -1106,6 +1157,30 @@ document.getElementById('restoreFile').addEventListener('change', function(e){
     toast('Backup restaurado com sucesso');
   };
   reader.readAsText(file);
+});
+
+/* ============ SINCRONIZAÇÃO MANUAL ============ */
+document.getElementById('btnPushSheets').addEventListener('click', async ()=>{
+  if(!API_URL){ toast('A URL do Google Sheets ainda não está configurada neste arquivo'); return; }
+  setSyncStatus('syncing');
+  try{
+    const resp = await fetch(API_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify(state)
+    });
+    const res = await resp.json();
+    if(res && res.ok){
+      setSyncStatus('ok');
+      toast('Dados enviados para o Google Sheets');
+    } else {
+      setSyncStatus('error', res && res.error);
+      toast('Falha ao enviar para o Google Sheets');
+    }
+  }catch(e){
+    setSyncStatus('error', 'sem conexão');
+    toast('Não consegui enviar para o Google Sheets');
+  }
 });
 
 /* ============ INIT ============ */
