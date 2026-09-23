@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pós Registro · SVS LOG</title>
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="favicon-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -119,6 +122,12 @@
   .alert-pills{display:flex;flex-wrap:wrap;gap:6px;}
   .alert-pill{background:#fff;border:1px solid #FCA5A5;color:#B91C1C;padding:5px 11px;border-radius:20px;font-size:12px;font-weight:600;}
   .alert-pill:hover{background:#FFF1F1;}
+
+  /* ---------- Reminder banner (lembrete de horário) ---------- */
+  .reminder-banner{position:sticky;top:0;z-index:30;background:var(--red-bg);border:1px solid #FCA5A5;border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+  .reminder-banner-title{font-size:12.5px;font-weight:700;color:#B91C1C;flex-shrink:0;}
+  .reminder-item{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #FCA5A5;border-radius:20px;padding:5px 6px 5px 12px;font-size:12px;font-weight:600;color:#7F1D1D;}
+  .reminder-item .btn{padding:3px 9px;font-size:11px;border-radius:14px;}
 
   /* ---------- Board ---------- */
   .board-scrollbar{height:10px;background:#E2E8F0;border-radius:5px;margin-bottom:12px;position:relative;cursor:pointer;}
@@ -245,6 +254,7 @@
   </aside>
 
   <main class="main">
+    <div id="reminderBanner" style="display:none;"></div>
 
     <!-- BOARD VIEW -->
     <section id="view-board">
@@ -393,6 +403,13 @@
       <label>Observação (opcional)</label>
       <textarea id="p_observacao" rows="2" placeholder="Ex: ARMAZENAGEM OK / AVERBAR: JP CARGO..."></textarea>
     </div>
+    <div class="field">
+      <label>⏰ Lembrete (avisar às)</label>
+      <div class="row">
+        <input type="datetime-local" id="p_lembrete">
+        <button type="button" class="btn btn-sm btn-ghost" id="btnClearLembrete" style="flex:0 0 auto;">Limpar</button>
+      </div>
+    </div>
     <div class="row" style="margin-top:2px;">
       <div class="field">
         <label>Retirada dos originais</label>
@@ -504,6 +521,7 @@ function normalizeState(s){
     p.transp = str(p.transp);
     p.despesa = str(p.despesa);
     p.observacao = str(p.observacao);
+    p.lembreteEm = p.lembreteEm ? str(p.lembreteEm) : null;
     p.archivedAt = p.archivedAt==null ? null : str(p.archivedAt);
     p.createdAt = str(p.createdAt);
   });
@@ -596,6 +614,13 @@ function isSdaPago(p){ return !!p.sdaPago || modalidadeOf(p)==='X'; }
 function clientRetiraOriginais(clienteId){ const c = clientById(clienteId); return !(c && c.retiraOriginais===false); }
 function sdaBadgeClass(mod, paid){ return (mod==='X' || paid) ? 'badge-paid' : 'badge-neutral'; }
 function fmtDate(iso){ if(!iso) return ''; const d=new Date(iso); return d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); }
+function toDatetimeLocal(iso){
+  if(!iso) return '';
+  const d = new Date(iso);
+  if(isNaN(d.getTime())) return '';
+  const pad = n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
 function statusDescription(p){
   const st = p.status;
@@ -844,7 +869,38 @@ function renderCounts(){
   document.getElementById('cnt-archived').textContent = state.processes.filter(p=>p.archived).length;
 }
 
-function renderAll(){ renderBoard(); renderClients(); renderArchive(); renderCounts(); }
+function renderAll(){ renderBoard(); renderClients(); renderArchive(); renderCounts(); checkReminders(); }
+
+/* ============ LEMBRETES (alerta de horário) ============ */
+function checkReminders(){
+  const now = Date.now();
+  const due = state.processes.filter(p=>!p.archived && p.lembreteEm && new Date(p.lembreteEm).getTime() <= now);
+  renderReminderBanner(due);
+}
+function renderReminderBanner(due){
+  const wrap = document.getElementById('reminderBanner');
+  if(!due.length){ wrap.style.display='none'; wrap.innerHTML=''; return; }
+  wrap.style.display='';
+  wrap.innerHTML = `<div class="reminder-banner">
+    <span class="reminder-banner-title">⏰ Lembrete</span>
+    ${due.map(p=>{
+      const cli = clientById(p.clienteId);
+      return `<span class="reminder-item">${esc(p.codigo)} · ${cli?esc(cli.nome):'?'}
+        <button class="btn" data-snooze="${p.id}">+5 min</button>
+        <button class="btn btn-gold" data-done="${p.id}">Concluir</button>
+      </span>`;
+    }).join('')}
+  </div>`;
+  wrap.querySelectorAll('[data-snooze]').forEach(b=>b.addEventListener('click', ()=>{
+    const p = state.processes.find(x=>x.id===b.dataset.snooze);
+    if(p){ p.lembreteEm = new Date(Date.now()+5*60000).toISOString(); save(); toast('Lembrete adiado por 5 minutos'); }
+  }));
+  wrap.querySelectorAll('[data-done]').forEach(b=>b.addEventListener('click', ()=>{
+    const p = state.processes.find(x=>x.id===b.dataset.done);
+    if(p){ p.lembreteEm = null; save(); toast('Lembrete concluído'); }
+  }));
+}
+setInterval(checkReminders, 20000);
 
 /* ============ SDA OPTIONS (select with "+ novo valor") ============ */
 function sdaDisplayText(v){
@@ -943,6 +999,7 @@ function openProcessModal(id){
   document.getElementById('p_transp').value = p ? (p.transp||'') : '';
   document.getElementById('p_despesa').value = p ? (p.despesa||'') : '';
   document.getElementById('p_observacao').value = p ? (p.observacao||'') : '';
+  document.getElementById('p_lembrete').value = toDatetimeLocal(p ? p.lembreteEm : null);
   document.getElementById('p_originais').value = p && p.originais ? '1':'0';
   document.getElementById('p_sdapago').value = (p && isSdaPago(p)) ? '1':'0';
   document.getElementById('p_alerta').checked = !!(p && p.alerta);
@@ -955,6 +1012,7 @@ function openProcessModal(id){
 }
 document.getElementById('btnNewProcess').addEventListener('click', ()=>openProcessModal(null));
 document.getElementById('btnCancelProcess').addEventListener('click', ()=>processOverlay.classList.remove('show'));
+document.getElementById('btnClearLembrete').addEventListener('click', ()=>{ document.getElementById('p_lembrete').value = ''; });
 processOverlay.addEventListener('click', e=>{ if(e.target===processOverlay) processOverlay.classList.remove('show'); });
 
 document.getElementById('btnSaveProcess').addEventListener('click', ()=>{
@@ -988,6 +1046,7 @@ document.getElementById('btnSaveProcess').addEventListener('click', ()=>{
     transp: document.getElementById('p_transp').value.trim(),
     despesa: document.getElementById('p_despesa').value.trim(),
     observacao: document.getElementById('p_observacao').value.trim(),
+    lembreteEm: document.getElementById('p_lembrete').value ? new Date(document.getElementById('p_lembrete').value).toISOString() : null,
     originais,
     sdaPago,
     alerta: document.getElementById('p_alerta').checked,
@@ -1142,7 +1201,7 @@ function buildExportBox(){
         ? `<span style="background-color:#F59E0B;color:#111827;padding:1px 7px;border-radius:4px;">${esc(p.codigo)}</span>`
         : `<span style="color:#C9A227;">${esc(p.codigo)}</span>`;
       let block = `<div style="background-color:#111827;color:#FFFFFF;border-radius:8px;padding:10px 14px;">`
-            + `<div style="font-weight:700;color:#C9A227;">${codigoSpan} – <span style="color:#C9A227;">${esc(cli?cli.nome:'?')}</span> – ${modSpan}</div>`
+            + `<div style="font-weight:700;">${codigoSpan}<span style="color:#C9A227;"> – </span><span style="color:#C9A227;">${esc(cli?cli.nome:'?')}</span><span style="color:#C9A227;"> – </span>${modSpan}</div>`
             + `<div style="margin-top:2px;"><span style="color:#FFFFFF;">${esc(statusDescription(p))}</span></div>`;
       if(p.observacao) block += `<div style="margin-top:2px;"><span style="color:#9CA3AF;">${esc(p.observacao)}</span></div>`;
       block += `</div>`;
