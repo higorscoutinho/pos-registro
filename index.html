@@ -143,7 +143,8 @@
   .col-count{font-size:11px;color:var(--muted);background:#fff;padding:1px 8px;border-radius:20px;font-weight:600;flex-shrink:0;}
   .col-cards{display:flex;flex-direction:column;gap:8px;min-height:6px;overflow-y:auto;flex:1;padding-right:2px;}
 
-  .card{background:var(--card);border-radius:10px;padding:11px 12px;box-shadow:var(--shadow);border:1px solid var(--border);cursor:pointer;transition:.12s;}
+  .card{background:var(--card);border-radius:10px;padding:11px 12px;box-shadow:var(--shadow);border:1px solid var(--border);cursor:grab;transition:.12s;}
+  .card.dragging{opacity:.4;cursor:grabbing;}
   .card:hover{border-color:#C7D0E0;transform:translateY(-1px);}
   .card.alert{border-left:3px solid var(--red);}
   .card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;gap:6px;}
@@ -528,6 +529,20 @@ function normalizeState(s){
   });
   s.stages.forEach(st=>{ st.id = str(st.id); st.label = str(st.label); st.color = str(st.color); });
   s.sdaOptions = s.sdaOptions.map(str);
+  /* Migração: dá um "order" pra quem ainda não tem, mantendo a ordem por
+     código que já existia (por etapa), pra nada pular de lugar na
+     primeira vez que essa versão carrega. Depois disso, arrastar os
+     cards é quem manda na ordem. */
+  const missingOrder = s.processes.some(p => p.order===undefined || p.order===null || p.order==='');
+  if(missingOrder){
+    const byStage = {};
+    s.processes.forEach(p=>{ (byStage[p.status] = byStage[p.status] || []).push(p); });
+    Object.keys(byStage).forEach(stId=>{
+      byStage[stId].slice().sort((a,b)=>String(a.codigo||'').localeCompare(String(b.codigo||'')))
+        .forEach((p,idx)=>{ if(p.order===undefined || p.order===null || p.order==='') p.order = idx; });
+    });
+  }
+  s.processes.forEach(p=>{ p.order = Number(p.order) || 0; });
   return s;
 }
 function loadLocal(){
@@ -691,12 +706,66 @@ function renderBoard(){
     if(list.length===0){
       cardsWrap.innerHTML = `<div class="empty">Nada aqui</div>`;
     } else {
-      list.sort((a,b)=>(a.codigo||'').localeCompare(b.codigo||''));
+      list.sort((a,b)=>(a.order||0)-(b.order||0));
       list.forEach(p=>cardsWrap.appendChild(renderCard(p)));
     }
+    cardsWrap.addEventListener('dragover', e=>{
+      e.preventDefault();
+      const draggingEl = document.querySelector('.card.dragging');
+      if(!draggingEl) return;
+      const emptyEl = cardsWrap.querySelector('.empty');
+      if(emptyEl) emptyEl.remove();
+      const afterEl = getDragAfterElement(cardsWrap, e.clientY);
+      if(afterEl == null) cardsWrap.appendChild(draggingEl);
+      else cardsWrap.insertBefore(draggingEl, afterEl);
+    });
+    cardsWrap.addEventListener('drop', e=>{
+      e.preventDefault();
+      handleCardDrop(stage.id, cardsWrap);
+    });
     board.appendChild(col);
   });
   updateBoardScrollbar();
+}
+
+function getDragAfterElement(container, y){
+  const cards = [...container.querySelectorAll('.card:not(.dragging)')];
+  return cards.reduce((closest, child)=>{
+    const box = child.getBoundingClientRect();
+    const offset = y - box.top - box.height/2;
+    if(offset < 0 && offset > closest.offset) return {offset, element: child};
+    return closest;
+  }, {offset:-Infinity}).element;
+}
+
+let draggedProcessId = null;
+
+function handleCardDrop(targetStageId, cardsWrap){
+  if(!draggedProcessId) return;
+  const p = state.processes.find(x=>x.id===draggedProcessId);
+  if(!p){ renderBoard(); return; }
+  const sourceStageId = p.status;
+
+  const applyOrderAndSave = ()=>{
+    [...cardsWrap.querySelectorAll('.card')].forEach((el, idx)=>{
+      const proc = state.processes.find(x=>x.id===el.dataset.processId);
+      if(proc) proc.order = idx;
+    });
+    save();
+  };
+
+  if(targetStageId === sourceStageId){
+    applyOrderAndSave();
+  } else {
+    const stage = stageById(targetStageId);
+    const label = stage ? stage.label : targetStageId;
+    if(!confirm(`Tem certeza que deseja alterar o status para "${label}"?`)){
+      renderBoard();
+      return;
+    }
+    p.status = targetStageId;
+    applyOrderAndSave();
+  }
 }
 
 function updateBoardScrollbar(){
@@ -793,6 +862,8 @@ function renderCard(p){
   const showOriginaisTag = !retira || p.originais;
   const div = document.createElement('div');
   div.className = 'card' + (p.alerta ? ' alert' : '');
+  div.draggable = true;
+  div.dataset.processId = p.id;
   div.innerHTML = `
     <div class="card-top">
       <span class="card-code">${p.alerta?'<span class="alert-dot"></span>':''}${esc(p.codigo)||'—'}</span>
@@ -804,6 +875,14 @@ function renderCard(p){
     <div class="card-client">${cli?esc(cli.nome):'(cliente removido)'}</div>
     <div class="card-detail">${esc(statusDescription(p))}</div>
     ${p.observacao ? `<div class="card-obs">${esc(p.observacao)}</div>` : ''}`;
+  div.addEventListener('dragstart', ()=>{
+    draggedProcessId = p.id;
+    div.classList.add('dragging');
+  });
+  div.addEventListener('dragend', ()=>{
+    div.classList.remove('dragging');
+    draggedProcessId = null;
+  });
   div.addEventListener('click', ()=>openProcessModal(p.id));
   return div;
 }
@@ -1054,6 +1133,12 @@ document.getElementById('btnSaveProcess').addEventListener('click', ()=>{
     archivedAt: null,
     createdAt: existing ? existing.createdAt : new Date().toISOString(),
   };
+  if(!existing || existing.status !== targetStage){
+    const siblings = state.processes.filter(x=>x.status===targetStage && x.id!==id);
+    data.order = siblings.length ? Math.max(...siblings.map(x=>x.order||0)) + 1 : 0;
+  } else {
+    data.order = existing.order;
+  }
   if(existing) Object.assign(existing, data);
   else state.processes.push(data);
   processOverlay.classList.remove('show');
@@ -1215,7 +1300,7 @@ function buildExportBox(){
   [sec1, sec2, sec3].forEach(sectionStages=>{
     const sectionBlocks = [];
     sectionStages.forEach(stage=>{
-      const items = active.filter(p=>p.status===stage.id).sort((a,b)=>(a.codigo||'').localeCompare(b.codigo||''));
+      const items = active.filter(p=>p.status===stage.id).sort((a,b)=>(a.order||0)-(b.order||0));
       if(items.length===0) return;
       if(stage.noteOnly) sectionBlocks.push(`<div><b>${esc(stage.label)}:</b></div>`);
       items.forEach(p=>{
