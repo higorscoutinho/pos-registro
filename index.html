@@ -200,6 +200,42 @@
   .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:.2s;z-index:99;}
   .toast.show{opacity:1;transform:translate(-50%,-4px);}
 
+  /* ---------- Retirada Documental ---------- */
+  .rd-card{background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:18px;margin-bottom:18px;}
+  .rd-card h3{font-size:14.5px;margin:0 0 12px;font-weight:700;}
+  .kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:20px;}
+  .kpi-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 18px;box-shadow:var(--shadow);cursor:pointer;transition:.12s;}
+  .kpi-card:hover{transform:translateY(-1px);border-color:#C7D0E0;}
+  .kpi-card .label{font-size:11.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.03em;margin-bottom:8px;}
+  .kpi-card .value{font-size:26px;font-weight:700;}
+  .kpi-card .value.accent{color:var(--gold);}
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:16px;flex-wrap:wrap;}
+  .tab{padding:9px 13px;cursor:pointer;color:var(--muted);font-weight:600;font-size:12.8px;border-bottom:2px solid transparent;user-select:none;}
+  .tab.active{color:var(--text);border-bottom-color:var(--gold);}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;}
+  .toolbar input[type=text]{max-width:280px;}
+  .toolbar select{width:auto;}
+  .table-wrap{overflow-x:auto;}
+  .badge-ok{background:var(--green-bg);color:var(--green);}
+  .badge-warn{background:var(--amber-bg);color:var(--amber);}
+  .badge-danger{background:var(--red-bg);color:var(--red);}
+  .badge-info{background:#EAEFFF;color:#2E52D5;}
+  .bulk-bar{display:flex;align-items:center;gap:10px;background:var(--navy);color:#fff;padding:10px 14px;border-radius:9px;margin-bottom:14px;flex-wrap:wrap;}
+  .bulk-bar .count{font-weight:700;color:var(--gold-light);}
+  .bulk-bar .spacer{flex:1;}
+  .bulk-bar .btn{background:rgba(255,255,255,.08);color:#fff;border-color:rgba(255,255,255,.18);}
+  .bulk-bar .btn:hover{background:rgba(255,255,255,.16);}
+  .agente-card{border:1px solid var(--border);border-radius:9px;padding:11px 13px;margin-bottom:8px;}
+  .agente-card .nome{font-weight:700;margin-bottom:3px;}
+  .agente-card .endereco{white-space:pre-line;font-size:12.5px;margin-bottom:4px;}
+  .agente-card .obsline{white-space:pre-line;color:var(--amber);font-size:12px;background:var(--amber-bg);border-radius:6px;padding:5px 8px;display:inline-block;}
+  .empty-state{text-align:center;padding:40px 16px;color:var(--muted);}
+  .empty-state .big{font-size:30px;margin-bottom:8px;}
+  .muted{color:var(--muted);}
+  .small{font-size:12px;}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+  .checkbox-col{width:28px;}
+
   @media(max-width:820px){
     .app{flex-direction:column;}
     .sidebar{position:static;width:100%;height:auto;flex-direction:row;overflow-x:auto;overflow-y:visible;padding:12px;}
@@ -247,6 +283,32 @@
           <button class="nav-btn" data-view="archive">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9"/><path d="M10 13h4"/></svg>
             <span class="nav-label">Arquivados</span> <span class="count" id="cnt-archived">0</span>
+          </button>
+        </div>
+      </div>
+      <div class="nav-group nav-top" id="navGroupRetirada">
+        <button class="nav-btn nav-parent" data-view="rd-dashboard">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
+          <span class="nav-label">Retirada Documental</span>
+          <span class="count" id="cnt-rd-active">0</span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="nav-children">
+          <button class="nav-btn" data-view="rd-processos">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="7" height="16" rx="1.5"/><rect x="14" y="4" width="7" height="9" rx="1.5"/></svg>
+            <span class="nav-label">Processos</span>
+          </button>
+          <button class="nav-btn" data-view="rd-instrucoes">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3v5h5"/><path d="M6 3h8l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M8 13h8M8 17h5"/></svg>
+            <span class="nav-label">Instruções de Retirada</span>
+          </button>
+          <button class="nav-btn" data-view="rd-finalizados">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9"/><path d="M10 13h4"/></svg>
+            <span class="nav-label">Finalizados</span> <span class="count" id="cnt-rd-finalizados">0</span>
+          </button>
+          <button class="nav-btn" data-view="rd-importar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/><path d="M7 9l5-5 5 5"/><path d="M12 4v12"/></svg>
+            <span class="nav-label">Importar/Exportar</span>
           </button>
         </div>
       </div>
@@ -367,6 +429,71 @@
       </div>
     </section>
 
+    <!-- RETIRADA DOCUMENTAL: DASHBOARD -->
+    <section id="view-rd-dashboard" style="display:none;">
+      <div class="topbar">
+        <div>
+          <h2>Dashboard</h2>
+          <div class="sub">Retirada e envio de documentos originais — visão geral</div>
+        </div>
+        <div class="actions">
+          <button class="btn" id="btnRDViewFinalizados">📦 Finalizados</button>
+          <button class="btn btn-gold" id="btnRDNewFromDashboard">+ Novo processo</button>
+        </div>
+      </div>
+      <div id="rdDashboardBody"></div>
+    </section>
+
+    <!-- RETIRADA DOCUMENTAL: PROCESSOS -->
+    <section id="view-rd-processos" style="display:none;">
+      <div class="topbar">
+        <div>
+          <h2>Processos</h2>
+          <div class="sub">Solicitação → retirada → recebido na SVS → envio ao cliente</div>
+        </div>
+        <div class="actions">
+          <button class="btn btn-gold" id="btnRDNewProcess">+ Novo processo</button>
+        </div>
+      </div>
+      <div id="rdProcessosBody"></div>
+    </section>
+
+    <!-- RETIRADA DOCUMENTAL: FINALIZADOS -->
+    <section id="view-rd-finalizados" style="display:none;">
+      <div class="topbar">
+        <div>
+          <h2>Finalizados</h2>
+          <div class="sub">Processos já enviados ao cliente — busque por referência, cliente ou rastreio.</div>
+        </div>
+      </div>
+      <div id="rdFinalizadosBody"></div>
+    </section>
+
+    <!-- RETIRADA DOCUMENTAL: INSTRUÇÕES -->
+    <section id="view-rd-instrucoes" style="display:none;">
+      <div class="topbar">
+        <div>
+          <h2>Instruções de Retirada</h2>
+          <div class="sub">Onde retirar em cada aeroporto/porto, por agente de cargas</div>
+        </div>
+        <div class="actions">
+          <button class="btn btn-gold" id="btnRDNewInstrucao">+ Adicionar instrução</button>
+        </div>
+      </div>
+      <div id="rdInstrucoesBody"></div>
+    </section>
+
+    <!-- RETIRADA DOCUMENTAL: IMPORTAR/EXPORTAR -->
+    <section id="view-rd-importar" style="display:none;">
+      <div class="topbar">
+        <div>
+          <h2>Importar / Exportar</h2>
+          <div class="sub">Traga dados de uma planilha existente, ou faça backup só desta seção</div>
+        </div>
+      </div>
+      <div id="rdImportarBody"></div>
+    </section>
+
   </main>
 </div>
 
@@ -476,8 +603,101 @@
   </div>
 </div>
 
+<!-- MODAL: retirada documental — processo -->
+<div class="overlay" id="rdProcessOverlay">
+  <div class="modal" style="max-width:560px;">
+    <h3 id="rdProcessModalTitle">Novo processo</h3>
+    <input type="hidden" id="rd_id">
+    <div class="row">
+      <div class="field"><label>Referência SVS LOG</label><input id="rd_ref" placeholder="Ex: 13164"></div>
+      <div class="field"><label>Cliente</label><input id="rd_cliente" placeholder="Ex: CLEAN"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Modal</label><select id="rd_modal"></select></div>
+      <div class="field"><label>MAWB</label><input id="rd_mawb"></div>
+      <div class="field"><label>HAWB / BL</label><input id="rd_hawb"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Agente de cargas</label><input id="rd_agente" placeholder="Ex: EXPEDITORS" list="rd_agentesDatalist"></div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>Local de retirada</label>
+        <input id="rd_local" list="rd_locaisDatalist" placeholder="Escolha ou digite um novo local">
+        <datalist id="rd_locaisDatalist"></datalist>
+      </div>
+      <div class="field">
+        <label>Responsável pela retirada</label>
+        <input id="rd_responsavel" list="rd_responsaveisDatalist" placeholder="Escolha ou digite um novo responsável">
+        <datalist id="rd_responsaveisDatalist"></datalist>
+      </div>
+    </div>
+    <div id="rd_instrucaoHint"></div>
+    <div class="row" style="margin-top:6px;">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="rd_retirado" style="width:auto;"><span style="font-size:13px;font-weight:500;">Retirado com o representante</span></label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="rd_recebidosvs" style="width:auto;"><span style="font-size:13px;font-weight:500;">Recebido na SVS</span></label>
+    </div>
+    <div class="field"><label>Data recebimento na SVS</label><input type="date" id="rd_datarecebimento"></div>
+    <div class="row">
+      <div class="field"><label>Status do envio</label>
+        <select id="rd_statusenvio">
+          <option value="AGUARDANDO">Aguardando</option>
+          <option value="EM_ELABORACAO">Em elaboração</option>
+          <option value="ENVIADO">Enviado</option>
+        </select>
+      </div>
+      <div class="field"><label>Confirmação presença SVS</label><input id="rd_confirmacao" placeholder="OK / observação"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Data de envio (Correios)</label><input type="date" id="rd_dataenvio"></div>
+      <div class="field"><label>Número de rastreio</label><input id="rd_rastreio"></div>
+    </div>
+    <div class="field"><label>E-mails (cliente)</label><input id="rd_emails"></div>
+    <div class="field"><label>Observações</label><textarea id="rd_observacoes" rows="2"></textarea></div>
+    <div class="modal-foot">
+      <button class="btn btn-danger btn-ghost" id="btnRDDeleteProcess" style="display:none;margin-right:auto;">Excluir</button>
+      <button class="btn btn-ghost" id="btnRDCancelProcess">Cancelar</button>
+      <button class="btn btn-gold" id="btnRDSaveProcess">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: retirada documental — instrução -->
+<div class="overlay" id="rdInstrucaoOverlay">
+  <div class="modal">
+    <h3 id="rdInstrucaoModalTitle">Nova instrução de retirada</h3>
+    <input type="hidden" id="rdi_editIdx">
+    <input type="hidden" id="rdi_editLocal">
+    <div class="row">
+      <div class="field"><label>Local (aeroporto/porto)</label><select id="rdi_local"></select></div>
+      <div class="field"><label>Agente de cargas</label><input id="rdi_agente"></div>
+    </div>
+    <div class="field"><label>Endereço</label><textarea id="rdi_endereco" rows="3"></textarea></div>
+    <div class="field"><label>Observações</label><textarea id="rdi_obs" rows="2"></textarea></div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="btnRDCancelInstrucao">Cancelar</button>
+      <button class="btn btn-gold" id="btnRDSaveInstrucao">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: retirada documental — marcar enviado em massa -->
+<div class="overlay" id="rdEnvioOverlay">
+  <div class="modal" style="max-width:400px;">
+    <h3>Marcar como enviado</h3>
+    <div class="sub" style="color:var(--muted);font-size:12.5px;margin:-10px 0 14px;">Aplica a mesma data e rastreio para os processos selecionados.</div>
+    <div class="field"><label>Data de envio</label><input type="date" id="rde_data"></div>
+    <div class="field"><label>Número de rastreio</label><input id="rde_rastreio" placeholder="Ex: JU774030471BR"></div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="btnRDCancelEnvio">Cancelar</button>
+      <button class="btn btn-gold" id="btnRDConfirmEnvio">Confirmar envio</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
 /* ============ CONFIG ============ */
 const STORAGE_KEY = 'posRegistroSVSLOG_v1';
@@ -498,6 +718,76 @@ const DEFAULT_STAGES = [
 ];
 const STAGE_PALETTE = ['#94A3B8','#38BDF8','#8B5CF6','#F97316','#C9A227','#14B8A6','#16A34A','#EC4899','#0EA5E9','#F43F5E','#6366F1','#84CC16'];
 const KNOWN_SDA = ['T','150','350','X'];
+
+/* ============ RETIRADA DOCUMENTAL — base de referência padrão ============ */
+const RD_SEED_REFERENCE = {
+  "instrucoesRetirada": [
+    {"local":"GUARULHOS","agentes":[
+      {"agente":"UPS","endereco":"RETIRAR NA UPS","obs":null},
+      {"agente":"DHL","endereco":"RETIRAR NA DHL","obs":null},
+      {"agente":"EXPEDITORS","endereco":"RETIRAR NA EXPEDITORS","obs":"QUANDO FOR INDUSTRIAL, NÃO RETIRAR"},
+      {"agente":"EASY LOAD","endereco":"CRIMPEX:\nRua Estrela d'Oeste, 124, sala 20\nJardim São Geraldo/Vila Barros, em Guarulhos – SP","obs":"GERALMENTE CLIENTE FLIR  // FLAVIO (11) 939363329"},
+      {"agente":"DC LOGISTICS","endereco":"RETIRAR COM TRANSPORTES YASMIN","obs":null},
+      {"agente":"DOM LOG","endereco":"GRU\nPredio Teca, 4° andar, Sala 4.11\nEdivaldo Gomes","obs":"Edivaldo Gomes/Sebastião\ne.gomes@goldmex.com.br\nsebastiao@csamimpexcargo.com\n11-2445-5183"},
+      {"agente":"EMIRATES/CTA CARGO/SKY CARGO","endereco":"Aeroporto Internacional de Guarulhos\nTerminal de Cargas, edifício TECA, \n7º andar, sala 7.10","obs":null},
+      {"agente":"HAND LINE/TAKEOFF/SCAN GLOBAL","endereco":"AEROPORTO INTERNACIONAL GUARULHOS - TERMINAL DE CARGAS\nEDIFÍCIO TECA 7 ANDAR , SALA 7.02 (TAKEOFF SERVIÇOS ADUANEIROS)","obs":"Amilton"},
+      {"agente":"SCAN GLOBAL","endereco":"LCS Serviços Aeroportuários\nEdificio Teca – Sala 7.13 – 7º Andar – Guarulhos","obs":"GERALMENTE CLIENTE ALFA"},
+      {"agente":"PLUS CARGO","endereco":"AVIATION RAMP - TECA GRU - 5º Andar - Sala 5.15","obs":"Ruan Silva ou Kauã Leão (11) 2445-6766\t(11) 97859-6815"},
+      {"agente":"BRACHMANN/LCS","endereco":"Sala – 7º Andar -Sala 13\nRodovia Helio Smidt S/N\nTECA GRU","obs":"Isabelle / Gustavo"},
+      {"agente":"YUSEN","endereco":"CRIMPEX:\nRua Estrela d'Oeste, 124, sala 20\nJardim São Geraldo/Vila Barros, em Guarulhos – SP","obs":"GERALMENTE CLIENTE FLIR  // FLAVIO (11) 939363329"},
+      {"agente":"YUSEN/DELTACAMP","endereco":"DELTACAMP – GRU\nAeroporto Internacional De Guarulhos\nEdificio TECA - 4º andar sala 4.18","obs":"Tel: (13) 3219-2844/3219-4458 /3219-6978 // Leandro/ Marcelo/ Alfredo"},
+      {"agente":"LATAM","endereco":"Aeroporto Internacional de Guarulhos\nRod. Hélio Smidt, s/n - Edifício TECA\n6º Andar - Sala 6.18","obs":null},
+      {"agente":"BRITISH AIRWAYS PLC","endereco":"INFORMAR SOMENTE O NOME PARA O ISAAC","obs":null},
+      {"agente":"CRAFT MULTIMODAL","endereco":"RETIRAR COM TRANSPORTES YASMIN","obs":null},
+      {"agente":"SWISS INTERNATIONAL AIR LINES","endereco":"RETIRAR NO ENDEREÇO ABAIXO:\nRod Helio Smidt, s/n - Edifício TECA - Sala 4.26 - Guarulhos - SP","obs":"ACONTECEU PRIMEIRO CASO DA CLEAN EM GRU"},
+      {"agente":"RHENUS BRAZIL","endereco":"Rhenus Brazil\nRodovia Hélio Schmidt – S/N    Edifício Teca – Sala 2.10\nAeroporto de Guarulhos, Guarulhos – 07143 000","obs":"Marco Camargo // +55 11 2101-5454\nCamargo, Marco Marco.Camargo@rhenus.com"},
+      {"agente":"LAOWAI","endereco":"COMEXPERT GUARULHOS:\nRod. Helio Smidt, s/n - Edificio TECA - 4º andar - Sala 4.21 - Guarulhos - SP - CEP: 07190-971","obs":"Contact : Wellington Faria\nPH: +55 11 98861-9493"},
+      {"agente":"BRACHMANN/WEST CARGO","endereco":"RETIRAR NA WEST CARGO - GRU","obs":null},
+      {"agente":"ROME LOGISTICS","endereco":"OHPERS GUARULHOS - IMPO\nENDEREÇO: RODOVIA HELIO SMITH, S/N – EDIFÍCIO TECA - SALA 4.11","obs":"(GERALMENTE SHORELINE)\nCONTATO: DANIEL OU PAULO \nE-MAIL: aereo@ohpers.com.br"}
+    ]},
+    {"local":"VIRACOPOS","agentes":[
+      {"agente":"KERRY","endereco":"RETIRAR NA KERRY","obs":"GERALMENTE CLIENTE CLEAN"},
+      {"agente":"UPS","endereco":"RETIRAR NA UPS","obs":"ENVIAR PARA MOTOBOY DONIZETE"},
+      {"agente":"DHL","endereco":"RETIRAR NA DHL","obs":"PST E AUDIO ENVIAR PRINT DO N° DA CONTA NA DHL. ENVIAR PARA MOTOBOY DONIZETE"},
+      {"agente":"EXPEDITORS","endereco":"RETIRAR NA EXPEDITORS","obs":null},
+      {"agente":"LUFTHANSA/TRISTAR","endereco":"Centro Empresarial de Viracopos, Sala 314.","obs":null},
+      {"agente":"SWISS PORT","endereco":"RETIRAR NA SWISS PORT","obs":null},
+      {"agente":"ONE SYSTEM","endereco":"Rodovia Santos Dumont, Km 66, SN – Prédio Empresarial\n2° andar sala268","obs":"Fone:(19) 3725-6758"},
+      {"agente":"LCS/BRACHMANN","endereco":"Centro empresarial de Viracopos – 1º andar\nSala – 169 - Santos Dummont km 66 s/n – Viracopos","obs":null},
+      {"agente":"YUSEN/DELTACAMP","endereco":"DELTACAMP – VCP\nCentro Empresarial Viracopos \n1º Andar – Cj. 185 – Campinas/SP","obs":"Tel: (19) 3725-6340/(19) 3725-6341\nContato: Lauro/ Lucas"},
+      {"agente":"TOP HANDLING/DRASCHER","endereco":"RODOVIA SANTOS DUMONT, S/N, KM 66\nViracopos Office,\n2° andar, salas 244 - 245","obs":null},
+      {"agente":"TRANSPALLET","endereco":"RODOVIA SANTOS DUMONT, S/N, KM 66\nCentro Empresarial Viracopos,\nSala 124 – 13052-902","obs":"(19) 37255857"},
+      {"agente":"LEGACY","endereco":"Rodovia Santos Dumont, km 66, s/nº, Viracopos Office\n3º andar, sala 364 – Campinas/SP - Brasil","obs":"Contato: eduardoschuck12@gmail.com"},
+      {"agente":"ATLAS/AVIATION/ABSA","endereco":"Viracopos Ofice 2° andar sala da Atlas / Aviation.","obs":null},
+      {"agente":"CARGOLUX","endereco":"Rod Santos Dumont, KM 66\nCentro empresarial Viracopos, 02° andar sala 275","obs":null},
+      {"agente":"LATAM/LAN CARGO","endereco":"RETIRAR NA LAN CARGO S.A.","obs":null},
+      {"agente":"AZUL/TRI-STARS","endereco":"Centro Empresarial-VCP , Sala 205","obs":null},
+      {"agente":"DC LOGISTICS","endereco":null,"obs":null}
+    ]},
+    {"local":"SANTOS","agentes":[
+      {"agente":"DC LOGISTICS","endereco":"DC ENVIA DIRETO PARA SVS CASO SEJA MARÍTIMO","obs":"QUESTIONAR POR E-MAIL LARISSA SE FOI ENVIADO"},
+      {"agente":"BRACHMANN","endereco":null,"obs":"QUESTIONAR A BRACHMANN SE ENVIARÃO PARA A SVS OU SE DEVEMOS RETIRAR EM ALGUM ENDEREÇO."},
+      {"agente":"ONE LOG","endereco":"Alameda Armênio Mendes, 66 - CJ. 2508 (25° Andar) Edf. Praiamar Corporate, Bairro Aprecida, Santos -SP (CEP: 11035-260)","obs":"Aline manda para Diego retirar"}
+    ]},
+    {"local":"SANTA CATARINA","agentes":[
+      {"agente":"DC LOGISTICS","endereco":"DC ENVIA DIRETO PARA SVS CASO SEJA MARÍTIMO","obs":"CASO SEJA MARÍTIMO, ENVIAM PARA A SVS DIRETO (QUESTIONAR POR E-MAIL ISABELLA SE FOI ENVIADO)"},
+      {"agente":"BRACHMANN","endereco":null,"obs":"QUESTIONAR A BRACHMANN SE ENVIARÃO PARA A SVS OU SE DEVEMOS RETIRAR EM ALGUM ENDEREÇO."}
+    ]}
+  ],
+  "responsaveis": [
+    {"nome":"KALAU","local":"VIRACOPOS"},
+    {"nome":"ADRIANO","local":"GUARULHOS"},
+    {"nome":"CONEXÃO","local":"PARANAGUÁ"},
+    {"nome":"H-IMPEX","local":"PORTO DE SANTOS"},
+    {"nome":"ÁGUA MARINHA","local":"SANTA CATARINA"},
+    {"nome":"CASCO","local":"CURITIBA"},
+    {"nome":"WILSON","local":null},
+    {"nome":"DONIZETE","local":"VIRACOPOS","obs":"Motoboy - retira malotes de cursos (UPS/DHL) em Viracopos e leva até a residência do Higor"},
+    {"nome":"ISAAC (GRU)","local":"GUARULHOS","obs":"Pessoa de contato: Edvaldo"}
+  ],
+  "locaisRetirada": ["VIRACOPOS","GUARULHOS","PARANAGUÁ","PORTO DE SANTOS","SANTA CATARINA","CURITIBA"],
+  "modais": ["AÉREO","MARÍTIMO","EXPORTAÇÃO","COURIER","PROROGAÇÃO","CERTIFICADO DE ORIGEM","ADM. TEMPORÁRIO","REEXPORTAÇÃO","RETIFICAÇÃO DI"]
+};
 
 /* ============ STATE ============ */
 function normalizeState(s){
@@ -543,6 +833,40 @@ function normalizeState(s){
     });
   }
   s.processes.forEach(p=>{ p.order = Number(p.order) || 0; });
+
+  /* ---- Retirada Documental (nova seção, dados independentes) ---- */
+  if(!s.retirada || typeof s.retirada !== 'object') s.retirada = {};
+  if(!Array.isArray(s.retirada.processos)) s.retirada.processos = [];
+  if(!s.retirada.reference || typeof s.retirada.reference !== 'object'){
+    s.retirada.reference = JSON.parse(JSON.stringify(RD_SEED_REFERENCE));
+  }
+  const ref = s.retirada.reference;
+  if(!Array.isArray(ref.responsaveis)) ref.responsaveis = [];
+  if(!Array.isArray(ref.locaisRetirada)) ref.locaisRetirada = [];
+  if(!Array.isArray(ref.modais)) ref.modais = [];
+  if(!Array.isArray(ref.instrucoesRetirada)) ref.instrucoesRetirada = [];
+  s.retirada.processos.forEach(p=>{
+    p.id = str(p.id);
+    p.ref = str(p.ref);
+    p.cliente = str(p.cliente);
+    p.modal = str(p.modal);
+    p.mawb = str(p.mawb);
+    p.hawb = str(p.hawb);
+    p.agenteDeCargas = str(p.agenteDeCargas);
+    p.local = str(p.local);
+    p.responsavelRetirada = str(p.responsavelRetirada);
+    p.retirado = !!p.retirado;
+    p.recebidoNaSVS = !!p.recebidoNaSVS;
+    p.dataRecebimentoSVS = (p.dataRecebimentoSVS==null || p.dataRecebimentoSVS==='') ? null : str(p.dataRecebimentoSVS);
+    p.statusEnvio = str(p.statusEnvio) || 'AGUARDANDO';
+    p.confirmacaoPresencaSVS = str(p.confirmacaoPresencaSVS);
+    p.dataEnvioCliente = (p.dataEnvioCliente==null || p.dataEnvioCliente==='') ? null : str(p.dataEnvioCliente);
+    p.numeroRastreio = str(p.numeroRastreio);
+    p.emails = str(p.emails);
+    p.observacoes = str(p.observacoes);
+    p.criadoEm = str(p.criadoEm) || new Date().toISOString();
+    p.atualizadoEm = str(p.atualizadoEm) || p.criadoEm;
+  });
   return s;
 }
 function loadLocal(){
@@ -661,7 +985,7 @@ function toast(msg){
 }
 
 /* ============ NAV ============ */
-const views = ['board','export','clients','archive','terceiros'];
+const views = ['board','export','clients','archive','terceiros','rd-dashboard','rd-processos','rd-finalizados','rd-instrucoes','rd-importar'];
 document.getElementById('nav').addEventListener('click', e=>{
   const btn = e.target.closest('.nav-btn');
   if(!btn) return;
@@ -670,10 +994,16 @@ document.getElementById('nav').addEventListener('click', e=>{
   btn.classList.add('active');
   views.forEach(v=>{ const el=document.getElementById('view-'+v); if(el) el.style.display = (v===view?'':'none'); });
   if(btn.classList.contains('nav-parent')){
-    document.getElementById('navGroupProcessos').classList.toggle('collapsed');
+    const grp = btn.closest('.nav-group');
+    if(grp) grp.classList.toggle('collapsed');
   }
   if(view==='export') buildExportBox();
   if(view==='terceiros') loadTerceiros();
+  if(view==='rd-dashboard') renderRDDashboard();
+  if(view==='rd-processos') renderRDProcessos();
+  if(view==='rd-finalizados') renderRDFinalizados();
+  if(view==='rd-instrucoes') renderRDInstrucoes();
+  if(view==='rd-importar') renderRDImportar();
 });
 
 /* ============ RENDER: BOARD ============ */
@@ -947,6 +1277,8 @@ function renderCounts(){
   document.getElementById('cnt-active').textContent = state.processes.filter(p=>!p.archived).length;
   document.getElementById('cnt-clients').textContent = state.clients.length;
   document.getElementById('cnt-archived').textContent = state.processes.filter(p=>p.archived).length;
+  document.getElementById('cnt-rd-active').textContent = state.retirada.processos.filter(p=>p.statusEnvio!=='ENVIADO').length;
+  document.getElementById('cnt-rd-finalizados').textContent = state.retirada.processos.filter(p=>p.statusEnvio==='ENVIADO').length;
 }
 
 function renderAll(){ renderBoard(); renderClients(); renderArchive(); renderCounts(); checkReminders(); }
@@ -1475,6 +1807,767 @@ document.getElementById('btnPushSheets').addEventListener('click', async ()=>{
     toast('Não consegui enviar para o Google Sheets');
   }
 });
+
+/* ============================================================
+ * RETIRADA DOCUMENTAL
+ * Seção independente (mesmo estado/persistência, mesmo padrão visual).
+ * ============================================================ */
+function rdRef(){ return state.retirada.reference; }
+function rdProcessos(){ return state.retirada.processos; }
+function rdUid(){ return uid(); }
+function rdNowISO(){ return new Date().toISOString(); }
+function rdToday(){ return new Date().toISOString().slice(0,10); }
+function rdFmtDate(iso){
+  if(!iso) return '';
+  const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(!m) return iso;
+  return `${m[3]}/${m[2]}/${m[1]}`;
+}
+function rdStageOf(p){
+  if(p.statusEnvio==='ENVIADO') return 'ENVIADO';
+  if(p.recebidoNaSVS) return 'EM_ELABORACAO';
+  if(p.retirado) return 'RETIRADO';
+  return 'AGUARDANDO_RETIRADA';
+}
+function rdNewProcesso(partial){
+  const now = rdNowISO();
+  return Object.assign({
+    id: rdUid(), ref:'', cliente:'', modal:'', mawb:'', hawb:'', agenteDeCargas:'',
+    local:'', responsavelRetirada:'', retirado:false, recebidoNaSVS:false, dataRecebimentoSVS:null,
+    statusEnvio:'AGUARDANDO', confirmacaoPresencaSVS:'', dataEnvioCliente:null,
+    numeroRastreio:'', emails:'', observacoes:'', criadoEm:now, atualizadoEm:now
+  }, partial||{});
+}
+function rdUpsertProcesso(data){
+  const now = rdNowISO();
+  const list = rdProcessos();
+  const idx = list.findIndex(p=>p.id===data.id);
+  if(idx===-1){
+    const full = rdNewProcesso(data);
+    full.criadoEm = now; full.atualizadoEm = now;
+    list.push(full);
+  } else {
+    Object.assign(list[idx], data, {atualizadoEm: now});
+  }
+}
+function rdAddLocal(nome){
+  if(!nome) return;
+  const ref = rdRef();
+  if(ref.locaisRetirada.some(l=>l.toUpperCase()===nome.toUpperCase())) return;
+  ref.locaisRetirada.push(nome);
+}
+function rdAddResponsavel(nome, local){
+  if(!nome) return;
+  const ref = rdRef();
+  if(ref.responsaveis.some(r=>r.nome.toUpperCase()===nome.toUpperCase())) return;
+  ref.responsaveis.push({nome, local: local||null});
+}
+function rdStatusRetiradaBadge(p){
+  return p.retirado ? `<span class="badge badge-ok">Retirado</span>` : `<span class="badge badge-warn">Aguardando retirada</span>`;
+}
+function rdStatusSVSBadge(p){
+  if(p.recebidoNaSVS) return `<span class="badge badge-ok">Recebido na SVS</span>`;
+  if(p.retirado) return `<span class="badge badge-info">Em trânsito</span>`;
+  return `<span class="badge badge-neutral">—</span>`;
+}
+function rdStatusEnvioBadge(p){
+  if(p.statusEnvio==='ENVIADO') return `<span class="badge badge-ok">Enviado</span>`;
+  if(p.statusEnvio==='EM_ELABORACAO') return `<span class="badge badge-warn">Em elaboração</span>`;
+  return `<span class="badge badge-neutral">Aguardando</span>`;
+}
+function rdFindInstrucao(local, agente){
+  if(!local || !agente) return null;
+  const map = {
+    'VIRACOPOS':'VIRACOPOS','VCP':'VIRACOPOS',
+    'GUARULHOS':'GUARULHOS','GRU':'GUARULHOS',
+    'PORTO DE SANTOS':'SANTOS','SANTOS':'SANTOS',
+    'SANTA CATARINA':'SANTA CATARINA',
+    'CURITIBA':'CURITIBA','PARANAGUÁ':'PARANAGUÁ'
+  };
+  const key = map[local.toUpperCase()] || local.toUpperCase();
+  const section = rdRef().instrucoesRetirada.find(s=>s.local===key);
+  if(!section) return null;
+  const agenteNorm = agente.trim().toUpperCase();
+  return section.agentes.find(a=>a.agente.toUpperCase().includes(agenteNorm) || agenteNorm.includes(a.agente.toUpperCase())) || null;
+}
+function rdSaveAndRefresh(refreshFn){
+  save();
+  if(refreshFn) refreshFn();
+}
+
+/* ---------- Dashboard ---------- */
+function rdDaysSince(iso){
+  if(!iso) return null;
+  const d = new Date(iso+'T00:00:00');
+  if(isNaN(d)) return null;
+  return Math.floor((Date.now()-d.getTime())/86400000);
+}
+function renderRDDashboard(){
+  const processos = rdProcessos();
+  const aguardando = processos.filter(p=>!p.retirado);
+  const transito = processos.filter(p=>p.retirado && !p.recebidoNaSVS);
+  const elaboracao = processos.filter(p=>p.recebidoNaSVS && p.statusEnvio!=='ENVIADO');
+  const finalizados = processos.filter(p=>p.statusEnvio==='ENVIADO');
+  const atrasados = elaboracao.map(p=>({p, dias: rdDaysSince(p.dataRecebimentoSVS)}))
+    .filter(x=>x.dias!==null && x.dias>=5).sort((a,b)=>b.dias-a.dias);
+
+  const byResp = {};
+  aguardando.concat(transito).forEach(p=>{
+    const key = p.responsavelRetirada || '(sem responsável)';
+    byResp[key] = (byResp[key]||0)+1;
+  });
+  const respEntries = Object.entries(byResp).sort((a,b)=>b[1]-a[1]);
+
+  document.getElementById('rdDashboardBody').innerHTML = `
+    <div class="kpi-row">
+      <div class="kpi-card" data-stage="AGUARDANDO_RETIRADA"><div class="label">Aguardando retirada</div><div class="value">${aguardando.length}</div></div>
+      <div class="kpi-card" data-stage="RETIRADO"><div class="label">Retirado — em trânsito</div><div class="value">${transito.length}</div></div>
+      <div class="kpi-card" data-stage="EM_ELABORACAO"><div class="label">Em elaboração</div><div class="value accent">${elaboracao.length}</div></div>
+    </div>
+    <p class="muted small" style="margin:-10px 0 20px;">Assim que um processo é marcado como <strong>Enviado</strong>, ele some daqui e passa a viver em <strong>Finalizados</strong> — dá pra buscar por referência, cliente ou rastreio a qualquer momento.</p>
+    ${atrasados.length ? `
+    <div class="rd-card">
+      <h3>⚠ Parados há 5+ dias em "em elaboração"</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Ref</th><th>Cliente</th><th>Recebido na SVS</th><th>Dias parado</th><th></th></tr></thead>
+        <tbody>${atrasados.slice(0,12).map(({p,dias})=>`
+          <tr><td class="mono">${esc(p.ref)}</td><td>${esc(p.cliente)}</td><td>${rdFmtDate(p.dataRecebimentoSVS)}</td>
+          <td><span class="badge badge-danger">${dias} dias</span></td>
+          <td><button class="btn btn-sm" data-rdedit="${p.id}">Abrir</button></td></tr>`).join('')}
+        </tbody>
+      </table></div>
+    </div>` : ''}
+    <div class="rd-card">
+      <h3>Resumo por responsável de retirada (pendentes)</h3>
+      ${respEntries.length ? `<div class="table-wrap"><table>
+        <thead><tr><th>Responsável</th><th>Pendentes</th></tr></thead>
+        <tbody>${respEntries.map(([nome,qtd])=>`<tr><td>${esc(nome)}</td><td>${qtd}</td></tr>`).join('')}</tbody>
+      </table></div>` : `<div class="muted small">Nada pendente. 🎉</div>`}
+    </div>
+  `;
+  document.querySelectorAll('#rdDashboardBody [data-stage]').forEach(el=>{
+    el.addEventListener('click', ()=>{ rdProcessosState.stage = el.dataset.stage; document.querySelector('.nav-btn[data-view="rd-processos"]').click(); });
+  });
+  document.querySelectorAll('#rdDashboardBody [data-rdedit]').forEach(el=>{
+    el.addEventListener('click', ()=>openRDProcessModal(el.dataset.rdedit));
+  });
+}
+document.getElementById('btnRDNewFromDashboard').addEventListener('click', ()=>openRDProcessModal(null));
+document.getElementById('btnRDViewFinalizados').addEventListener('click', ()=>document.querySelector('.nav-btn[data-view="rd-finalizados"]').click());
+
+/* ---------- Processos ---------- */
+let rdProcessosState = { stage:'TODOS', search:'', responsavel:'', local:'' };
+let rdSelected = new Set();
+
+function rdFilteredList(){
+  let list = rdProcessos().filter(p=>p.statusEnvio!=='ENVIADO'); // finalizados saem da tela principal
+  if(rdProcessosState.stage!=='TODOS') list = list.filter(p=>rdStageOf(p)===rdProcessosState.stage);
+  if(rdProcessosState.responsavel) list = list.filter(p=>p.responsavelRetirada===rdProcessosState.responsavel);
+  if(rdProcessosState.local) list = list.filter(p=>p.local===rdProcessosState.local);
+  if(rdProcessosState.search.trim()){
+    const q = rdProcessosState.search.trim().toLowerCase();
+    list = list.filter(p=>[p.ref,p.cliente,p.mawb,p.hawb,p.agenteDeCargas,p.numeroRastreio,p.observacoes].some(v=>v && String(v).toLowerCase().includes(q)));
+  }
+  return list;
+}
+function rdStageCounts(){
+  const all = rdProcessos().filter(p=>p.statusEnvio!=='ENVIADO');
+  const c = {TODOS:all.length, AGUARDANDO_RETIRADA:0, RETIRADO:0, EM_ELABORACAO:0};
+  all.forEach(p=>{ c[rdStageOf(p)]=(c[rdStageOf(p)]||0)+1; });
+  return c;
+}
+function renderRDProcessos(){
+  const ref = rdRef();
+  const list = rdFilteredList();
+  const counts = rdStageCounts();
+  const tabs = [['TODOS','Todos'],['AGUARDANDO_RETIRADA','Aguardando retirada'],['RETIRADO','Em trânsito'],['EM_ELABORACAO','Em elaboração']];
+  const body = document.getElementById('rdProcessosBody');
+  body.innerHTML = `
+    <div class="tabs">${tabs.map(([k,l])=>`<div class="tab ${rdProcessosState.stage===k?'active':''}" data-stage="${k}">${l} (${counts[k]||0})</div>`).join('')}</div>
+    <div class="toolbar">
+      <input type="text" id="rd-search" placeholder="Buscar por ref, cliente, MAWB/HAWB, rastreio..." value="${escAttr(rdProcessosState.search)}">
+      <select id="rd-f-responsavel"><option value="">Todos os responsáveis</option>${ref.responsaveis.map(r=>`<option value="${escAttr(r.nome)}" ${rdProcessosState.responsavel===r.nome?'selected':''}>${esc(r.nome)}</option>`).join('')}</select>
+      <select id="rd-f-local"><option value="">Todos os locais</option>${ref.locaisRetirada.map(l=>`<option value="${escAttr(l)}" ${rdProcessosState.local===l?'selected':''}>${esc(l)}</option>`).join('')}</select>
+    </div>
+    <div id="rd-bulk-bar-slot"></div>
+    <div class="panel">
+      <div class="table-wrap"><table>
+        <thead><tr>
+          <th class="checkbox-col"><input type="checkbox" id="rd-chk-all"></th>
+          <th>Ref</th><th>Cliente</th><th>Modal</th><th>Local</th><th>Responsável</th>
+          <th>Retirada</th><th>SVS</th><th>Rastreio</th><th></th>
+        </tr></thead>
+        <tbody id="rd-tbody">${list.length ? list.map(rdRowHtml).join('') : `<tr><td colspan="9"><div class="empty-state"><div class="big">📭</div>Nenhum processo encontrado com esses filtros.</div></td></tr>`}</tbody>
+      </table></div>
+    </div>
+  `;
+  rdWireProcessosEvents(list);
+  rdDrawBulkBar();
+}
+function rdRowHtml(p){
+  return `<tr>
+    <td class="checkbox-col"><input type="checkbox" class="rd-row-chk" data-id="${p.id}" ${rdSelected.has(p.id)?'checked':''}></td>
+    <td class="mono">${esc(p.ref)}</td><td>${esc(p.cliente)}</td><td>${esc(p.modal)}</td><td>${esc(p.local)}</td><td>${esc(p.responsavelRetirada)}</td>
+    <td>${rdStatusRetiradaBadge(p)}</td><td>${rdStatusSVSBadge(p)}</td><td class="mono">${esc(p.numeroRastreio||'')}</td>
+    <td><button class="btn btn-sm" data-rdedit="${p.id}">Editar</button></td>
+  </tr>`;
+}
+function rdWireProcessosEvents(list){
+  const body = document.getElementById('rdProcessosBody');
+  body.querySelectorAll('.tab').forEach(el=>el.addEventListener('click', ()=>{ rdProcessosState.stage=el.dataset.stage; rdSelected=new Set(); renderRDProcessos(); }));
+  body.querySelector('#rd-search').addEventListener('input', ()=>{ rdProcessosState.search=document.getElementById('rd-search').value; renderRDProcessos(); const el=document.getElementById('rd-search'); if(el){ el.focus(); el.setSelectionRange(rdProcessosState.search.length, rdProcessosState.search.length); } });
+  body.querySelector('#rd-f-responsavel').addEventListener('change', e=>{ rdProcessosState.responsavel=e.target.value; renderRDProcessos(); });
+  body.querySelector('#rd-f-local').addEventListener('change', e=>{ rdProcessosState.local=e.target.value; renderRDProcessos(); });
+  body.querySelectorAll('[data-rdedit]').forEach(el=>el.addEventListener('click', ()=>openRDProcessModal(el.dataset.rdedit)));
+  body.querySelectorAll('.rd-row-chk').forEach(el=>el.addEventListener('change', ()=>{
+    if(el.checked) rdSelected.add(el.dataset.id); else rdSelected.delete(el.dataset.id);
+    rdDrawBulkBar();
+    const all = document.getElementById('rd-chk-all'); if(all) all.checked = rdSelected.size===list.length && list.length>0;
+  }));
+  const chkAll = body.querySelector('#rd-chk-all');
+  if(chkAll) chkAll.addEventListener('change', ()=>{
+    if(chkAll.checked) list.forEach(p=>rdSelected.add(p.id)); else list.forEach(p=>rdSelected.delete(p.id));
+    renderRDProcessos();
+  });
+}
+function rdDrawBulkBar(){
+  const slot = document.getElementById('rd-bulk-bar-slot');
+  if(!slot) return;
+  if(rdSelected.size===0){ slot.innerHTML=''; return; }
+  slot.innerHTML = `<div class="bulk-bar">
+    <span class="count">${rdSelected.size} selecionado(s)</span>
+    <div class="spacer"></div>
+    <button class="btn" id="rd-bulk-retirado">Marcar retirado</button>
+    <button class="btn" id="rd-bulk-svs">Marcar recebido na SVS</button>
+    <button class="btn" id="rd-bulk-elaboracao">Marcar em elaboração</button>
+    <button class="btn btn-gold" id="rd-bulk-enviado">Marcar enviado…</button>
+    <button class="btn btn-danger" id="rd-bulk-excluir">Excluir</button>
+  </div>`;
+  slot.querySelector('#rd-bulk-retirado').addEventListener('click', ()=>{
+    const ids = new Set(rdSelected);
+    rdProcessos().forEach(p=>{ if(ids.has(p.id)){ p.retirado=true; p.atualizadoEm=rdNowISO(); } });
+    rdSelected=new Set(); toast('Marcado como retirado.'); rdSaveAndRefresh(renderRDProcessos);
+  });
+  slot.querySelector('#rd-bulk-svs').addEventListener('click', ()=>{
+    const ids = new Set(rdSelected);
+    rdProcessos().forEach(p=>{ if(ids.has(p.id)){ p.retirado=true; p.recebidoNaSVS=true; p.dataRecebimentoSVS=rdToday(); p.statusEnvio='EM_ELABORACAO'; p.atualizadoEm=rdNowISO(); } });
+    rdSelected=new Set(); toast('Marcado como recebido na SVS.'); rdSaveAndRefresh(renderRDProcessos);
+  });
+  slot.querySelector('#rd-bulk-elaboracao').addEventListener('click', ()=>{
+    const ids = new Set(rdSelected);
+    rdProcessos().forEach(p=>{ if(ids.has(p.id)){ p.statusEnvio='EM_ELABORACAO'; p.atualizadoEm=rdNowISO(); } });
+    rdSelected=new Set(); toast('Marcado como em elaboração.'); rdSaveAndRefresh(renderRDProcessos);
+  });
+  slot.querySelector('#rd-bulk-enviado').addEventListener('click', ()=>openRDEnvioModal([...rdSelected]));
+  slot.querySelector('#rd-bulk-excluir').addEventListener('click', ()=>{
+    if(!confirm(`Excluir ${rdSelected.size} processo(s)? Essa ação não pode ser desfeita.`)) return;
+    const ids = new Set(rdSelected);
+    state.retirada.processos = rdProcessos().filter(p=>!ids.has(p.id));
+    rdSelected=new Set(); rdSaveAndRefresh(renderRDProcessos);
+  });
+}
+
+/* ---------- Finalizados ---------- */
+let rdFinalizadosSearch = '';
+function renderRDFinalizados(){
+  const q = rdFinalizadosSearch.trim().toLowerCase();
+  let list = rdProcessos().filter(p=>p.statusEnvio==='ENVIADO');
+  if(q) list = list.filter(p=>[p.ref,p.cliente,p.numeroRastreio].some(v=>v && String(v).toLowerCase().includes(q)));
+  list.sort((a,b)=>(b.dataEnvioCliente||'').localeCompare(a.dataEnvioCliente||''));
+  document.getElementById('rdFinalizadosBody').innerHTML = `
+    <div class="toolbar"><input type="text" id="rd-fin-search" placeholder="Buscar por ref, cliente ou rastreio..." value="${escAttr(rdFinalizadosSearch)}"></div>
+    <div class="panel"><div class="table-wrap"><table>
+      <thead><tr><th>Ref</th><th>Cliente</th><th>Modal</th><th>Data de envio</th><th>Rastreio</th><th></th></tr></thead>
+      <tbody>${list.length ? list.map(p=>`<tr>
+        <td class="mono">${esc(p.ref)}</td><td>${esc(p.cliente)}</td><td>${esc(p.modal)}</td>
+        <td>${rdFmtDate(p.dataEnvioCliente)}</td><td class="mono">${esc(p.numeroRastreio||'')}</td>
+        <td><button class="btn btn-sm" data-rdedit="${p.id}">Abrir</button></td>
+      </tr>`).join('') : `<tr><td colspan="6"><div class="empty-state"><div class="big">📦</div>Nenhum processo finalizado ainda.</div></td></tr>`}</tbody>
+    </table></div></div>
+  `;
+  document.getElementById('rd-fin-search').addEventListener('input', ()=>{ rdFinalizadosSearch=document.getElementById('rd-fin-search').value; renderRDFinalizados(); const el=document.getElementById('rd-fin-search'); if(el){el.focus(); el.setSelectionRange(rdFinalizadosSearch.length, rdFinalizadosSearch.length);} });
+  document.querySelectorAll('#rdFinalizadosBody [data-rdedit]').forEach(el=>el.addEventListener('click', ()=>openRDProcessModal(el.dataset.rdedit)));
+}
+
+/* ---------- Modal: marcar enviado em massa ---------- */
+const rdEnvioOverlay = document.getElementById('rdEnvioOverlay');
+let rdEnvioIds = [];
+function openRDEnvioModal(ids){
+  rdEnvioIds = ids;
+  document.getElementById('rde_data').value = rdToday();
+  document.getElementById('rde_rastreio').value = '';
+  rdEnvioOverlay.classList.add('show');
+}
+document.getElementById('btnRDCancelEnvio').addEventListener('click', ()=>rdEnvioOverlay.classList.remove('show'));
+rdEnvioOverlay.addEventListener('click', e=>{ if(e.target===rdEnvioOverlay) rdEnvioOverlay.classList.remove('show'); });
+document.getElementById('btnRDConfirmEnvio').addEventListener('click', ()=>{
+  const data = document.getElementById('rde_data').value || rdToday();
+  const rastreio = document.getElementById('rde_rastreio').value.trim();
+  const ids = new Set(rdEnvioIds);
+  rdProcessos().forEach(p=>{ if(ids.has(p.id)){ p.statusEnvio='ENVIADO'; p.dataEnvioCliente=data; p.numeroRastreio=rastreio; p.recebidoNaSVS=true; p.atualizadoEm=rdNowISO(); } });
+  rdSelected = new Set();
+  rdEnvioOverlay.classList.remove('show');
+  toast('Envio confirmado.');
+  rdSaveAndRefresh(renderRDProcessos);
+});
+
+/* ---------- Modal: processo ---------- */
+const rdProcessOverlay = document.getElementById('rdProcessOverlay');
+function rdPopulateModalStatic(p){
+  const ref = rdRef();
+  const modalSel = document.getElementById('rd_modal');
+  modalSel.innerHTML = '<option value="">—</option>' + ref.modais.map(m=>`<option value="${escAttr(m)}" ${p.modal===m?'selected':''}>${esc(m)}</option>`).join('');
+  document.getElementById('rd_locaisDatalist').innerHTML = ref.locaisRetirada.map(l=>`<option value="${escAttr(l)}">`).join('');
+  document.getElementById('rd_responsaveisDatalist').innerHTML = ref.responsaveis.map(r=>`<option value="${escAttr(r.nome)}">`).join('');
+}
+function rdUpdateInstrucaoHint(){
+  const local = document.getElementById('rd_local').value;
+  const agente = document.getElementById('rd_agente').value;
+  const hint = rdFindInstrucao(local, agente);
+  const hintEl = document.getElementById('rd_instrucaoHint');
+  if(hint){
+    hintEl.innerHTML = `<div class="agente-card" style="background:#FDF8ED;border-color:#ECD98C;margin-top:8px;">
+      <div class="nome">📍 Instrução de retirada — ${esc(hint.agente)} (${esc(local)})</div>
+      ${hint.endereco ? `<div class="endereco">${esc(hint.endereco)}</div>` : ''}
+      ${hint.obs ? `<div class="obsline">${esc(hint.obs)}</div>` : ''}
+    </div>`;
+  } else {
+    hintEl.innerHTML = '';
+  }
+}
+function openRDProcessModal(id){
+  const p = id ? rdProcessos().find(x=>x.id===id) : rdNewProcesso();
+  document.getElementById('rdProcessModalTitle').textContent = id ? `Processo ${p.ref}${p.cliente?' — '+p.cliente:''}` : 'Novo processo';
+  document.getElementById('rd_id').value = p.id;
+  document.getElementById('rd_ref').value = p.ref;
+  document.getElementById('rd_cliente').value = p.cliente;
+  rdPopulateModalStatic(p);
+  document.getElementById('rd_mawb').value = p.mawb;
+  document.getElementById('rd_hawb').value = p.hawb;
+  document.getElementById('rd_agente').value = p.agenteDeCargas;
+  document.getElementById('rd_local').value = p.local;
+  document.getElementById('rd_responsavel').value = p.responsavelRetirada;
+  document.getElementById('rd_retirado').checked = !!p.retirado;
+  document.getElementById('rd_recebidosvs').checked = !!p.recebidoNaSVS;
+  document.getElementById('rd_datarecebimento').value = p.dataRecebimentoSVS || '';
+  document.getElementById('rd_statusenvio').value = p.statusEnvio || 'AGUARDANDO';
+  document.getElementById('rd_confirmacao').value = p.confirmacaoPresencaSVS;
+  document.getElementById('rd_dataenvio').value = p.dataEnvioCliente || '';
+  document.getElementById('rd_rastreio').value = p.numeroRastreio;
+  document.getElementById('rd_emails').value = p.emails;
+  document.getElementById('rd_observacoes').value = p.observacoes;
+  document.getElementById('btnRDDeleteProcess').style.display = id ? '' : 'none';
+  rdUpdateInstrucaoHint();
+  rdProcessOverlay.classList.add('show');
+}
+document.getElementById('btnRDNewProcess').addEventListener('click', ()=>openRDProcessModal(null));
+document.getElementById('btnRDCancelProcess').addEventListener('click', ()=>rdProcessOverlay.classList.remove('show'));
+rdProcessOverlay.addEventListener('click', e=>{ if(e.target===rdProcessOverlay) rdProcessOverlay.classList.remove('show'); });
+document.getElementById('rd_agente').addEventListener('input', rdUpdateInstrucaoHint);
+document.getElementById('rd_local').addEventListener('input', rdUpdateInstrucaoHint);
+document.getElementById('rd_recebidosvs').addEventListener('change', function(){
+  if(this.checked && !document.getElementById('rd_datarecebimento').value){
+    document.getElementById('rd_datarecebimento').value = rdToday();
+  }
+});
+document.getElementById('btnRDSaveProcess').addEventListener('click', ()=>{
+  const refVal = document.getElementById('rd_ref').value.trim();
+  if(!refVal){ toast('Informe a referência.'); return; }
+  const data = {
+    id: document.getElementById('rd_id').value || rdUid(),
+    ref: refVal,
+    cliente: document.getElementById('rd_cliente').value.trim(),
+    modal: document.getElementById('rd_modal').value,
+    mawb: document.getElementById('rd_mawb').value.trim(),
+    hawb: document.getElementById('rd_hawb').value.trim(),
+    agenteDeCargas: document.getElementById('rd_agente').value.trim(),
+    local: document.getElementById('rd_local').value.trim(),
+    responsavelRetirada: document.getElementById('rd_responsavel').value.trim(),
+    retirado: document.getElementById('rd_retirado').checked,
+    recebidoNaSVS: document.getElementById('rd_recebidosvs').checked,
+    dataRecebimentoSVS: document.getElementById('rd_datarecebimento').value || null,
+    statusEnvio: document.getElementById('rd_statusenvio').value,
+    confirmacaoPresencaSVS: document.getElementById('rd_confirmacao').value.trim(),
+    dataEnvioCliente: document.getElementById('rd_dataenvio').value || null,
+    numeroRastreio: document.getElementById('rd_rastreio').value.trim(),
+    emails: document.getElementById('rd_emails').value.trim(),
+    observacoes: document.getElementById('rd_observacoes').value.trim(),
+  };
+  if(data.local) rdAddLocal(data.local);
+  if(data.responsavelRetirada) rdAddResponsavel(data.responsavelRetirada, data.local || null);
+  rdUpsertProcesso(data);
+  rdProcessOverlay.classList.remove('show');
+  toast('Processo salvo.');
+  rdSaveAndRefresh(()=>{
+    const activeView = document.querySelector('.nav-btn.active');
+    if(activeView && activeView.dataset.view==='rd-processos') renderRDProcessos();
+    else if(activeView && activeView.dataset.view==='rd-finalizados') renderRDFinalizados();
+    else if(activeView && activeView.dataset.view==='rd-dashboard') renderRDDashboard();
+  });
+});
+document.getElementById('btnRDDeleteProcess').addEventListener('click', ()=>{
+  const id = document.getElementById('rd_id').value;
+  if(!id) return;
+  if(!confirm('Excluir este processo?')) return;
+  state.retirada.processos = rdProcessos().filter(x=>x.id!==id);
+  rdProcessOverlay.classList.remove('show');
+  toast('Processo excluído.');
+  rdSaveAndRefresh(()=>{
+    const activeView = document.querySelector('.nav-btn.active');
+    if(activeView && activeView.dataset.view==='rd-processos') renderRDProcessos();
+    else if(activeView && activeView.dataset.view==='rd-finalizados') renderRDFinalizados();
+    else if(activeView && activeView.dataset.view==='rd-dashboard') renderRDDashboard();
+  });
+});
+
+/* ---------- Instruções de Retirada ---------- */
+let rdInstrucoesSearch = '';
+let rdInstrucoesSelectedLocal = null;
+function renderRDInstrucoes(){
+  const sections = rdRef().instrucoesRetirada || [];
+  if(!rdInstrucoesSelectedLocal || !sections.some(s=>s.local===rdInstrucoesSelectedLocal)){
+    rdInstrucoesSelectedLocal = sections.length ? sections[0].local : null;
+  }
+  const current = sections.find(s=>s.local===rdInstrucoesSelectedLocal) || {local:null, agentes:[]};
+  const q = rdInstrucoesSearch.trim().toLowerCase();
+  let agentes = current.agentes || [];
+  if(q) agentes = agentes.filter(a=>(a.agente||'').toLowerCase().includes(q) || (a.endereco||'').toLowerCase().includes(q) || (a.obs||'').toLowerCase().includes(q));
+
+  document.getElementById('rdInstrucoesBody').innerHTML = `
+    <div class="tabs">${sections.length ? sections.map(sec=>`<div class="tab ${sec.local===rdInstrucoesSelectedLocal?'active':''}" data-local="${escAttr(sec.local)}">${esc(sec.local)} (${sec.agentes.length})</div>`).join('') : `<div class="muted small" style="padding:9px 0;">Nenhum local cadastrado ainda.</div>`}</div>
+    ${sections.length ? `
+    <div class="toolbar"><input type="text" id="rdi-search" placeholder="Buscar por agente, endereço ou observação..." value="${escAttr(rdInstrucoesSearch)}"></div>
+    <div class="panel"><div class="table-wrap"><table>
+      <thead><tr><th style="width:200px;">Agente</th><th>Endereço</th><th>Observações</th><th style="width:150px;"></th></tr></thead>
+      <tbody>${agentes.length ? agentes.map((a,i)=>rdInstrucaoRowHtml(a,i)).join('') : `<tr><td colspan="4"><div class="empty-state"><div class="big">🔍</div>Nada encontrado.</div></td></tr>`}</tbody>
+    </table></div></div>` : ''}
+  `;
+  document.querySelectorAll('#rdInstrucoesBody .tab').forEach(el=>el.addEventListener('click', ()=>{ rdInstrucoesSelectedLocal=el.dataset.local; rdInstrucoesSearch=''; renderRDInstrucoes(); }));
+  const searchInput = document.getElementById('rdi-search');
+  if(searchInput) searchInput.addEventListener('input', ()=>{ rdInstrucoesSearch=document.getElementById('rdi-search').value; renderRDInstrucoes(); const el=document.getElementById('rdi-search'); if(el){el.focus(); el.setSelectionRange(rdInstrucoesSearch.length, rdInstrucoesSearch.length);} });
+  document.querySelectorAll('#rdInstrucoesBody [data-edit-instrucao]').forEach(el=>el.addEventListener('click', ()=>openRDInstrucaoModal(parseInt(el.dataset.editInstrucao,10))));
+  document.querySelectorAll('#rdInstrucoesBody [data-del-instrucao]').forEach(el=>el.addEventListener('click', ()=>{
+    if(!confirm('Remover esta instrução?')) return;
+    const sec = rdRef().instrucoesRetirada.find(s=>s.local===rdInstrucoesSelectedLocal);
+    if(sec) sec.agentes.splice(parseInt(el.dataset.delInstrucao,10),1);
+    rdSaveAndRefresh(renderRDInstrucoes);
+  }));
+}
+function rdInstrucaoRowHtml(a,i){
+  return `<tr>
+    <td><strong>${esc(a.agente)}</strong></td>
+    <td>${a.endereco ? esc(a.endereco).replace(/\n/g,'<br>') : '<span class="muted">—</span>'}</td>
+    <td>${a.obs ? `<span class="obsline">${esc(a.obs).replace(/\n/g,'<br>')}</span>` : ''}</td>
+    <td style="white-space:nowrap;"><button class="btn btn-sm" data-edit-instrucao="${i}">Editar</button> <button class="btn btn-sm btn-danger btn-ghost" data-del-instrucao="${i}">Remover</button></td>
+  </tr>`;
+}
+const rdInstrucaoOverlay = document.getElementById('rdInstrucaoOverlay');
+function openRDInstrucaoModal(idx){
+  const ref = rdRef();
+  const isEdit = idx!==null && idx!==undefined && !isNaN(idx);
+  const sec = rdInstrucoesSelectedLocal ? ref.instrucoesRetirada.find(s=>s.local===rdInstrucoesSelectedLocal) : null;
+  const existing = isEdit && sec ? sec.agentes[idx] : {agente:'',endereco:'',obs:''};
+  const locaisConhecidos = (ref.instrucoesRetirada||[]).map(s=>s.local);
+  ref.locaisRetirada.forEach(l=>{ if(!locaisConhecidos.includes(l)) locaisConhecidos.push(l); });
+  document.getElementById('rdInstrucaoModalTitle').textContent = isEdit ? 'Editar instrução' : 'Nova instrução de retirada';
+  document.getElementById('rdi_editIdx').value = isEdit ? idx : '';
+  document.getElementById('rdi_editLocal').value = rdInstrucoesSelectedLocal || '';
+  document.getElementById('rdi_local').innerHTML = locaisConhecidos.map(l=>`<option value="${escAttr(l)}" ${rdInstrucoesSelectedLocal===l?'selected':''}>${esc(l)}</option>`).join('');
+  document.getElementById('rdi_local').disabled = isEdit;
+  document.getElementById('rdi_agente').value = existing.agente;
+  document.getElementById('rdi_endereco').value = existing.endereco || '';
+  document.getElementById('rdi_obs').value = existing.obs || '';
+  rdInstrucaoOverlay.classList.add('show');
+}
+document.getElementById('btnRDNewInstrucao').addEventListener('click', ()=>openRDInstrucaoModal(null));
+document.getElementById('btnRDCancelInstrucao').addEventListener('click', ()=>rdInstrucaoOverlay.classList.remove('show'));
+rdInstrucaoOverlay.addEventListener('click', e=>{ if(e.target===rdInstrucaoOverlay) rdInstrucaoOverlay.classList.remove('show'); });
+document.getElementById('btnRDSaveInstrucao').addEventListener('click', ()=>{
+  const localVal = document.getElementById('rdi_local').value.trim();
+  const agenteVal = document.getElementById('rdi_agente').value.trim();
+  if(!localVal || !agenteVal){ toast('Preencha local e agente.'); return; }
+  const enderecoVal = document.getElementById('rdi_endereco').value.trim();
+  const obsVal = document.getElementById('rdi_obs').value.trim();
+  const idxRaw = document.getElementById('rdi_editIdx').value;
+  const isEdit = idxRaw!=='';
+  const editLocal = document.getElementById('rdi_editLocal').value;
+  const ref = rdRef();
+  let s = ref.instrucoesRetirada.find(x=>x.local===localVal);
+  if(!s){ s = {local:localVal, agentes:[]}; ref.instrucoesRetirada.push(s); }
+  if(isEdit && localVal===editLocal){
+    s.agentes[parseInt(idxRaw,10)] = {agente:agenteVal, endereco:enderecoVal||null, obs:obsVal||null};
+  } else {
+    s.agentes.push({agente:agenteVal, endereco:enderecoVal||null, obs:obsVal||null});
+  }
+  rdInstrucoesSelectedLocal = localVal;
+  rdInstrucaoOverlay.classList.remove('show');
+  toast('Instrução salva.');
+  rdSaveAndRefresh(renderRDInstrucoes);
+});
+
+/* ---------- Importar / Exportar ---------- */
+let rdImportWb = null, rdImportRows = [], rdImportHeaderIdx = 0, rdImportMapping = [];
+const RD_IMPORT_CAMPOS = [
+  {key:'', label:'— Ignorar coluna —'},
+  {key:'refCliente', label:'Referência + Cliente juntos (ex: "12133 - CLEAN")'},
+  {key:'ref', label:'Referência'}, {key:'cliente', label:'Cliente'}, {key:'modal', label:'Modal'},
+  {key:'mawb', label:'MAWB / Master'}, {key:'hawb', label:'HAWB / House / BL'},
+  {key:'agenteDeCargas', label:'Agente de Cargas'}, {key:'local', label:'Local de retirada'},
+  {key:'responsavelRetirada', label:'Responsável pela retirada'}, {key:'retirado', label:'Retirado (sim/não)'},
+  {key:'recebidoNaSVS', label:'Recebido na SVS (sim/não)'}, {key:'dataRecebimentoSVS', label:'Data de recebimento na SVS'},
+  {key:'confirmacaoPresencaSVS', label:'Confirmação presença SVS'}, {key:'dataEnvioCliente', label:'Data de envio ao cliente'},
+  {key:'numeroRastreio', label:'Número de rastreio'}, {key:'emails', label:'E-mails'}, {key:'observacoes', label:'Observações'}
+];
+const RD_GUESS_PATTERNS = [
+  ['refCliente', /refer[êe]ncia.*svs/i], ['ref', /^ref\.?$/i], ['ref', /ref\.?\s*svs/i],
+  ['', /ref\.?\s*clientes?/i], ['cliente', /cliente/i], ['modal', /modal/i], ['mawb', /mawb|master/i],
+  ['hawb', /hawb|house|\bbl\b/i], ['agenteDeCargas', /agente/i], ['local', /local/i],
+  ['responsavelRetirada', /respons[áa]vel/i], ['responsavelRetirada', /^status/i], ['retirado', /retirado/i],
+  ['recebidoNaSVS', /recebido/i], ['confirmacaoPresencaSVS', /confirma[çc][ãa]o/i], ['numeroRastreio', /rastreio/i],
+  ['emails', /e-?mails?/i], ['dataEnvioCliente', /data.*envio/i], ['observacoes', /obs/i]
+];
+const RD_MESES = ['JANEIRO','FEVEREIRO','MARÇO','ABRIL','MAIO','JUNHO','JULHO','AGOSTO','SETEMBRO','OUTUBRO','NOVEMBRO','DEZEMBRO'];
+function rdToISODate(value){
+  if(value===null||value===undefined||value==='') return null;
+  if(value instanceof Date && !isNaN(value)) return value.toISOString().slice(0,10);
+  if(typeof value==='number'){ const d=new Date(Math.round((value-25569)*86400*1000)); return isNaN(d)?null:d.toISOString().slice(0,10); }
+  const s = String(value).trim();
+  if(!s) return null;
+  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m) return `${m[1]}-${m[2]}-${m[3]}`;
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+  if(m){ let [,d,mo,y]=m; if(y.length===2) y='20'+y; return `${y}-${mo.padStart(2,'0')}-${d.padStart(2,'0')}`; }
+  return null;
+}
+function rdSplitRefCliente(str){
+  if(!str) return {ref:'',cliente:''};
+  const s = String(str).trim();
+  const idx = s.indexOf(' - ');
+  if(idx===-1){ const m=s.match(/^([A-Za-z0-9./_-]+)\s*-\s*(.+)$/); if(m) return {ref:m[1].trim(), cliente:m[2].trim()}; return {ref:s, cliente:''}; }
+  return {ref:s.slice(0,idx).trim(), cliente:s.slice(idx+3).trim()};
+}
+function rdImportToBool(v){
+  if(v===null||v===undefined) return false;
+  const s = String(v).trim().toUpperCase();
+  return s==='SIM'||s==='OK'||s==='RECEBIDO'||s==='TRUE'||s==='X';
+}
+function rdIsSectionOrEmptyRow(row){
+  const nonEmpty = row.filter(v=>v!==null && v!=='' && String(v).trim()!=='');
+  if(nonEmpty.length===0) return true;
+  if(nonEmpty.length===1){ const v=String(nonEmpty[0]).trim().toUpperCase(); if(RD_MESES.includes(v)) return true; }
+  return false;
+}
+function rdBuildProcessosFromImport(dataRows, mapping, fixedValues){
+  const items = []; let skipped = 0;
+  dataRows.forEach(row=>{
+    if(rdIsSectionOrEmptyRow(row)){ skipped++; return; }
+    const item = {ref:'',cliente:'',modal:'',mawb:'',hawb:'',agenteDeCargas:'',local:'',responsavelRetirada:'',retirado:false,recebidoNaSVS:false,dataRecebimentoSVS:null,statusEnvio:'AGUARDANDO',confirmacaoPresencaSVS:'',dataEnvioCliente:null,numeroRastreio:'',emails:'',observacoes:''};
+    let hasAnyContent = false;
+    mapping.forEach((fieldKey, colIdx)=>{
+      if(!fieldKey) return;
+      const raw = row[colIdx];
+      if(raw===null||raw===undefined||raw==='') return;
+      hasAnyContent = true;
+      switch(fieldKey){
+        case 'refCliente': { const {ref,cliente}=rdSplitRefCliente(raw); item.ref=ref; if(cliente) item.cliente=cliente; break; }
+        case 'retirado': item.retirado = rdImportToBool(raw); break;
+        case 'recebidoNaSVS': item.recebidoNaSVS = rdImportToBool(raw); break;
+        case 'dataRecebimentoSVS': item.dataRecebimentoSVS = rdToISODate(raw); break;
+        case 'dataEnvioCliente': {
+          const s = String(raw).trim();
+          if(/elabora/i.test(s)) item.statusEnvio='EM_ELABORACAO';
+          else { const iso = rdToISODate(raw); if(iso){ item.dataEnvioCliente=iso; item.statusEnvio='ENVIADO'; } }
+          break;
+        }
+        default: item[fieldKey] = String(raw).trim();
+      }
+    });
+    if(!hasAnyContent){ skipped++; return; }
+    if(!item.recebidoNaSVS && item.confirmacaoPresencaSVS && !/^n[ãa]o\b/i.test(item.confirmacaoPresencaSVS)) item.recebidoNaSVS = true;
+    if(fixedValues.responsavelRetirada && !item.responsavelRetirada) item.responsavelRetirada = fixedValues.responsavelRetirada;
+    if(fixedValues.local && !item.local) item.local = fixedValues.local;
+    if(fixedValues.statusEnvioDefault && item.statusEnvio==='AGUARDANDO') item.statusEnvio = fixedValues.statusEnvioDefault;
+    if(item.recebidoNaSVS && item.statusEnvio==='AGUARDANDO') item.statusEnvio = 'EM_ELABORACAO';
+    if(item.recebidoNaSVS) item.retirado = true;
+    if(!item.ref && !item.cliente && !item.mawb && !item.hawb){ skipped++; return; }
+    items.push(item);
+  });
+  return {items, skipped};
+}
+function renderRDImportar(){
+  rdImportWb = null; rdImportRows = []; rdImportHeaderIdx = 0; rdImportMapping = [];
+  document.getElementById('rdImportarBody').innerHTML = `
+    <div class="rd-card">
+      <h3>1. Importar de uma planilha Excel (.xlsx)</h3>
+      <p class="small muted">Funciona com as planilhas de retirada (por representante) e a de envio ao cliente — você escolhe a aba e diz o que cada coluna significa.</p>
+      <input type="file" id="rdi-file" accept=".xlsx,.xls">
+      <div id="rdi-sheet-picker"></div>
+      <div id="rdi-mapping-area"></div>
+      <div id="rdi-preview-area"></div>
+    </div>
+    <div class="rd-card">
+      <h3>2. Backup e exportação (desta seção)</h3>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-gold" id="btnRDExportJSON">⬇ Exportar backup completo (JSON)</button>
+        <button class="btn" id="btnRDExportXLSX">⬇ Exportar processos (Excel)</button>
+        <label class="btn" style="cursor:pointer;">⬆ Restaurar backup (JSON)<input type="file" id="rdi-restore-json" accept="application/json" style="display:none;"></label>
+      </div>
+    </div>
+    <div class="rd-card">
+      <h3 style="color:var(--red);">Zona de risco</h3>
+      <p class="small muted">Apaga todos os processos de Retirada Documental (responsáveis, locais e instruções não são afetados). Faça um backup antes.</p>
+      <button class="btn btn-danger" id="btnRDClearAll">Excluir todos os processos</button>
+    </div>
+  `;
+  document.getElementById('rdi-file').addEventListener('change', rdOnFileChosen);
+  document.getElementById('btnRDExportJSON').addEventListener('click', ()=>{
+    const data = {versao:1, exportadoEm:rdNowISO(), processos: rdProcessos(), reference: rdRef()};
+    const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `backup-retirada-documental-${rdToday()}.json`;
+    a.click();
+    toast('Backup baixado');
+  });
+  document.getElementById('btnRDExportXLSX').addEventListener('click', ()=>{
+    if(typeof XLSX==='undefined'){ toast('Biblioteca de Excel não carregou (verifique sua conexão).'); return; }
+    const cols = [['ref','Referência'],['cliente','Cliente'],['modal','Modal'],['mawb','MAWB'],['hawb','HAWB/BL'],['agenteDeCargas','Agente de Cargas'],['local','Local de Retirada'],['responsavelRetirada','Responsável pela Retirada'],['retirado','Retirado'],['recebidoNaSVS','Recebido na SVS'],['dataRecebimentoSVS','Data Recebimento SVS'],['statusEnvio','Status Envio'],['confirmacaoPresencaSVS','Confirmação Presença SVS'],['dataEnvioCliente','Data Envio Cliente'],['numeroRastreio','Número de Rastreio'],['emails','E-mails'],['observacoes','Observações']];
+    const rows = [cols.map(c=>c[1])];
+    rdProcessos().forEach(p=>{ rows.push(cols.map(([key])=>{ const v=p[key]; if(typeof v==='boolean') return v?'SIM':'NÃO'; return v===null||v===undefined?'':v; })); });
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = cols.map(()=>({wch:18}));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Processos');
+    const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+    const blob = new Blob([wbout], {type:'application/octet-stream'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `retirada-documental-processos-${rdToday()}.xlsx`;
+    a.click();
+  });
+  document.getElementById('rdi-restore-json').addEventListener('change', function(e){
+    const file = e.target.files[0];
+    if(!file) return;
+    const fr = new FileReader();
+    fr.onload = ()=>{
+      let data;
+      try{ data = JSON.parse(fr.result); }catch(err){ toast('Arquivo de backup inválido.'); return; }
+      const merge = confirm('OK = mesclar com os dados atuais. Cancelar = substituir tudo pelo backup.');
+      if(!merge) state.retirada.processos = Array.isArray(data.processos) ? data.processos : [];
+      else{
+        const existingIds = new Set(rdProcessos().map(p=>p.id));
+        const toAdd = (data.processos||[]).filter(p=>!existingIds.has(p.id));
+        state.retirada.processos = rdProcessos().concat(toAdd);
+      }
+      if(data.reference) state.retirada.reference = data.reference;
+      state = normalizeState(state);
+      toast('Backup restaurado.');
+      rdSaveAndRefresh(renderRDImportar);
+    };
+    fr.readAsText(file);
+  });
+  document.getElementById('btnRDClearAll').addEventListener('click', ()=>{
+    if(!confirm('Tem certeza? Isso vai apagar TODOS os processos de Retirada Documental.')) return;
+    if(!confirm('Confirma mesmo? Essa ação não pode ser desfeita.')) return;
+    state.retirada.processos = [];
+    toast('Todos os processos foram apagados.');
+    rdSaveAndRefresh(renderRDImportar);
+  });
+}
+async function rdOnFileChosen(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  if(typeof XLSX==='undefined'){ toast('Biblioteca de Excel não carregou (verifique sua conexão).'); return; }
+  try{
+    rdImportWb = await new Promise((resolve,reject)=>{
+      const fr = new FileReader();
+      fr.onload = ev=>{ try{ resolve(XLSX.read(ev.target.result, {type:'array', cellDates:true})); }catch(err){ reject(err); } };
+      fr.onerror = reject;
+      fr.readAsArrayBuffer(file);
+    });
+  }catch(err){ toast('Não consegui ler esse arquivo. É um .xlsx válido?'); return; }
+  const sheets = rdImportWb.SheetNames.filter(name=>{ const ws=rdImportWb.Sheets[name]; return ws && ws['!ref']; });
+  const picker = document.getElementById('rdi-sheet-picker');
+  picker.innerHTML = `
+    <div class="row" style="margin-top:14px;">
+      <div class="field"><label>Aba da planilha</label><select id="rdi-sheet">${sheets.map(s=>`<option value="${escAttr(s)}">${esc(s)}</option>`).join('')}</select></div>
+      <div class="field"><label>Linha do cabeçalho</label><input type="number" id="rdi-header-row" min="1" value="1"></div>
+    </div>`;
+  picker.querySelector('#rdi-sheet').addEventListener('change', ()=>rdLoadSheet(picker.querySelector('#rdi-sheet').value));
+  picker.querySelector('#rdi-header-row').addEventListener('change', ev=>{
+    rdImportHeaderIdx = Math.max(0, (parseInt(ev.target.value,10)||1)-1);
+    rdLoadMappingUI();
+  });
+  rdLoadSheet(sheets[0]);
+}
+function rdLoadSheet(sheetName){
+  const ws = rdImportWb.Sheets[sheetName];
+  rdImportRows = XLSX.utils.sheet_to_json(ws, {header:1, raw:false, defval:null, dateNF:'yyyy-mm-dd'});
+  rdImportHeaderIdx = 0;
+  for(let i=0;i<Math.min(rdImportRows.length,5);i++){
+    const nonEmpty = rdImportRows[i].filter(v=>v!==null && v!=='').length;
+    if(nonEmpty>=3){ rdImportHeaderIdx=i; break; }
+  }
+  const headerInput = document.getElementById('rdi-header-row');
+  if(headerInput) headerInput.value = rdImportHeaderIdx+1;
+  rdLoadMappingUI();
+}
+function rdLoadMappingUI(){
+  const headerRow = rdImportRows[rdImportHeaderIdx] || [];
+  const isPlanilhaDeRetirada = headerRow.some(h=>h && /retirado/i.test(String(h)));
+  rdImportMapping = headerRow.map(h=>{
+    if(!h) return '';
+    const s = String(h);
+    if(/^data\.?\s*$/i.test(s)) return isPlanilhaDeRetirada ? 'dataRecebimentoSVS' : 'dataEnvioCliente';
+    for(const [key,re] of RD_GUESS_PATTERNS){ if(re.test(s)) return key; }
+    return '';
+  });
+  const area = document.getElementById('rdi-mapping-area');
+  const ref = rdRef();
+  area.innerHTML = `
+    <h3 style="margin-top:18px;">Mapeamento de colunas</h3>
+    <div class="table-wrap"><table>
+      <thead><tr>${headerRow.map((h,i)=>`<th>${esc(h || '(coluna '+(i+1)+')')}</th>`).join('')}</tr></thead>
+      <tbody><tr>${headerRow.map((h,i)=>`<td><select data-col="${i}">${RD_IMPORT_CAMPOS.map(c=>`<option value="${c.key}" ${rdImportMapping[i]===c.key?'selected':''}>${esc(c.label)}</option>`).join('')}</select></td>`).join('')}</tr></tbody>
+    </table></div>
+    <h3>Valores fixos (opcional)</h3>
+    <div class="row">
+      <div class="field"><label>Responsável pela retirada</label><select id="rdi-fixed-resp"><option value="">—</option>${ref.responsaveis.map(r=>`<option value="${escAttr(r.nome)}">${esc(r.nome)}</option>`).join('')}</select></div>
+      <div class="field"><label>Local de retirada</label><select id="rdi-fixed-local"><option value="">—</option>${ref.locaisRetirada.map(l=>`<option value="${escAttr(l)}">${esc(l)}</option>`).join('')}</select></div>
+      <div class="field"><label>Status de envio padrão</label><select id="rdi-fixed-status"><option value="">Detectar automaticamente</option><option value="AGUARDANDO">Aguardando</option><option value="EM_ELABORACAO">Em elaboração</option><option value="ENVIADO">Enviado</option></select></div>
+    </div>
+    <div style="margin-top:14px;"><button class="btn btn-gold" id="rdi-preview-btn">Pré-visualizar importação</button></div>
+  `;
+  area.querySelectorAll('[data-col]').forEach(sel=>sel.addEventListener('change', ()=>{ rdImportMapping[parseInt(sel.dataset.col,10)] = sel.value; }));
+  area.querySelector('#rdi-preview-btn').addEventListener('click', rdShowImportPreview);
+}
+function rdShowImportPreview(){
+  const dataRows = rdImportRows.slice(rdImportHeaderIdx+1);
+  const fixed = {
+    responsavelRetirada: document.getElementById('rdi-fixed-resp')?.value || '',
+    local: document.getElementById('rdi-fixed-local')?.value || '',
+    statusEnvioDefault: document.getElementById('rdi-fixed-status')?.value || ''
+  };
+  const {items, skipped} = rdBuildProcessosFromImport(dataRows, rdImportMapping, fixed);
+  const area = document.getElementById('rdi-preview-area');
+  area.innerHTML = `
+    <h3 style="margin-top:18px;">Pré-visualização</h3>
+    <p class="small">${items.length} processo(s) serão importados. ${skipped} linha(s) ignoradas.</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Ref</th><th>Cliente</th><th>Local</th><th>Responsável</th><th>Retirado</th><th>Recebido SVS</th><th>Status envio</th></tr></thead>
+      <tbody>${items.slice(0,8).map(p=>`<tr><td class="mono">${esc(p.ref)}</td><td>${esc(p.cliente)}</td><td>${esc(p.local)}</td><td>${esc(p.responsavelRetirada)}</td><td>${p.retirado?'Sim':'Não'}</td><td>${p.recebidoNaSVS?'Sim':'Não'}</td><td>${esc(p.statusEnvio)}</td></tr>`).join('')}</tbody>
+    </table></div>
+    ${items.length>8?`<p class="small muted">...e mais ${items.length-8}.</p>`:''}
+    <button class="btn btn-gold" id="rdi-confirm-import" ${items.length?'':'disabled'}>Importar ${items.length} processo(s)</button>
+  `;
+  area.querySelector('#rdi-confirm-import').addEventListener('click', ()=>{
+    const now = rdNowISO();
+    items.forEach(item=>{ state.retirada.processos.push(rdNewProcesso(Object.assign({}, item, {criadoEm:now, atualizadoEm:now}))); });
+    toast(`${items.length} processo(s) importado(s) com sucesso.`);
+    document.querySelector('.nav-btn[data-view="rd-processos"]').click();
+    save();
+  });
+}
 
 /* ============ INIT ============ */
 init();
