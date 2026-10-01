@@ -316,6 +316,7 @@
       </div>
     </nav>
     <div class="sidebar-foot" id="sidebarFoot">Dados salvos só neste navegador (localStorage). Exporte/backupe pelo botão "Backup" se trocar de PC.</div>
+    <div class="sidebar-foot" id="autoBackupFoot" style="border-top:none;padding-top:0;margin-top:2px;"></div>
   </aside>
 
   <main class="main">
@@ -336,6 +337,7 @@
           <button class="btn" id="btnBackup">Exportar backup</button>
           <button class="btn" id="btnRestore">Restaurar backup</button>
           <input type="file" id="restoreFile" accept="application/json" style="display:none;">
+          <button class="btn" id="btnAutoBackup" title="Escolhe um arquivo no seu PC que o app atualiza sozinho de tempos em tempos">🛡 Backup automático</button>
           <button class="btn" id="btnPushSheets">⬆ Enviar p/ Sheets</button>
           <button class="btn" id="btnManageStages">⚙ Etapas</button>
           <button class="btn btn-gold" id="btnNewProcess">+ Novo processo</button>
@@ -2625,8 +2627,128 @@ function rdShowImportPreview(){
   });
 }
 
+/* ============================================================
+ * BACKUP AUTOMÁTICO (arquivo único no seu PC, atualizado sozinho)
+ * Usa a File System Access API (só Chrome/Edge no computador).
+ * O app guarda a permissão de escrever num arquivo que você escolhe
+ * uma vez, e vai sobrescrevendo ele a cada 15 minutos — sem baixar
+ * arquivo novo nenhum, sem lotar sua pasta de Downloads.
+ * ============================================================ */
+const AUTO_BACKUP_DB = 'posRegistroAutoBackupDB';
+const AUTO_BACKUP_STORE = 'handles';
+const AUTO_BACKUP_KEY = 'backupFileHandle';
+const AUTO_BACKUP_INTERVAL_MS = 15 * 60 * 1000; // 15 minutos
+let autoBackupHandle = null;
+let autoBackupTimer = null;
+
+function autoBackupSupported(){
+  return typeof window.showSaveFilePicker === 'function';
+}
+function idbOpen(){
+  return new Promise((resolve,reject)=>{
+    const req = indexedDB.open(AUTO_BACKUP_DB, 1);
+    req.onupgradeneeded = ()=>{ req.result.createObjectStore(AUTO_BACKUP_STORE); };
+    req.onsuccess = ()=>resolve(req.result);
+    req.onerror = ()=>reject(req.error);
+  });
+}
+async function idbGetHandle(){
+  try{
+    const db = await idbOpen();
+    return await new Promise((resolve,reject)=>{
+      const tx = db.transaction(AUTO_BACKUP_STORE,'readonly');
+      const req = tx.objectStore(AUTO_BACKUP_STORE).get(AUTO_BACKUP_KEY);
+      req.onsuccess = ()=>resolve(req.result||null);
+      req.onerror = ()=>reject(req.error);
+    });
+  }catch(e){ return null; }
+}
+async function idbSetHandle(handle){
+  try{
+    const db = await idbOpen();
+    await new Promise((resolve,reject)=>{
+      const tx = db.transaction(AUTO_BACKUP_STORE,'readwrite');
+      tx.objectStore(AUTO_BACKUP_STORE).put(handle, AUTO_BACKUP_KEY);
+      tx.oncomplete = resolve;
+      tx.onerror = ()=>reject(tx.error);
+    });
+  }catch(e){}
+}
+function setAutoBackupStatus(text, color){
+  const el = document.getElementById('autoBackupFoot');
+  if(!el) return;
+  el.textContent = text;
+  el.style.color = color || '#6B7DA0';
+}
+async function writeAutoBackup(){
+  if(!autoBackupHandle) return;
+  try{
+    const perm = await autoBackupHandle.queryPermission({mode:'readwrite'});
+    if(perm !== 'granted') return; // precisa de um clique novo pra reautorizar (ver botão)
+    const writable = await autoBackupHandle.createWritable();
+    await writable.write(JSON.stringify(state, null, 2));
+    await writable.close();
+    const time = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    setAutoBackupStatus(`🛡 Backup automático salvo às ${time}`, '#4ADE80');
+  }catch(e){
+    setAutoBackupStatus('🛡 Backup automático pausado — clique em "Backup automático" pra retomar', '#FCA5A5');
+  }
+}
+function startAutoBackupTimer(){
+  if(autoBackupTimer) clearInterval(autoBackupTimer);
+  autoBackupTimer = setInterval(writeAutoBackup, AUTO_BACKUP_INTERVAL_MS);
+}
+async function initAutoBackup(){
+  const btn = document.getElementById('btnAutoBackup');
+  if(!autoBackupSupported()){
+    if(btn) btn.style.display = 'none'; // Firefox/Safari não suportam — some o botão
+    return;
+  }
+  const handle = await idbGetHandle();
+  if(!handle) return; // ainda não configurado
+  autoBackupHandle = handle;
+  const perm = await handle.queryPermission({mode:'readwrite'});
+  if(perm === 'granted'){
+    startAutoBackupTimer();
+    writeAutoBackup();
+  } else {
+    setAutoBackupStatus('🛡 Backup automático pausado — clique em "Backup automático" pra retomar', '#FCA5A5');
+  }
+}
+document.getElementById('btnAutoBackup').addEventListener('click', async ()=>{
+  if(!autoBackupSupported()){
+    toast('Esse recurso funciona só no Chrome ou Edge, no computador');
+    return;
+  }
+  try{
+    if(autoBackupHandle){
+      // já tem arquivo escolhido antes — esse clique serve só pra reautorizar a escrita
+      const perm = await autoBackupHandle.requestPermission({mode:'readwrite'});
+      if(perm === 'granted'){
+        startAutoBackupTimer();
+        await writeAutoBackup();
+        toast('Backup automático retomado');
+        return;
+      }
+    }
+    const handle = await window.showSaveFilePicker({
+      suggestedName: 'backup-pos-registro-auto.json',
+      types: [{description:'Backup JSON', accept:{'application/json':['.json']}}]
+    });
+    await idbSetHandle(handle);
+    autoBackupHandle = handle;
+    startAutoBackupTimer();
+    await writeAutoBackup();
+    toast('Backup automático configurado — vai salvar sozinho a cada 15 min');
+  }catch(e){
+    if(e && e.name === 'AbortError') return; // cancelou o seletor de arquivo
+    toast('Não consegui configurar o backup automático');
+  }
+});
+
 /* ============ INIT ============ */
 init();
+initAutoBackup();
 </script>
 </body>
 </html>
