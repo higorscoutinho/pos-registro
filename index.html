@@ -337,7 +337,7 @@
           <button class="btn" id="btnBackup">Exportar backup</button>
           <button class="btn" id="btnRestore">Restaurar backup</button>
           <input type="file" id="restoreFile" accept="application/json" style="display:none;">
-          <button class="btn" id="btnAutoBackup" title="Escolhe um arquivo no seu PC que o app atualiza sozinho de tempos em tempos">🛡 Backup automático</button>
+          <button class="btn" id="btnAutoBackup" title="Escolhe uma pasta no seu PC onde o app vai salvando um arquivo novo a cada 30 minutos">🛡 Backup automático</button>
           <button class="btn" id="btnPushSheets">⬆ Enviar p/ Sheets</button>
           <button class="btn" id="btnManageStages">⚙ Etapas</button>
           <button class="btn btn-gold" id="btnNewProcess">+ Novo processo</button>
@@ -2628,21 +2628,23 @@ function rdShowImportPreview(){
 }
 
 /* ============================================================
- * BACKUP AUTOMÁTICO (arquivo único no seu PC, atualizado sozinho)
+ * BACKUP AUTOMÁTICO (arquivos com data/hora numa pasta do seu PC)
  * Usa a File System Access API (só Chrome/Edge no computador).
- * O app guarda a permissão de escrever num arquivo que você escolhe
- * uma vez, e vai sobrescrevendo ele a cada 15 minutos — sem baixar
- * arquivo novo nenhum, sem lotar sua pasta de Downloads.
+ * Você escolhe uma pasta uma vez, e a cada 30 minutos o app cria
+ * um arquivo novo ali dentro (backup-pos-registro-2026-10-01_17-30.json)
+ * — assim, se alguma coisa for salva errado, dá pra abrir um arquivo
+ * de um horário anterior e ver o que mudou. De vez em quando você
+ * mesmo apaga os mais antigos pra não acumular.
  * ============================================================ */
 const AUTO_BACKUP_DB = 'posRegistroAutoBackupDB';
 const AUTO_BACKUP_STORE = 'handles';
-const AUTO_BACKUP_KEY = 'backupFileHandle';
-const AUTO_BACKUP_INTERVAL_MS = 15 * 60 * 1000; // 15 minutos
-let autoBackupHandle = null;
+const AUTO_BACKUP_KEY = 'backupDirHandle';
+const AUTO_BACKUP_INTERVAL_MS = 30 * 60 * 1000; // 30 minutos
+let autoBackupDirHandle = null;
 let autoBackupTimer = null;
 
 function autoBackupSupported(){
-  return typeof window.showSaveFilePicker === 'function';
+  return typeof window.showDirectoryPicker === 'function';
 }
 function idbOpen(){
   return new Promise((resolve,reject)=>{
@@ -2680,12 +2682,18 @@ function setAutoBackupStatus(text, color){
   el.textContent = text;
   el.style.color = color || '#6B7DA0';
 }
+function autoBackupFileName(){
+  const d = new Date();
+  const pad = n=>String(n).padStart(2,'0');
+  return `backup-pos-registro-${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}.json`;
+}
 async function writeAutoBackup(){
-  if(!autoBackupHandle) return;
+  if(!autoBackupDirHandle) return;
   try{
-    const perm = await autoBackupHandle.queryPermission({mode:'readwrite'});
+    const perm = await autoBackupDirHandle.queryPermission({mode:'readwrite'});
     if(perm !== 'granted') return; // precisa de um clique novo pra reautorizar (ver botão)
-    const writable = await autoBackupHandle.createWritable();
+    const fileHandle = await autoBackupDirHandle.getFileHandle(autoBackupFileName(), {create:true});
+    const writable = await fileHandle.createWritable();
     await writable.write(JSON.stringify(state, null, 2));
     await writable.close();
     const time = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
@@ -2706,7 +2714,7 @@ async function initAutoBackup(){
   }
   const handle = await idbGetHandle();
   if(!handle) return; // ainda não configurado
-  autoBackupHandle = handle;
+  autoBackupDirHandle = handle;
   const perm = await handle.queryPermission({mode:'readwrite'});
   if(perm === 'granted'){
     startAutoBackupTimer();
@@ -2721,9 +2729,9 @@ document.getElementById('btnAutoBackup').addEventListener('click', async ()=>{
     return;
   }
   try{
-    if(autoBackupHandle){
-      // já tem arquivo escolhido antes — esse clique serve só pra reautorizar a escrita
-      const perm = await autoBackupHandle.requestPermission({mode:'readwrite'});
+    if(autoBackupDirHandle){
+      // já tem pasta escolhida antes — esse clique serve só pra reautorizar a escrita
+      const perm = await autoBackupDirHandle.requestPermission({mode:'readwrite'});
       if(perm === 'granted'){
         startAutoBackupTimer();
         await writeAutoBackup();
@@ -2731,17 +2739,14 @@ document.getElementById('btnAutoBackup').addEventListener('click', async ()=>{
         return;
       }
     }
-    const handle = await window.showSaveFilePicker({
-      suggestedName: 'backup-pos-registro-auto.json',
-      types: [{description:'Backup JSON', accept:{'application/json':['.json']}}]
-    });
-    await idbSetHandle(handle);
-    autoBackupHandle = handle;
+    const dirHandle = await window.showDirectoryPicker({mode:'readwrite'});
+    await idbSetHandle(dirHandle);
+    autoBackupDirHandle = dirHandle;
     startAutoBackupTimer();
     await writeAutoBackup();
-    toast('Backup automático configurado — vai salvar sozinho a cada 15 min');
+    toast('Backup automático configurado — vai criar um arquivo novo nessa pasta a cada 30 min');
   }catch(e){
-    if(e && e.name === 'AbortError') return; // cancelou o seletor de arquivo
+    if(e && e.name === 'AbortError') return; // cancelou o seletor de pasta
     toast('Não consegui configurar o backup automático');
   }
 });
