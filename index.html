@@ -237,6 +237,17 @@
   .checkbox-col{width:28px;}
   .rd-count-link{background:none;border:none;padding:2px 8px;border-radius:6px;font-weight:700;font-size:13.5px;cursor:pointer;color:var(--text);}
   .rd-count-link:hover{background:#FDF8ED;color:var(--amber);text-decoration:underline;}
+  .rd-donizete-table th{background:#F7DA6B;color:#4A3B00;border-bottom:1px solid #D8BE3F;}
+  .rd-donizete-table td{font-size:13px;}
+  .rd-donizete-table tr.rd-total-row td{background:#F7DA6B;color:#4A3B00;font-weight:700;border-top:2px solid #D8BE3F;}
+  .rd-donizete-head{font-weight:700;font-size:13.5px;margin-bottom:8px;}
+  @media print{
+    body *{visibility:hidden;}
+    #rdDonizeteOverlay, #rdDonizeteOverlay *{visibility:visible;}
+    #rdDonizeteOverlay{position:absolute;inset:0;background:#fff;}
+    #rdDonizeteOverlay .modal-foot, #rdDonizeteOverlay .field, #rdDonizeteOverlay .row, #rdDonizeteOverlay .sub{display:none;}
+    #rdDonizeteOverlay .modal{box-shadow:none;max-width:100%;}
+  }
 
   @media(max-width:820px){
     .app{flex-direction:column;}
@@ -456,6 +467,7 @@
           <div class="sub">Solicitação → retirada → recebido na SVS → envio ao cliente</div>
         </div>
         <div class="actions">
+          <button class="btn" id="btnRDGerarDonizete">📋 Gerar retiradas Donizete</button>
           <button class="btn btn-gold" id="btnRDNewProcess">+ Novo processo</button>
         </div>
       </div>
@@ -706,6 +718,24 @@
     <div class="modal-foot">
       <button class="btn btn-ghost" id="btnRDCancelEnvio">Cancelar</button>
       <button class="btn btn-gold" id="btnRDConfirmEnvio">Confirmar envio</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: retirada documental — relatório mensal Donizete -->
+<div class="overlay" id="rdDonizeteOverlay">
+  <div class="modal" style="max-width:760px;">
+    <h3>Gerar retiradas Donizete</h3>
+    <div class="sub" style="color:var(--muted);font-size:12.5px;margin:-10px 0 14px;">Lista todas as retiradas solicitadas ao Donizete no mês selecionado (não importa se já foram retiradas ou não) — para enviar à contadora dele faturar.</div>
+    <div class="row">
+      <div class="field"><label>Mês de referência</label><input type="month" id="rdd_mes"></div>
+      <div class="field"><label>Valor por retirada (R$)</label><input type="number" step="0.01" min="0" id="rdd_valor" value="15.00"></div>
+    </div>
+    <div id="rdDonizeteReport" style="margin-top:14px;"></div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="btnRDDonizeteFechar">Fechar</button>
+      <button class="btn" id="btnRDDonizeteImprimir">🖨 Imprimir</button>
+      <button class="btn btn-gold" id="btnRDDonizeteGerar">Gerar</button>
     </div>
   </div>
 </div>
@@ -2168,6 +2198,57 @@ document.getElementById('btnRDConfirmEnvio').addEventListener('click', ()=>{
   toast('Envio confirmado.');
   rdSaveAndRefresh(renderRDProcessos);
 });
+
+/* ---------- Relatório mensal: Gerar retiradas Donizete ---------- */
+const rdDonizeteOverlay = document.getElementById('rdDonizeteOverlay');
+function rdCurrentMonthStr(){
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+function rdMonthLabel(mesStr){
+  const [y,m] = mesStr.split('-').map(Number);
+  const nomes = ['JANEIRO','FEVEREIRO','MARÇO','ABRIL','MAIO','JUNHO','JULHO','AGOSTO','SETEMBRO','OUTUBRO','NOVEMBRO','DEZEMBRO'];
+  return `${nomes[(m-1+12)%12]}/${y}`;
+}
+function rdRenderDonizeteReport(){
+  const mes = document.getElementById('rdd_mes').value || rdCurrentMonthStr();
+  const valor = parseFloat(document.getElementById('rdd_valor').value) || 0;
+  const items = rdProcessos().filter(p=>{
+    if(!p.responsavelRetirada || !/donizete/i.test(p.responsavelRetirada)) return false;
+    const dt = (p.criadoEm||'').slice(0,7);
+    return dt === mes;
+  }).sort((a,b)=> (a.criadoEm||'').localeCompare(b.criadoEm||''));
+  const total = items.length * valor;
+  const fmtMoney = n => n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const rows = items.map(p=>`
+    <tr>
+      <td class="mono">${esc(p.ref)}</td>
+      <td>${esc(p.cliente)}</td>
+      <td>${esc(p.agenteDeCargas||'—')}</td>
+      <td class="mono">${esc(p.mawb||p.hawb||p.numeroRastreio||'—')}</td>
+      <td>${rdFmtDate((p.criadoEm||'').slice(0,10))||'—'}</td>
+      <td>R$ ${fmtMoney(valor)}</td>
+    </tr>`).join('');
+  document.getElementById('rdDonizeteReport').innerHTML = `
+    <div class="rd-donizete-head">Retiradas — Donizete — ${rdMonthLabel(mes)}</div>
+    <table class="rd-donizete-table">
+      <thead><tr><th>Ref</th><th>Cliente</th><th>Agente</th><th>MAWB/HAWB</th><th>Data solicitação</th><th>Valor</th></tr></thead>
+      <tbody>${rows || `<tr><td colspan="6" class="muted" style="text-align:center;padding:18px;">Nenhuma retirada do Donizete solicitada neste mês.</td></tr>`}</tbody>
+      ${items.length ? `<tfoot><tr class="rd-total-row"><td colspan="5" style="text-align:right;">Total (${items.length} retirada${items.length>1?'s':''})</td><td>R$ ${fmtMoney(total)}</td></tr></tfoot>` : ''}
+    </table>`;
+}
+document.getElementById('btnRDGerarDonizete').addEventListener('click', ()=>{
+  document.getElementById('rdd_mes').value = rdCurrentMonthStr();
+  document.getElementById('rdd_valor').value = '15.00';
+  rdRenderDonizeteReport();
+  rdDonizeteOverlay.classList.add('show');
+});
+document.getElementById('btnRDDonizeteGerar').addEventListener('click', rdRenderDonizeteReport);
+document.getElementById('rdd_mes').addEventListener('change', rdRenderDonizeteReport);
+document.getElementById('rdd_valor').addEventListener('change', rdRenderDonizeteReport);
+document.getElementById('btnRDDonizeteFechar').addEventListener('click', ()=>rdDonizeteOverlay.classList.remove('show'));
+rdDonizeteOverlay.addEventListener('click', e=>{ if(e.target===rdDonizeteOverlay) rdDonizeteOverlay.classList.remove('show'); });
+document.getElementById('btnRDDonizeteImprimir').addEventListener('click', ()=>window.print());
 
 /* ---------- Modal: processo ---------- */
 const rdProcessOverlay = document.getElementById('rdProcessOverlay');
