@@ -245,7 +245,7 @@
     body *{visibility:hidden;}
     #rdDonizeteOverlay, #rdDonizeteOverlay *{visibility:visible;}
     #rdDonizeteOverlay{position:absolute;inset:0;background:#fff;}
-    #rdDonizeteOverlay .modal-foot, #rdDonizeteOverlay .field, #rdDonizeteOverlay .row, #rdDonizeteOverlay .sub{display:none;}
+    #rdDonizeteOverlay .modal-foot, #rdDonizeteOverlay .rd-no-print, #rdDonizeteOverlay .field, #rdDonizeteOverlay .row, #rdDonizeteOverlay .sub{display:none;}
     #rdDonizeteOverlay .modal{box-shadow:none;max-width:100%;}
   }
 
@@ -670,6 +670,10 @@
     </div>
     <div class="field"><label>E-mails (cliente)</label><input id="rd_emails"></div>
     <div class="field"><label>Observações</label><textarea id="rd_observacoes" rows="2"></textarea></div>
+    <div class="row" style="align-items:end;">
+      <div class="field"><label>Data da solicitação (usada no relatório do Donizete)</label><input type="date" id="rd_datasolicitacao"></div>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding-bottom:10px;"><input type="checkbox" id="rd_pagodonizete" style="width:auto;"><span style="font-size:13px;font-weight:500;">Já pago ao Donizete</span></label>
+    </div>
     <div class="modal-foot">
       <button class="btn btn-danger btn-ghost" id="btnRDDeleteProcess" style="display:none;margin-right:auto;">Excluir</button>
       <button class="btn btn-ghost" id="btnRDCancelProcess">Cancelar</button>
@@ -730,11 +734,13 @@
     <div class="row">
       <div class="field"><label>Mês de referência</label><input type="month" id="rdd_mes"></div>
       <div class="field"><label>Valor por retirada (R$)</label><input type="number" step="0.01" min="0" id="rdd_valor" value="15.00"></div>
+      <div class="field"><label>Mostrar</label><select id="rdd_filtro"><option value="apagar">A pagar (não pagas)</option><option value="pagos">Já pagas</option><option value="todas">Todas</option></select></div>
     </div>
     <div id="rdDonizeteReport" style="margin-top:14px;"></div>
     <div class="modal-foot">
       <button class="btn btn-ghost" id="btnRDDonizeteFechar">Fechar</button>
       <button class="btn" id="btnRDDonizeteImprimir">🖨 Imprimir</button>
+      <button class="btn" id="btnRDDonizeteMarcarPagos" style="display:none;">✓ Marcar listadas como pagas</button>
       <button class="btn btn-gold" id="btnRDDonizeteGerar">Gerar</button>
     </div>
   </div>
@@ -911,6 +917,9 @@ function normalizeState(s){
     p.observacoes = str(p.observacoes);
     p.criadoEm = str(p.criadoEm) || new Date().toISOString();
     p.atualizadoEm = str(p.atualizadoEm) || p.criadoEm;
+    p.dataSolicitacao = str(p.dataSolicitacao).slice(0,10) || p.criadoEm.slice(0,10);
+    p.pagoDonizete = !!p.pagoDonizete;
+    p.dataPagoDonizete = (p.dataPagoDonizete==null || p.dataPagoDonizete==='') ? null : str(p.dataPagoDonizete).slice(0,10);
   });
   return s;
 }
@@ -1880,7 +1889,8 @@ function rdNewProcesso(partial){
     id: rdUid(), ref:'', cliente:'', modal:'', mawb:'', hawb:'', agenteDeCargas:'',
     local:'', responsavelRetirada:'', retirado:false, recebidoNaSVS:false, dataRecebimentoSVS:null,
     statusEnvio:'AGUARDANDO', confirmacaoPresencaSVS:'', dataEnvioCliente:null,
-    numeroRastreio:'', emails:'', observacoes:'', criadoEm:now, atualizadoEm:now
+    numeroRastreio:'', emails:'', observacoes:'', criadoEm:now, atualizadoEm:now,
+    dataSolicitacao: now.slice(0,10), pagoDonizete:false, dataPagoDonizete:null
   }, partial||{});
 }
 function rdUpsertProcesso(data){
@@ -1900,6 +1910,11 @@ function rdAddLocal(nome){
   const ref = rdRef();
   if(ref.locaisRetirada.some(l=>l.toUpperCase()===nome.toUpperCase())) return;
   ref.locaisRetirada.push(nome);
+}
+function rdResponsaveisOrdenados(){
+  const prio = [/kalau/i, /is+a+c/i, /donizete/i];
+  const rank = r=>{ const i = prio.findIndex(rx=>rx.test(r.nome)); return i===-1 ? prio.length : i; };
+  return rdRef().responsaveis.map((r,i)=>({r,i})).sort((a,b)=>rank(a.r)-rank(b.r) || a.i-b.i).map(x=>x.r);
 }
 function rdAddResponsavel(nome, local){
   if(!nome) return;
@@ -2074,7 +2089,7 @@ function renderRDProcessos(){
     <div class="tabs">${tabs.map(([k,l])=>`<div class="tab ${rdProcessosState.stage===k?'active':''}" data-stage="${k}">${l} (${counts[k]||0})</div>`).join('')}</div>
     <div class="toolbar">
       <input type="text" id="rd-search" placeholder="Buscar por ref, cliente, MAWB/HAWB, rastreio..." value="${escAttr(rdProcessosState.search)}">
-      <select id="rd-f-responsavel"><option value="">Todos os responsáveis</option>${ref.responsaveis.map(r=>`<option value="${escAttr(r.nome)}" ${rdProcessosState.responsavel===r.nome?'selected':''}>${esc(r.nome)}</option>`).join('')}</select>
+      <select id="rd-f-responsavel"><option value="">Todos os responsáveis</option>${rdResponsaveisOrdenados().map(r=>`<option value="${escAttr(r.nome)}" ${rdProcessosState.responsavel===r.nome?'selected':''}>${esc(r.nome)}</option>`).join('')}</select>
       <select id="rd-f-local"><option value="">Todos os locais</option>${ref.locaisRetirada.map(l=>`<option value="${escAttr(l)}" ${rdProcessosState.local===l?'selected':''}>${esc(l)}</option>`).join('')}</select>
     </div>
     <div id="rd-bulk-bar-slot"></div>
@@ -2210,14 +2225,22 @@ function rdMonthLabel(mesStr){
   const nomes = ['JANEIRO','FEVEREIRO','MARÇO','ABRIL','MAIO','JUNHO','JULHO','AGOSTO','SETEMBRO','OUTUBRO','NOVEMBRO','DEZEMBRO'];
   return `${nomes[(m-1+12)%12]}/${y}`;
 }
+function rdDonizeteList(){
+  const mes = document.getElementById('rdd_mes').value || rdCurrentMonthStr();
+  const filtro = document.getElementById('rdd_filtro').value;
+  return rdProcessos().filter(p=>{
+    if(!p.responsavelRetirada || !/donizete/i.test(p.responsavelRetirada)) return false;
+    if((p.dataSolicitacao||'').slice(0,7) !== mes) return false;
+    if(filtro==='apagar') return !p.pagoDonizete;
+    if(filtro==='pagos') return !!p.pagoDonizete;
+    return true;
+  }).sort((a,b)=> (a.dataSolicitacao||'').localeCompare(b.dataSolicitacao||''));
+}
 function rdRenderDonizeteReport(){
   const mes = document.getElementById('rdd_mes').value || rdCurrentMonthStr();
   const valor = parseFloat(document.getElementById('rdd_valor').value) || 0;
-  const items = rdProcessos().filter(p=>{
-    if(!p.responsavelRetirada || !/donizete/i.test(p.responsavelRetirada)) return false;
-    const dt = (p.criadoEm||'').slice(0,7);
-    return dt === mes;
-  }).sort((a,b)=> (a.criadoEm||'').localeCompare(b.criadoEm||''));
+  const filtro = document.getElementById('rdd_filtro').value;
+  const items = rdDonizeteList();
   const total = items.length * valor;
   const fmtMoney = n => n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
   const rows = items.map(p=>`
@@ -2226,26 +2249,48 @@ function rdRenderDonizeteReport(){
       <td>${esc(p.cliente)}</td>
       <td>${esc(p.agenteDeCargas||'—')}</td>
       <td class="mono">${esc(p.mawb||p.hawb||p.numeroRastreio||'—')}</td>
-      <td>${rdFmtDate((p.criadoEm||'').slice(0,10))||'—'}</td>
-      <td>R$ ${fmtMoney(valor)}</td>
+      <td>${rdFmtDate(p.dataSolicitacao)||'—'}</td>
+      <td>R$ ${fmtMoney(valor)}${p.pagoDonizete?' <span class="badge badge-ok">Pago</span>':''}</td>
+      <td class="rd-no-print" style="width:40px;"><input type="checkbox" class="rdd-pago" data-id="${p.id}" ${p.pagoDonizete?'checked':''} title="Já pago ao Donizete" style="width:auto;"></td>
     </tr>`).join('');
+  const titulo = filtro==='apagar' ? 'A pagar' : filtro==='pagos' ? 'Já pagos' : 'Todas';
   document.getElementById('rdDonizeteReport').innerHTML = `
-    <div class="rd-donizete-head">Retiradas — Donizete — ${rdMonthLabel(mes)}</div>
+    <div class="rd-donizete-head">Retiradas — Donizete — ${rdMonthLabel(mes)} (${titulo})</div>
     <table class="rd-donizete-table">
-      <thead><tr><th>Ref</th><th>Cliente</th><th>Agente</th><th>MAWB/HAWB</th><th>Data solicitação</th><th>Valor</th></tr></thead>
-      <tbody>${rows || `<tr><td colspan="6" class="muted" style="text-align:center;padding:18px;">Nenhuma retirada do Donizete solicitada neste mês.</td></tr>`}</tbody>
-      ${items.length ? `<tfoot><tr class="rd-total-row"><td colspan="5" style="text-align:right;">Total (${items.length} retirada${items.length>1?'s':''})</td><td>R$ ${fmtMoney(total)}</td></tr></tfoot>` : ''}
+      <thead><tr><th>Ref</th><th>Cliente</th><th>Agente</th><th>MAWB/HAWB</th><th>Data solicitação</th><th>Valor</th><th class="rd-no-print">Pago</th></tr></thead>
+      <tbody>${rows || `<tr><td colspan="7" class="muted" style="text-align:center;padding:18px;">Nenhuma retirada neste filtro.</td></tr>`}</tbody>
+      ${items.length ? `<tfoot><tr class="rd-total-row"><td colspan="5" style="text-align:right;">Total (${items.length} retirada${items.length>1?'s':''})</td><td>R$ ${fmtMoney(total)}</td><td class="rd-no-print"></td></tr></tfoot>` : ''}
     </table>`;
+  document.querySelectorAll('.rdd-pago').forEach(cb=>cb.addEventListener('change', ()=>{
+    const p = rdProcessos().find(x=>x.id===cb.dataset.id);
+    if(!p) return;
+    p.pagoDonizete = cb.checked;
+    p.dataPagoDonizete = cb.checked ? rdToday() : null;
+    p.atualizadoEm = rdNowISO();
+    rdSaveAndRefresh(rdRenderDonizeteReport);
+  }));
+  document.getElementById('btnRDDonizeteMarcarPagos').style.display = (filtro==='apagar' && items.length) ? '' : 'none';
 }
 document.getElementById('btnRDGerarDonizete').addEventListener('click', ()=>{
   document.getElementById('rdd_mes').value = rdCurrentMonthStr();
   document.getElementById('rdd_valor').value = '15.00';
+  document.getElementById('rdd_filtro').value = 'apagar';
   rdRenderDonizeteReport();
   rdDonizeteOverlay.classList.add('show');
 });
 document.getElementById('btnRDDonizeteGerar').addEventListener('click', rdRenderDonizeteReport);
 document.getElementById('rdd_mes').addEventListener('change', rdRenderDonizeteReport);
 document.getElementById('rdd_valor').addEventListener('change', rdRenderDonizeteReport);
+document.getElementById('rdd_filtro').addEventListener('change', rdRenderDonizeteReport);
+document.getElementById('btnRDDonizeteMarcarPagos').addEventListener('click', ()=>{
+  const items = rdDonizeteList();
+  if(!items.length) return;
+  if(!confirm(`Marcar ${items.length} retirada(s) listada(s) como JÁ PAGAS ao Donizete? Elas deixam de aparecer na cobrança (ficam em "Já pagos").`)) return;
+  const hoje = rdToday();
+  items.forEach(p=>{ p.pagoDonizete=true; p.dataPagoDonizete=hoje; p.atualizadoEm=rdNowISO(); });
+  toast(`${items.length} marcada(s) como pagas.`);
+  rdSaveAndRefresh(rdRenderDonizeteReport);
+});
 document.getElementById('btnRDDonizeteFechar').addEventListener('click', ()=>rdDonizeteOverlay.classList.remove('show'));
 rdDonizeteOverlay.addEventListener('click', e=>{ if(e.target===rdDonizeteOverlay) rdDonizeteOverlay.classList.remove('show'); });
 document.getElementById('btnRDDonizeteImprimir').addEventListener('click', ()=>window.print());
@@ -2257,7 +2302,7 @@ function rdPopulateModalStatic(p){
   const modalSel = document.getElementById('rd_modal');
   modalSel.innerHTML = '<option value="">—</option>' + ref.modais.map(m=>`<option value="${escAttr(m)}" ${p.modal===m?'selected':''}>${esc(m)}</option>`).join('');
   document.getElementById('rd_locaisDatalist').innerHTML = ref.locaisRetirada.map(l=>`<option value="${escAttr(l)}">`).join('');
-  document.getElementById('rd_responsaveisDatalist').innerHTML = ref.responsaveis.map(r=>`<option value="${escAttr(r.nome)}">`).join('');
+  document.getElementById('rd_responsaveisDatalist').innerHTML = rdResponsaveisOrdenados().map(r=>`<option value="${escAttr(r.nome)}">`).join('');
 }
 function rdUpdateInstrucaoHint(){
   const local = document.getElementById('rd_local').value;
@@ -2295,6 +2340,8 @@ function openRDProcessModal(id){
   document.getElementById('rd_rastreio').value = p.numeroRastreio;
   document.getElementById('rd_emails').value = p.emails;
   document.getElementById('rd_observacoes').value = p.observacoes;
+  document.getElementById('rd_datasolicitacao').value = p.dataSolicitacao || rdToday();
+  document.getElementById('rd_pagodonizete').checked = !!p.pagoDonizete;
   document.getElementById('btnRDDeleteProcess').style.display = id ? '' : 'none';
   rdUpdateInstrucaoHint();
   rdProcessOverlay.classList.add('show');
@@ -2331,7 +2378,11 @@ document.getElementById('btnRDSaveProcess').addEventListener('click', ()=>{
     numeroRastreio: document.getElementById('rd_rastreio').value.trim(),
     emails: document.getElementById('rd_emails').value.trim(),
     observacoes: document.getElementById('rd_observacoes').value.trim(),
+    dataSolicitacao: document.getElementById('rd_datasolicitacao').value || rdToday(),
+    pagoDonizete: document.getElementById('rd_pagodonizete').checked,
   };
+  { const old = rdProcessos().find(x=>x.id===data.id);
+    data.dataPagoDonizete = data.pagoDonizete ? ((old && old.dataPagoDonizete) || rdToday()) : null; }
   if(data.local) rdAddLocal(data.local);
   if(data.responsavelRetirada) rdAddResponsavel(data.responsavelRetirada, data.local || null);
   rdUpsertProcesso(data);
@@ -2671,7 +2722,7 @@ function rdLoadMappingUI(){
     </table></div>
     <h3>Valores fixos (opcional)</h3>
     <div class="row">
-      <div class="field"><label>Responsável pela retirada</label><select id="rdi-fixed-resp"><option value="">—</option>${ref.responsaveis.map(r=>`<option value="${escAttr(r.nome)}">${esc(r.nome)}</option>`).join('')}</select></div>
+      <div class="field"><label>Responsável pela retirada</label><select id="rdi-fixed-resp"><option value="">—</option>${rdResponsaveisOrdenados().map(r=>`<option value="${escAttr(r.nome)}">${esc(r.nome)}</option>`).join('')}</select></div>
       <div class="field"><label>Local de retirada</label><select id="rdi-fixed-local"><option value="">—</option>${ref.locaisRetirada.map(l=>`<option value="${escAttr(l)}">${esc(l)}</option>`).join('')}</select></div>
       <div class="field"><label>Status de envio padrão</label><select id="rdi-fixed-status"><option value="">Detectar automaticamente</option><option value="AGUARDANDO">Aguardando</option><option value="EM_ELABORACAO">Em elaboração</option><option value="ENVIADO">Enviado</option></select></div>
     </div>
