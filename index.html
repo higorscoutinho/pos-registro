@@ -235,6 +235,27 @@
   .small{font-size:12px;}
   .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
   .checkbox-col{width:28px;}
+
+  /* ===== Notas rápidas (post-its) ===== */
+  .notes-fab{position:fixed;right:22px;bottom:22px;z-index:900;width:52px;height:52px;border-radius:50%;border:none;background:var(--gold);color:var(--navy);font-size:22px;cursor:pointer;box-shadow:0 8px 22px rgba(15,23,42,.3);display:flex;align-items:center;justify-content:center;}
+  .notes-fab:hover{transform:scale(1.06);}
+  .notes-fab .nb{position:absolute;top:-4px;right:-4px;background:var(--navy);color:#fff;font-size:11px;font-weight:700;min-width:20px;height:20px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 5px;}
+  .notes-drawer{position:fixed;top:0;right:0;height:100vh;width:400px;max-width:100vw;background:#F8FAFC;border-left:1px solid var(--border);box-shadow:-12px 0 40px rgba(15,23,42,.18);z-index:950;transform:translateX(105%);transition:transform .2s;display:flex;flex-direction:column;}
+  .notes-drawer.open{transform:none;}
+  .notes-head{display:flex;align-items:center;gap:8px;padding:16px 18px 10px;}
+  .notes-head h3{margin:0;font-size:16px;flex:1;}
+  .notes-colors{display:flex;gap:6px;padding:0 18px 10px;align-items:center;font-size:12px;color:var(--muted);}
+  .notes-colors button{width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;}
+  .notes-colors button.sel{border-color:var(--navy);}
+  .notes-list{flex:1;overflow-y:auto;padding:4px 18px 24px;display:grid;grid-template-columns:1fr 1fr;gap:12px;align-content:start;}
+  .note{position:relative;border-radius:4px;padding:8px 10px 30px;min-height:130px;box-shadow:0 3px 8px rgba(15,23,42,.18);transform:rotate(-.6deg);display:flex;}
+  .note:nth-child(even){transform:rotate(.7deg);}
+  .note textarea{width:100%;border:none;background:transparent;resize:none;font-family:inherit;font-size:13px;line-height:1.4;color:#1E293B;outline:none;padding:0;min-height:90px;}
+  .note.done textarea{text-decoration:line-through;opacity:.55;}
+  .note .nbar{position:absolute;left:8px;right:8px;bottom:5px;display:flex;align-items:center;gap:8px;font-size:11px;color:rgba(30,41,59,.7);}
+  .note .nbar button{background:none;border:none;cursor:pointer;font-size:13px;padding:0;color:inherit;}
+  .note .nbar .sp{flex:1;}
+  .notes-empty{grid-column:1/-1;text-align:center;color:var(--muted);font-size:13px;padding:30px 10px;}
   .rd-count-link{background:none;border:none;padding:2px 8px;border-radius:6px;font-weight:700;font-size:13.5px;cursor:pointer;color:var(--text);}
   .rd-count-link:hover{background:#FDF8ED;color:var(--amber);text-decoration:underline;}
   .rd-donizete-table th{background:#F7DA6B;color:#4A3B00;border-bottom:1px solid #D8BE3F;}
@@ -746,6 +767,13 @@
   </div>
 </div>
 
+<button class="notes-fab" id="notesFab" title="Notas rápidas">📝<span class="nb" id="notesBadge" style="display:none;">0</span></button>
+<aside class="notes-drawer" id="notesDrawer">
+  <div class="notes-head"><h3>📝 Notas rápidas</h3><button class="btn btn-sm" id="notesAdd">+ Nova nota</button><button class="btn btn-ghost btn-sm" id="notesClose">✕</button></div>
+  <div class="notes-colors" id="notesColors">Cor da nova nota:</div>
+  <div class="notes-list" id="notesList"></div>
+</aside>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -848,6 +876,8 @@ function normalizeState(s){
   if(!Array.isArray(s.stages) || s.stages.length===0) s.stages = DEFAULT_STAGES.map(x=>({...x}));
   if(!Array.isArray(s.sdaOptions) || s.sdaOptions.length===0) s.sdaOptions = KNOWN_SDA.slice();
   if(typeof s.terceirosNotes !== 'string') s.terceirosNotes = '';
+  if(!Array.isArray(s.notas)) s.notas = [];
+  s.notas = s.notas.filter(n=>n && n.id!=='' && n.id!=null).map((n,i)=>({id:String(n.id), texto:n.texto==null?'':String(n.texto), cor:String(n.cor||'#FEF08A'), feito:!!n.feito, ordem:Number(n.ordem)||i, criadoEm:String(n.criadoEm||new Date().toISOString())}));
   /* O Google Sheets devolve células que parecem número (ex: código "14037")
      como number, não string — isso quebra .localeCompare(), .toLowerCase()
      etc. Força string nesses campos sempre que o estado é carregado, de
@@ -2884,8 +2914,70 @@ document.getElementById('btnAutoBackup').addEventListener('click', async ()=>{
 });
 
 /* ============ INIT ============ */
+/* ============ NOTAS RÁPIDAS (post-its) ============ */
+const NOTE_COLORS = ['#FEF08A','#FBCFE8','#BAE6FD','#BBF7D0','#FED7AA'];
+let noteNewColor = NOTE_COLORS[0];
+let notesSaveTimer = null;
+function notesPersistSoon(){ clearTimeout(notesSaveTimer); notesSaveTimer = setTimeout(()=>persist(), 700); }
+function renderNotesBadge(){
+  const n = state.notas.filter(x=>!x.feito).length;
+  const b = document.getElementById('notesBadge');
+  b.textContent = n; b.style.display = n ? '' : 'none';
+}
+function renderNotes(){
+  const cw = document.getElementById('notesColors');
+  cw.innerHTML = 'Cor da nova nota: ' + NOTE_COLORS.map(c=>`<button type="button" data-c="${c}" class="${c===noteNewColor?'sel':''}" style="background:${c};"></button>`).join('');
+  cw.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{ noteNewColor=b.dataset.c; renderNotes(); }));
+  const list = document.getElementById('notesList');
+  const sorted = state.notas.slice().sort((a,b)=>(a.feito-b.feito)||(b.ordem-a.ordem));
+  list.innerHTML = sorted.length ? sorted.map(n=>`
+    <div class="note ${n.feito?'done':''}" style="background:${n.cor};" data-id="${escAttr(n.id)}">
+      <textarea data-nt="${escAttr(n.id)}" placeholder="Escreva aqui...">${esc(n.texto)}</textarea>
+      <div class="nbar">
+        <button type="button" data-ndone="${escAttr(n.id)}" title="${n.feito?'Reabrir':'Marcar como feita'}">${n.feito?'↩ reabrir':'✓ feito'}</button>
+        <span class="sp"></span>
+        <button type="button" data-ndel="${escAttr(n.id)}" title="Apagar nota">🗑</button>
+      </div>
+    </div>`).join('') : '<div class="notes-empty">Nenhuma nota ainda.<br>Clique em "+ Nova nota".</div>';
+  list.querySelectorAll('textarea').forEach(t=>{
+    const fit = ()=>{ t.style.height='auto'; t.style.height = Math.max(90,t.scrollHeight)+'px'; };
+    fit();
+    t.addEventListener('input', ()=>{ fit(); const n=state.notas.find(x=>x.id===t.dataset.nt); if(n){ n.texto=t.value; notesPersistSoon(); } });
+  });
+  list.querySelectorAll('[data-ndone]').forEach(b=>b.addEventListener('click', ()=>{ const n=state.notas.find(x=>x.id===b.dataset.ndone); if(n){ n.feito=!n.feito; persist(); renderNotes(); } }));
+  list.querySelectorAll('[data-ndel]').forEach(b=>b.addEventListener('click', ()=>{
+    const n=state.notas.find(x=>x.id===b.dataset.ndel);
+    if(n && (!n.texto.trim() || confirm('Apagar esta nota?'))){ state.notas=state.notas.filter(x=>x.id!==n.id); persist(); renderNotes(); }
+  }));
+  renderNotesBadge();
+}
+function openNotes(open){
+  document.getElementById('notesDrawer').classList.toggle('open', open);
+  if(open) renderNotes();
+}
+document.getElementById('notesFab').addEventListener('click', ()=>openNotes(!document.getElementById('notesDrawer').classList.contains('open')));
+document.getElementById('notesClose').addEventListener('click', ()=>openNotes(false));
+document.getElementById('notesAdd').addEventListener('click', ()=>{
+  const maxOrd = state.notas.reduce((m,n)=>Math.max(m,n.ordem),0);
+  state.notas.push({id:uid(), texto:'', cor:noteNewColor, feito:false, ordem:maxOrd+1, criadoEm:new Date().toISOString()});
+  persist(); renderNotes();
+  const first = document.querySelector('#notesList textarea'); if(first) first.focus();
+});
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') openNotes(false); });
+
+/* ============ Altura do quadro = ocupa a tela toda ============ */
+function fitBoard(){
+  const b = document.getElementById('board');
+  if(!b || b.offsetParent===null) return;
+  const top = b.getBoundingClientRect().top + window.scrollY;
+  b.style.height = Math.max(320, window.innerHeight - top - 66) + 'px';
+}
+window.addEventListener('resize', fitBoard);
+document.getElementById('nav').addEventListener('click', ()=>setTimeout(fitBoard,50));
+
 init();
 initAutoBackup();
+fitBoard(); setTimeout(fitBoard,400); renderNotesBadge();
 </script>
 </body>
 </html>
