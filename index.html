@@ -765,6 +765,36 @@
   </div>
 </div>
 
+<!-- MODAL: retirada documental — A enviar (por cliente) -->
+<div class="overlay" id="rdAEnviarOverlay">
+  <div class="modal" style="max-width:760px;max-height:90vh;display:flex;flex-direction:column;">
+    <h3>📦 A enviar — por cliente</h3>
+    <div class="sub" style="color:var(--muted);font-size:12.5px;margin:-10px 0 10px;">Só processos <strong>em elaboração</strong>. Imprima uma etiqueta por cliente, cole o rastreio e clique em "Enviado" — vale para todos os processos daquele cliente.</div>
+    <div id="rdAEnviarSummary" style="font-size:13px;font-weight:600;margin-bottom:8px;"></div>
+    <div id="rdAEnviarBody" style="overflow-y:auto;flex:1;"></div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="btnRDAEnviarCopiar">Copiar lista</button>
+      <button class="btn btn-gold" id="btnRDAEnviarFechar">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: retirada documental — trajeto do rastreio -->
+<div class="overlay" id="rdTrackOverlay">
+  <div class="modal" style="max-width:560px;max-height:90vh;display:flex;flex-direction:column;">
+    <h3 id="rdTrackTitle">Trajeto</h3>
+    <div id="rdTrackBody" style="overflow-y:auto;flex:1;"></div>
+    <div class="modal-foot"><button class="btn btn-gold" id="btnRDTrackFechar">Fechar</button></div>
+  </div>
+</div>
+
+<!-- LEMBRETE mensal Donizete -->
+<div id="lembreteDonizete" style="display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:20px;z-index:960;background:var(--navy);color:#fff;border-radius:12px;padding:12px 16px;box-shadow:0 12px 32px rgba(15,23,42,.35);align-items:center;gap:12px;max-width:92vw;font-size:13.5px;">
+  <span id="lembreteDonizeteTxt"></span>
+  <button class="btn btn-sm btn-gold" id="lembreteDonizeteAbrir">Abrir relatório</button>
+  <button class="btn btn-sm" id="lembreteDonizeteOk">✓ Concluído</button>
+</div>
+
 <button class="notes-fab" id="notesFab" title="Notas rápidas">📝<span class="nb" id="notesBadge" style="display:none;">0</span></button>
 <aside class="notes-drawer" id="notesDrawer">
   <div class="notes-head"><h3>📝 Notas rápidas</h3><button class="btn btn-sm" id="notesAdd">+ Nova nota</button><button class="btn btn-ghost btn-sm" id="notesClose">✕</button></div>
@@ -924,6 +954,10 @@ function normalizeState(s){
   if(!Array.isArray(ref.locaisRetirada)) ref.locaisRetirada = [];
   if(!Array.isArray(ref.modais)) ref.modais = [];
   if(!Array.isArray(ref.instrucoesRetirada)) ref.instrucoesRetirada = [];
+  if(typeof ref.donizeteEnviadoMes !== 'string' || !/^\d{4}-\d{2}$/.test(ref.donizeteEnviadoMes)){
+    const d = new Date(); d.setDate(1); d.setMonth(d.getMonth()-1);   // base: mês anterior já considerado enviado
+    ref.donizeteEnviadoMes = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  }
   s.retirada.processos.forEach(p=>{
     p.id = str(p.id);
     p.ref = str(p.ref);
@@ -948,6 +982,12 @@ function normalizeState(s){
     p.dataSolicitacao = str(p.dataSolicitacao).slice(0,10) || p.criadoEm.slice(0,10);
     p.pagoDonizete = !!p.pagoDonizete;
     p.dataPagoDonizete = (p.dataPagoDonizete==null || p.dataPagoDonizete==='') ? null : str(p.dataPagoDonizete).slice(0,10);
+    p.entregue = !!p.entregue;
+    p.dataEntrega = (p.dataEntrega==null || p.dataEntrega==='') ? null : str(p.dataEntrega).slice(0,10);
+    p.rastreioStatus = str(p.rastreioStatus);
+    p.rastreioData = str(p.rastreioData);
+    p.rastreioConsultadoEm = str(p.rastreioConsultadoEm);
+    p.rastreioEventos = str(p.rastreioEventos);
   });
   return s;
 }
@@ -1360,7 +1400,7 @@ function renderCounts(){
   document.getElementById('cnt-clients').textContent = state.clients.length;
   document.getElementById('cnt-archived').textContent = state.processes.filter(p=>p.archived).length;
   document.getElementById('cnt-rd-active').textContent = state.retirada.processos.filter(p=>p.statusEnvio!=='ENVIADO').length;
-  document.getElementById('cnt-rd-finalizados').textContent = state.retirada.processos.filter(p=>p.statusEnvio==='ENVIADO').length;
+  document.getElementById('cnt-rd-finalizados').textContent = state.retirada.processos.filter(rdEntregue).length;
 }
 
 function renderAll(){ renderBoard(); renderClients(); renderArchive(); renderCounts(); checkReminders(); }
@@ -1905,6 +1945,8 @@ function rdFmtDate(iso){
   if(!m) return iso;
   return `${m[3]}/${m[2]}/${m[1]}`;
 }
+function rdEntregue(p){ return p.statusEnvio==='ENVIADO' && (p.entregue || !String(p.numeroRastreio||'').trim()); }
+function rdACaminho(p){ return p.statusEnvio==='ENVIADO' && !rdEntregue(p); }
 function rdStageOf(p){
   if(p.statusEnvio==='ENVIADO') return 'ENVIADO';
   if(p.recebidoNaSVS) return 'EM_ELABORACAO';
@@ -1918,7 +1960,8 @@ function rdNewProcesso(partial){
     local:'', responsavelRetirada:'', retirado:false, recebidoNaSVS:false, dataRecebimentoSVS:null,
     statusEnvio:'AGUARDANDO', confirmacaoPresencaSVS:'', dataEnvioCliente:null,
     numeroRastreio:'', emails:'', observacoes:'', criadoEm:now, atualizadoEm:now,
-    dataSolicitacao: now.slice(0,10), pagoDonizete:false, dataPagoDonizete:null
+    dataSolicitacao: now.slice(0,10), pagoDonizete:false, dataPagoDonizete:null,
+    entregue:false, dataEntrega:null, rastreioStatus:'', rastreioData:'', rastreioConsultadoEm:'', rastreioEventos:''
   }, partial||{});
 }
 function rdUpsertProcesso(data){
@@ -1995,7 +2038,8 @@ function renderRDDashboard(){
   const aguardando = processos.filter(p=>!p.retirado);
   const transito = processos.filter(p=>p.retirado && !p.recebidoNaSVS);
   const elaboracao = processos.filter(p=>p.recebidoNaSVS && p.statusEnvio!=='ENVIADO');
-  const finalizados = processos.filter(p=>p.statusEnvio==='ENVIADO');
+  const finalizados = processos.filter(rdEntregue);
+  const aCaminho = processos.filter(rdACaminho);
   const atrasados = elaboracao.map(p=>({p, dias: rdDaysSince(p.dataRecebimentoSVS)}))
     .filter(x=>x.dias!==null && x.dias>=5).sort((a,b)=>b.dias-a.dias);
 
@@ -2018,6 +2062,7 @@ function renderRDDashboard(){
       <div class="kpi-card" data-stage="AGUARDANDO_RETIRADA"><div class="label">Aguardando retirada</div><div class="value">${aguardando.length}</div></div>
       <div class="kpi-card" data-stage="RETIRADO"><div class="label">Retirado — em trânsito</div><div class="value">${transito.length}</div></div>
       <div class="kpi-card" data-stage="EM_ELABORACAO"><div class="label">Em elaboração</div><div class="value accent">${elaboracao.length}</div></div>
+      <div class="kpi-card" data-stage="A_CAMINHO"><div class="label">A caminho do cliente</div><div class="value">${aCaminho.length}</div></div>
     </div>
     <p class="muted small" style="margin:-10px 0 20px;">Assim que um processo é marcado como <strong>Enviado</strong>, ele some daqui e passa a viver em <strong>Finalizados</strong> — dá pra buscar por referência, cliente ou rastreio a qualquer momento.</p>
     ${atrasados.length ? `
@@ -2091,8 +2136,12 @@ let rdProcessosState = { stage:'TODOS', search:'', responsavel:'', local:'' };
 let rdSelected = new Set();
 
 function rdFilteredList(){
-  let list = rdProcessos().filter(p=>p.statusEnvio!=='ENVIADO'); // finalizados saem da tela principal
-  if(rdProcessosState.stage!=='TODOS') list = list.filter(p=>rdStageOf(p)===rdProcessosState.stage);
+  let list;
+  if(rdProcessosState.stage==='A_CAMINHO') list = rdProcessos().filter(rdACaminho);
+  else {
+    list = rdProcessos().filter(p=>p.statusEnvio!=='ENVIADO'); // enviados saem da tela principal
+    if(rdProcessosState.stage!=='TODOS') list = list.filter(p=>rdStageOf(p)===rdProcessosState.stage);
+  }
   if(rdProcessosState.responsavel) list = list.filter(p=>p.responsavelRetirada===rdProcessosState.responsavel);
   if(rdProcessosState.local) list = list.filter(p=>p.local===rdProcessosState.local);
   if(rdProcessosState.search.trim()){
@@ -2103,7 +2152,7 @@ function rdFilteredList(){
 }
 function rdStageCounts(){
   const all = rdProcessos().filter(p=>p.statusEnvio!=='ENVIADO');
-  const c = {TODOS:all.length, AGUARDANDO_RETIRADA:0, RETIRADO:0, EM_ELABORACAO:0};
+  const c = {TODOS:all.length, AGUARDANDO_RETIRADA:0, RETIRADO:0, EM_ELABORACAO:0, A_CAMINHO:rdProcessos().filter(rdACaminho).length};
   all.forEach(p=>{ c[rdStageOf(p)]=(c[rdStageOf(p)]||0)+1; });
   return c;
 }
@@ -2111,7 +2160,7 @@ function renderRDProcessos(){
   const ref = rdRef();
   const list = rdFilteredList();
   const counts = rdStageCounts();
-  const tabs = [['TODOS','Todos'],['AGUARDANDO_RETIRADA','Aguardando retirada'],['RETIRADO','Em trânsito'],['EM_ELABORACAO','Em elaboração']];
+  const tabs = [['TODOS','Todos'],['AGUARDANDO_RETIRADA','Aguardando retirada'],['RETIRADO','Em trânsito'],['EM_ELABORACAO','Em elaboração'],['A_CAMINHO','A caminho do cliente']];
   const body = document.getElementById('rdProcessosBody');
   body.innerHTML = `
     <div class="tabs">${tabs.map(([k,l])=>`<div class="tab ${rdProcessosState.stage===k?'active':''}" data-stage="${k}">${l} (${counts[k]||0})</div>`).join('')}</div>
@@ -2119,21 +2168,37 @@ function renderRDProcessos(){
       <input type="text" id="rd-search" placeholder="Buscar por ref, cliente, MAWB/HAWB, rastreio..." value="${escAttr(rdProcessosState.search)}">
       <select id="rd-f-responsavel"><option value="">Todos os responsáveis</option>${rdResponsaveisOrdenados().map(r=>`<option value="${escAttr(r.nome)}" ${rdProcessosState.responsavel===r.nome?'selected':''}>${esc(r.nome)}</option>`).join('')}</select>
       <select id="rd-f-local"><option value="">Todos os locais</option>${ref.locaisRetirada.map(l=>`<option value="${escAttr(l)}" ${rdProcessosState.local===l?'selected':''}>${esc(l)}</option>`).join('')}</select>
+      ${rdProcessosState.stage==='EM_ELABORACAO' ? `<button class="btn btn-gold" id="btnRDAEnviar">📦 A enviar (por cliente)</button>` : ''}
+      ${rdProcessosState.stage==='A_CAMINHO' ? `<button class="btn btn-gold" id="btnRDAtualizarRastreio">🔄 Atualizar rastreios</button>` : ''}
     </div>
+    ${rdProcessosState.stage==='A_CAMINHO' ? `<div class="muted small" id="rdRastreioInfo" style="margin:-4px 0 10px;">${esc(rdRastreioInfoText())}</div>` : ''}
     <div id="rd-bulk-bar-slot"></div>
     <div class="panel">
       <div class="table-wrap"><table>
         <thead><tr>
           <th class="checkbox-col"><input type="checkbox" id="rd-chk-all"></th>
-          <th>Ref</th><th>Cliente</th><th>Local</th><th>Responsável</th>
-          <th>Retirada</th><th>SVS</th><th>Rastreio</th><th></th>
+          <th>Ref</th><th>Cliente</th>${rdProcessosState.stage==='A_CAMINHO' ? '' : '<th>Local</th><th>Responsável</th>'}
+          ${rdProcessosState.stage==='A_CAMINHO' ? '<th>Enviado em</th><th>Dias</th><th>Rastreio</th><th>Situação (Correios)</th><th></th>' : '<th>Retirada</th><th>SVS</th><th>Rastreio</th><th></th>'}
         </tr></thead>
-        <tbody id="rd-tbody">${list.length ? list.map(rdRowHtml).join('') : `<tr><td colspan="9"><div class="empty-state"><div class="big">📭</div>Nenhum processo encontrado com esses filtros.</div></td></tr>`}</tbody>
+        <tbody id="rd-tbody">${list.length ? list.map(rdProcessosState.stage==='A_CAMINHO' ? rdCaminhoRowHtml : rdRowHtml).join('') : `<tr><td colspan="9"><div class="empty-state"><div class="big">📭</div>Nenhum processo encontrado com esses filtros.</div></td></tr>`}</tbody>
       </table></div>
     </div>
   `;
   rdWireProcessosEvents(list);
   rdDrawBulkBar();
+}
+function rdCaminhoRowHtml(p){
+  const dias = rdDaysSince(p.dataEnvioCliente);
+  const atrasado = dias!==null && dias>=7;
+  const sit = p.rastreioStatus ? `${esc(p.rastreioStatus)}${p.rastreioData?` <span class="muted small">(${rdFmtDate(String(p.rastreioData).slice(0,10))})</span>`:''}` : '<span class="muted small">ainda não consultado</span>';
+  return `<tr>
+    <td class="checkbox-col"><input type="checkbox" class="rd-row-chk" data-id="${p.id}" ${rdSelected.has(p.id)?'checked':''}></td>
+    <td class="mono">${esc(p.ref)}</td><td>${esc(p.cliente)}</td>
+    <td>${rdFmtDate(p.dataEnvioCliente)}</td>
+    <td>${dias===null?'':`<span class="badge ${atrasado?'badge-danger':'badge-ok'}">${dias}d</span>`}</td>
+    <td class="mono">${esc(p.numeroRastreio||'')}</td><td>${sit}</td>
+    <td><button class="btn btn-sm" data-rdtrack="${p.id}">Trajeto</button> <button class="btn btn-sm" data-rdedit="${p.id}">Editar</button></td>
+  </tr>`;
 }
 function rdRowHtml(p){
   return `<tr>
@@ -2150,6 +2215,9 @@ function rdWireProcessosEvents(list){
   body.querySelector('#rd-f-responsavel').addEventListener('change', e=>{ rdProcessosState.responsavel=e.target.value; renderRDProcessos(); });
   body.querySelector('#rd-f-local').addEventListener('change', e=>{ rdProcessosState.local=e.target.value; renderRDProcessos(); });
   body.querySelectorAll('[data-rdedit]').forEach(el=>el.addEventListener('click', ()=>openRDProcessModal(el.dataset.rdedit)));
+  body.querySelectorAll('[data-rdtrack]').forEach(el=>el.addEventListener('click', ()=>openRDTrackModal(el.dataset.rdtrack)));
+  const bAE = body.querySelector('#btnRDAEnviar'); if(bAE) bAE.addEventListener('click', openRDAEnviarModal);
+  const bAR = body.querySelector('#btnRDAtualizarRastreio'); if(bAR) bAR.addEventListener('click', ()=>rdAtualizarRastreios(true));
   body.querySelectorAll('.rd-row-chk').forEach(el=>el.addEventListener('change', ()=>{
     if(el.checked) rdSelected.add(el.dataset.id); else rdSelected.delete(el.dataset.id);
     rdDrawBulkBar();
@@ -2165,6 +2233,16 @@ function rdDrawBulkBar(){
   const slot = document.getElementById('rd-bulk-bar-slot');
   if(!slot) return;
   if(rdSelected.size===0){ slot.innerHTML=''; return; }
+  if(rdProcessosState.stage==='A_CAMINHO'){
+    slot.innerHTML = `<div class="bulk-bar"><span class="count">${rdSelected.size} selecionado(s)</span><div class="spacer"></div>
+      <button class="btn btn-gold" id="rd-bulk-entregue">✓ Marcar como entregue ao cliente</button></div>`;
+    slot.querySelector('#rd-bulk-entregue').addEventListener('click', ()=>{
+      const ids = new Set(rdSelected);
+      rdProcessos().forEach(p=>{ if(ids.has(p.id)){ p.entregue=true; p.dataEntrega=rdToday(); p.atualizadoEm=rdNowISO(); } });
+      rdSelected=new Set(); toast('Marcado como entregue — foi para Finalizados.'); rdSaveAndRefresh(renderRDProcessos);
+    });
+    return;
+  }
   slot.innerHTML = `<div class="bulk-bar">
     <span class="count">${rdSelected.size} selecionado(s)</span>
     <div class="spacer"></div>
@@ -2202,7 +2280,7 @@ function rdDrawBulkBar(){
 let rdFinalizadosSearch = '';
 function renderRDFinalizados(){
   const q = rdFinalizadosSearch.trim().toLowerCase();
-  let list = rdProcessos().filter(p=>p.statusEnvio==='ENVIADO');
+  let list = rdProcessos().filter(rdEntregue);
   if(q) list = list.filter(p=>[p.ref,p.cliente,p.numeroRastreio].some(v=>v && String(v).toLowerCase().includes(q)));
   list.sort((a,b)=>(b.dataEnvioCliente||'').localeCompare(a.dataEnvioCliente||''));
   document.getElementById('rdFinalizadosBody').innerHTML = `
@@ -2235,7 +2313,7 @@ document.getElementById('btnRDConfirmEnvio').addEventListener('click', ()=>{
   const data = document.getElementById('rde_data').value || rdToday();
   const rastreio = document.getElementById('rde_rastreio').value.trim();
   const ids = new Set(rdEnvioIds);
-  rdProcessos().forEach(p=>{ if(ids.has(p.id)){ p.statusEnvio='ENVIADO'; p.dataEnvioCliente=data; p.numeroRastreio=rastreio; p.recebidoNaSVS=true; p.atualizadoEm=rdNowISO(); } });
+  rdProcessos().forEach(p=>{ if(ids.has(p.id)){ p.statusEnvio='ENVIADO'; p.dataEnvioCliente=data; p.numeroRastreio=rastreio; p.recebidoNaSVS=true; p.entregue=false; p.atualizadoEm=rdNowISO(); } });
   rdSelected = new Set();
   rdEnvioOverlay.classList.remove('show');
   toast('Envio confirmado.');
@@ -2299,13 +2377,14 @@ function rdRenderDonizeteReport(){
   }));
   document.getElementById('btnRDDonizeteMarcarPagos').style.display = (filtro==='apagar' && items.length) ? '' : 'none';
 }
-document.getElementById('btnRDGerarDonizete').addEventListener('click', ()=>{
-  document.getElementById('rdd_mes').value = rdCurrentMonthStr();
+function openRDDonizeteReport(mes){
+  document.getElementById('rdd_mes').value = mes || rdCurrentMonthStr();
   document.getElementById('rdd_valor').value = '15.00';
   document.getElementById('rdd_filtro').value = 'apagar';
   rdRenderDonizeteReport();
   rdDonizeteOverlay.classList.add('show');
-});
+}
+document.getElementById('btnRDGerarDonizete').addEventListener('click', ()=>openRDDonizeteReport());
 document.getElementById('btnRDDonizeteGerar').addEventListener('click', rdRenderDonizeteReport);
 document.getElementById('rdd_mes').addEventListener('change', rdRenderDonizeteReport);
 document.getElementById('rdd_valor').addEventListener('change', rdRenderDonizeteReport);
@@ -2973,6 +3052,149 @@ function fitBoard(){
 }
 window.addEventListener('resize', fitBoard);
 document.getElementById('nav').addEventListener('click', ()=>setTimeout(fitBoard,50));
+
+/* ---------- A enviar (por cliente) ---------- */
+const rdAEnviarOverlay = document.getElementById('rdAEnviarOverlay');
+function rdClienteKey(c){ return String(c||'').trim().replace(/\s+/g,' ').toUpperCase() || '(SEM CLIENTE)'; }
+function rdAEnviarGroups(){
+  const g = {};
+  rdProcessos().filter(p=>rdStageOf(p)==='EM_ELABORACAO').forEach(p=>{
+    const k = rdClienteKey(p.cliente);
+    (g[k] = g[k] || []).push(p);
+  });
+  return Object.entries(g).sort((a,b)=>a[0].localeCompare(b[0],'pt-BR'));
+}
+function renderRDAEnviar(){
+  const groups = rdAEnviarGroups();
+  const total = groups.reduce((n,[,l])=>n+l.length,0);
+  document.getElementById('rdAEnviarSummary').textContent = groups.length ? `${groups.length} cliente(s) · ${total} processo(s) em elaboração` : '';
+  document.getElementById('rdAEnviarBody').innerHTML = groups.length ? `<table>
+    <thead><tr><th>Cliente</th><th>Envios</th><th>Rastreio</th><th></th></tr></thead>
+    <tbody>${groups.map(([k,list],i)=>`<tr>
+      <td><strong>${esc(k)}</strong><div class="muted small" style="margin-top:2px;">${list.map(p=>esc(p.ref)).join(' · ')}</div></td>
+      <td style="white-space:nowrap;"><strong>${list.length}</strong> envio${list.length>1?'s':''}</td>
+      <td><input type="text" class="rda-rastreio" data-i="${i}" placeholder="Ex: JU774030471BR" style="min-width:150px;"></td>
+      <td><button class="btn btn-sm btn-gold rda-ok" data-i="${i}">✓ Enviado</button></td>
+    </tr>`).join('')}</tbody></table>` : `<div class="empty-state"><div class="big">🎉</div>Nada em elaboração para enviar.</div>`;
+  const body = document.getElementById('rdAEnviarBody');
+  body.querySelectorAll('.rda-ok').forEach(btn=>btn.addEventListener('click', ()=>{
+    const i = +btn.dataset.i;
+    const [nome,list] = groups[i];
+    const rastreio = body.querySelector(`.rda-rastreio[data-i="${i}"]`).value.trim().toUpperCase();
+    if(!rastreio && !confirm(`Marcar ${nome} como enviado SEM número de rastreio? (não será rastreado nos Correios)`)) return;
+    const hoje = rdToday();
+    list.forEach(p=>{ p.statusEnvio='ENVIADO'; p.dataEnvioCliente=hoje; p.numeroRastreio=rastreio; p.recebidoNaSVS=true; p.entregue=false; p.atualizadoEm=rdNowISO(); });
+    toast(`${nome}: ${list.length} envio(s) marcado(s) como enviado(s).`);
+    rdSaveAndRefresh(()=>{ renderRDAEnviar(); renderRDProcessos(); if(rastreio) rdAtualizarRastreios(false); });
+  }));
+}
+function openRDAEnviarModal(){ renderRDAEnviar(); rdAEnviarOverlay.classList.add('show'); }
+document.getElementById('btnRDAEnviarFechar').addEventListener('click', ()=>rdAEnviarOverlay.classList.remove('show'));
+rdAEnviarOverlay.addEventListener('click', e=>{ if(e.target===rdAEnviarOverlay) rdAEnviarOverlay.classList.remove('show'); });
+document.getElementById('btnRDAEnviarCopiar').addEventListener('click', async ()=>{
+  const txt = rdAEnviarGroups().map(([k,l])=>`${k}: ${l.length} envio${l.length>1?'s':''}`).join('\n');
+  try{ await navigator.clipboard.writeText(txt); toast('Lista copiada.'); }catch(e){ toast('Não consegui copiar.'); }
+});
+
+/* ---------- Rastreio Correios ---------- */
+const RD_TRACK_RE = /^[A-Z]{2}[0-9]{9}[A-Z]{2}$/;
+let rdTrackLastRun = '', rdTrackLastError = '', rdTrackRunning = false;
+function rdRastreioInfoText(){
+  if(rdTrackRunning) return 'Consultando os Correios...';
+  const semRastreio = rdProcessos().filter(p=>rdACaminho(p) && !RD_TRACK_RE.test(String(p.numeroRastreio||'').trim().toUpperCase())).length;
+  let t = rdTrackLastRun ? `Última consulta: ${new Date(rdTrackLastRun).toLocaleString('pt-BR')}.` : 'O sistema consulta os Correios sozinho ao abrir e a cada hora.';
+  if(rdTrackLastError) t += ` ⚠ ${rdTrackLastError}`;
+  if(semRastreio) t += ` ${semRastreio} com código fora do padrão dos Correios (não rastreáveis — marque como entregue manualmente).`;
+  return t;
+}
+async function rdAtualizarRastreios(force){
+  if(rdTrackRunning || !API_URL) return;
+  const limite = Date.now() - 3*3600*1000;
+  const alvo = rdProcessos().filter(p=>{
+    if(!rdACaminho(p)) return false;
+    const c = String(p.numeroRastreio||'').trim().toUpperCase();
+    if(!RD_TRACK_RE.test(c)) return false;
+    return force || !p.rastreioConsultadoEm || new Date(p.rastreioConsultadoEm).getTime() < limite;
+  });
+  const codes = [...new Set(alvo.map(p=>String(p.numeroRastreio).trim().toUpperCase()))];
+  if(!codes.length){ if(force) toast('Nada para consultar agora.'); return; }
+  rdTrackRunning = true; rdTrackLastError = '';
+  const upd = ()=>{ const el=document.getElementById('rdRastreioInfo'); if(el) el.textContent = rdRastreioInfoText(); };
+  upd();
+  let entregues = 0, falhas = 0, primeiraFalha = '';
+  try{
+    for(let i=0;i<codes.length;i+=30){
+      const chunk = codes.slice(i,i+30);
+      const resp = await fetch(API_URL + '?action=track&codes=' + encodeURIComponent(chunk.join(',')));
+      const data = await resp.json();
+      if(!data.ok) throw new Error(data.error || 'Erro no servidor');
+      const agora = new Date().toISOString();
+      data.results.forEach(r=>{
+        rdProcessos().filter(p=>String(p.numeroRastreio||'').trim().toUpperCase()===r.codigo).forEach(p=>{
+          p.rastreioConsultadoEm = agora;
+          if(!r.ok){ falhas++; if(!primeiraFalha) primeiraFalha = `${r.codigo}: ${r.erro}`; if(!p.rastreioStatus) p.rastreioStatus = r.erro; return; }
+          const ult = r.eventos[0] || {};
+          p.rastreioStatus = ult.desc || '';
+          p.rastreioData = ult.data || '';
+          p.rastreioEventos = JSON.stringify(r.eventos);
+          if(r.entregue && !p.entregue){ p.entregue = true; p.dataEntrega = String(ult.data||rdToday()).slice(0,10); entregues++; }
+        });
+      });
+    }
+    rdTrackLastRun = new Date().toISOString();
+    if(falhas) rdTrackLastError = `${falhas} falha(s) — ${primeiraFalha}`;
+    persist();
+    if(entregues) toast(`${entregues} envio(s) entregue(s) — foram para Finalizados.`);
+  }catch(err){
+    rdTrackLastError = 'Não consegui consultar os Correios: ' + (err.message||err);
+  }finally{
+    rdTrackRunning = false;
+    const av = document.querySelector('.nav-btn.active');
+    if(av && av.dataset.view==='rd-processos') renderRDProcessos();
+    else if(av && av.dataset.view==='rd-finalizados') renderRDFinalizados();
+    else if(av && av.dataset.view==='rd-dashboard') renderRDDashboard();
+    renderCounts();
+  }
+}
+const rdTrackOverlay = document.getElementById('rdTrackOverlay');
+function openRDTrackModal(id){
+  const p = rdProcessos().find(x=>x.id===id); if(!p) return;
+  let ev = []; try{ ev = JSON.parse(p.rastreioEventos||'[]'); }catch(e){}
+  document.getElementById('rdTrackTitle').textContent = `${p.ref} — ${p.cliente||''}`;
+  document.getElementById('rdTrackBody').innerHTML = `
+    <div class="muted small" style="margin-bottom:10px;">Rastreio <span class="mono">${esc(p.numeroRastreio)}</span> · enviado em ${rdFmtDate(p.dataEnvioCliente)}</div>
+    ${ev.length ? `<div style="display:flex;flex-direction:column;gap:8px;">${ev.map(e=>`
+      <div style="border-left:3px solid var(--gold);padding:2px 0 2px 10px;">
+        <div style="font-weight:600;font-size:13px;">${esc(e.desc)}</div>
+        <div class="muted small">${e.data?new Date(e.data).toLocaleString('pt-BR'):''}${e.local?' · '+esc(e.local):''}</div>
+      </div>`).join('')}</div>` : `<div class="muted small">${esc(p.rastreioStatus||'Ainda sem eventos dos Correios. Clique em "Atualizar rastreios".')}</div>`}`;
+  rdTrackOverlay.classList.add('show');
+}
+document.getElementById('btnRDTrackFechar').addEventListener('click', ()=>rdTrackOverlay.classList.remove('show'));
+rdTrackOverlay.addEventListener('click', e=>{ if(e.target===rdTrackOverlay) rdTrackOverlay.classList.remove('show'); });
+setTimeout(()=>rdAtualizarRastreios(false), 4000);
+setInterval(()=>rdAtualizarRastreios(false), 60*60*1000);
+
+/* ---------- Lembrete mensal: planilha do Donizete ---------- */
+function rdPrevMonthStr(){
+  const d = new Date(); d.setDate(1); d.setMonth(d.getMonth()-1);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+function renderLembreteDonizete(){
+  const el = document.getElementById('lembreteDonizete');
+  if(!state.retirada) return;
+  const prev = rdPrevMonthStr();
+  const pendente = rdRef().donizeteEnviadoMes < prev;
+  el.style.display = pendente ? 'flex' : 'none';
+  if(pendente) document.getElementById('lembreteDonizeteTxt').textContent = `📋 Enviar a planilha de ${rdMonthLabel(prev)} para o Donizete`;
+}
+document.getElementById('lembreteDonizeteAbrir').addEventListener('click', ()=>openRDDonizeteReport(rdPrevMonthStr()));
+document.getElementById('lembreteDonizeteOk').addEventListener('click', ()=>{
+  rdRef().donizeteEnviadoMes = rdPrevMonthStr();
+  persist(); renderLembreteDonizete(); toast('Ótimo! Só volta a aparecer no dia 1 do próximo mês.');
+});
+setTimeout(renderLembreteDonizete, 1500);
+setInterval(renderLembreteDonizete, 30*60*1000);
 
 init();
 initAutoBackup();
