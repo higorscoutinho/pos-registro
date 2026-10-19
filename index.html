@@ -650,7 +650,6 @@
       <div class="field"><label>Cliente</label><input id="rd_cliente" placeholder="Ex: CLEAN"></div>
     </div>
     <div class="row">
-      <div class="field"><label>Modal</label><select id="rd_modal"></select></div>
       <div class="field"><label>MAWB</label><input id="rd_mawb"></div>
       <div class="field"><label>HAWB / BL</label><input id="rd_hawb"></div>
     </div>
@@ -683,7 +682,6 @@
           <option value="ENVIADO">Enviado</option>
         </select>
       </div>
-      <div class="field"><label>Confirmação presença SVS</label><input id="rd_confirmacao" placeholder="OK / observação"></div>
     </div>
     <div class="row">
       <div class="field"><label>Data de envio (Correios)</label><input type="date" id="rd_dataenvio"></div>
@@ -2127,7 +2125,7 @@ function renderRDProcessos(){
       <div class="table-wrap"><table>
         <thead><tr>
           <th class="checkbox-col"><input type="checkbox" id="rd-chk-all"></th>
-          <th>Ref</th><th>Cliente</th><th>Modal</th><th>Local</th><th>Responsável</th>
+          <th>Ref</th><th>Cliente</th><th>Local</th><th>Responsável</th>
           <th>Retirada</th><th>SVS</th><th>Rastreio</th><th></th>
         </tr></thead>
         <tbody id="rd-tbody">${list.length ? list.map(rdRowHtml).join('') : `<tr><td colspan="9"><div class="empty-state"><div class="big">📭</div>Nenhum processo encontrado com esses filtros.</div></td></tr>`}</tbody>
@@ -2140,7 +2138,7 @@ function renderRDProcessos(){
 function rdRowHtml(p){
   return `<tr>
     <td class="checkbox-col"><input type="checkbox" class="rd-row-chk" data-id="${p.id}" ${rdSelected.has(p.id)?'checked':''}></td>
-    <td class="mono">${esc(p.ref)}</td><td>${esc(p.cliente)}</td><td>${esc(p.modal)}</td><td>${esc(p.local)}</td><td>${esc(p.responsavelRetirada)}</td>
+    <td class="mono">${esc(p.ref)}</td><td>${esc(p.cliente)}</td><td>${esc(p.local)}</td><td>${esc(p.responsavelRetirada)}</td>
     <td>${rdStatusRetiradaBadge(p)}</td><td>${rdStatusSVSBadge(p)}</td><td class="mono">${esc(p.numeroRastreio||'')}</td>
     <td><button class="btn btn-sm" data-rdedit="${p.id}">Editar</button></td>
   </tr>`;
@@ -2210,9 +2208,9 @@ function renderRDFinalizados(){
   document.getElementById('rdFinalizadosBody').innerHTML = `
     <div class="toolbar"><input type="text" id="rd-fin-search" placeholder="Buscar por ref, cliente ou rastreio..." value="${escAttr(rdFinalizadosSearch)}"></div>
     <div class="panel"><div class="table-wrap"><table>
-      <thead><tr><th>Ref</th><th>Cliente</th><th>Modal</th><th>Data de envio</th><th>Rastreio</th><th></th></tr></thead>
+      <thead><tr><th>Ref</th><th>Cliente</th><th>Data de envio</th><th>Rastreio</th><th></th></tr></thead>
       <tbody>${list.length ? list.map(p=>`<tr>
-        <td class="mono">${esc(p.ref)}</td><td>${esc(p.cliente)}</td><td>${esc(p.modal)}</td>
+        <td class="mono">${esc(p.ref)}</td><td>${esc(p.cliente)}</td>
         <td>${rdFmtDate(p.dataEnvioCliente)}</td><td class="mono">${esc(p.numeroRastreio||'')}</td>
         <td><button class="btn btn-sm" data-rdedit="${p.id}">Abrir</button></td>
       </tr>`).join('') : `<tr><td colspan="6"><div class="empty-state"><div class="big">📦</div>Nenhum processo finalizado ainda.</div></td></tr>`}</tbody>
@@ -2329,8 +2327,6 @@ document.getElementById('btnRDDonizeteImprimir').addEventListener('click', ()=>w
 const rdProcessOverlay = document.getElementById('rdProcessOverlay');
 function rdPopulateModalStatic(p){
   const ref = rdRef();
-  const modalSel = document.getElementById('rd_modal');
-  modalSel.innerHTML = '<option value="">—</option>' + ref.modais.map(m=>`<option value="${escAttr(m)}" ${p.modal===m?'selected':''}>${esc(m)}</option>`).join('');
   document.getElementById('rd_locaisDatalist').innerHTML = ref.locaisRetirada.map(l=>`<option value="${escAttr(l)}">`).join('');
   document.getElementById('rd_responsaveisDatalist').innerHTML = rdResponsaveisOrdenados().map(r=>`<option value="${escAttr(r.nome)}">`).join('');
 }
@@ -2365,7 +2361,6 @@ function openRDProcessModal(id){
   document.getElementById('rd_recebidosvs').checked = !!p.recebidoNaSVS;
   document.getElementById('rd_datarecebimento').value = p.dataRecebimentoSVS || '';
   document.getElementById('rd_statusenvio').value = p.statusEnvio || 'AGUARDANDO';
-  document.getElementById('rd_confirmacao').value = p.confirmacaoPresencaSVS;
   document.getElementById('rd_dataenvio').value = p.dataEnvioCliente || '';
   document.getElementById('rd_rastreio').value = p.numeroRastreio;
   document.getElementById('rd_emails').value = p.emails;
@@ -2382,8 +2377,14 @@ rdProcessOverlay.addEventListener('click', e=>{ if(e.target===rdProcessOverlay) 
 document.getElementById('rd_agente').addEventListener('input', rdUpdateInstrucaoHint);
 document.getElementById('rd_local').addEventListener('input', rdUpdateInstrucaoHint);
 document.getElementById('rd_recebidosvs').addEventListener('change', function(){
-  if(this.checked && !document.getElementById('rd_datarecebimento').value){
-    document.getElementById('rd_datarecebimento').value = rdToday();
+  const st = document.getElementById('rd_statusenvio');
+  if(this.checked){
+    document.getElementById('rd_retirado').checked = true;
+    if(!document.getElementById('rd_datarecebimento').value) document.getElementById('rd_datarecebimento').value = rdToday();
+    if(st.value==='AGUARDANDO') st.value = 'EM_ELABORACAO';
+  } else if(st.value==='EM_ELABORACAO'){
+    st.value = 'AGUARDANDO';
+    document.getElementById('rd_datarecebimento').value = '';
   }
 });
 document.getElementById('btnRDSaveProcess').addEventListener('click', ()=>{
@@ -2393,7 +2394,6 @@ document.getElementById('btnRDSaveProcess').addEventListener('click', ()=>{
     id: document.getElementById('rd_id').value || rdUid(),
     ref: refVal,
     cliente: document.getElementById('rd_cliente').value.trim(),
-    modal: document.getElementById('rd_modal').value,
     mawb: document.getElementById('rd_mawb').value.trim(),
     hawb: document.getElementById('rd_hawb').value.trim(),
     agenteDeCargas: document.getElementById('rd_agente').value.trim(),
@@ -2403,7 +2403,6 @@ document.getElementById('btnRDSaveProcess').addEventListener('click', ()=>{
     recebidoNaSVS: document.getElementById('rd_recebidosvs').checked,
     dataRecebimentoSVS: document.getElementById('rd_datarecebimento').value || null,
     statusEnvio: document.getElementById('rd_statusenvio').value,
-    confirmacaoPresencaSVS: document.getElementById('rd_confirmacao').value.trim(),
     dataEnvioCliente: document.getElementById('rd_dataenvio').value || null,
     numeroRastreio: document.getElementById('rd_rastreio').value.trim(),
     emails: document.getElementById('rd_emails').value.trim(),
