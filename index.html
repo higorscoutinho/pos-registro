@@ -531,6 +531,7 @@
       <div id="rdImportarBody"></div>
     </section>
 
+    <footer id="siteFooter" style="margin-top:28px;padding-top:12px;font-size:12px;text-align:center;"><a href="https://www.siterastreio.com.br/" target="_blank" style="color:var(--bg);text-decoration:none;">Rastreamento</a></footer>
   </main>
 </div>
 
@@ -2190,14 +2191,15 @@ function renderRDProcessos(){
 function rdCaminhoRowHtml(p){
   const dias = rdDaysSince(p.dataEnvioCliente);
   const atrasado = dias!==null && dias>=7;
-  const sit = p.rastreioStatus ? `${esc(p.rastreioStatus)}${p.rastreioData?` <span class="muted small">(${rdFmtDate(String(p.rastreioData).slice(0,10))})</span>`:''}` : '<span class="muted small">ainda não consultado</span>';
+  const stat = /^HTTP \d+|^Resposta sem|^Error|^Exception/i.test(p.rastreioStatus||'') ? '' : p.rastreioStatus;
+  const sit = stat ? `${esc(stat)}${p.rastreioData?` <span class="muted small">(${rdFmtDate(String(p.rastreioData).slice(0,10))})</span>`:''}` : `<span class="muted small">${rdTrackLastError?'consulta automática indisponível — use "Correios ↗"':'ainda não consultado'}</span>`;
   return `<tr>
     <td class="checkbox-col"><input type="checkbox" class="rd-row-chk" data-id="${p.id}" ${rdSelected.has(p.id)?'checked':''}></td>
     <td class="mono">${esc(p.ref)}</td><td>${esc(p.cliente)}</td>
     <td>${rdFmtDate(p.dataEnvioCliente)}</td>
     <td>${dias===null?'':`<span class="badge ${atrasado?'badge-danger':'badge-ok'}">${dias}d</span>`}</td>
     <td class="mono">${esc(p.numeroRastreio||'')}</td><td>${sit}</td>
-    <td><button class="btn btn-sm" data-rdtrack="${p.id}">Trajeto</button> <button class="btn btn-sm" data-rdedit="${p.id}">Editar</button></td>
+    <td>${RD_TRACK_RE.test(String(p.numeroRastreio||'').trim().toUpperCase())?`<a class="btn btn-sm" target="_blank" rel="noopener" href="https://www.linkcorreios.com.br/?id=${encodeURIComponent(String(p.numeroRastreio).trim().toUpperCase())}">Correios ↗</a> `:''}<button class="btn btn-sm" data-rdtrack="${p.id}">Trajeto</button> <button class="btn btn-sm" data-rdedit="${p.id}">Editar</button></td>
   </tr>`;
 }
 function rdRowHtml(p){
@@ -3132,7 +3134,7 @@ async function rdAtualizarRastreios(force){
       data.results.forEach(r=>{
         rdProcessos().filter(p=>String(p.numeroRastreio||'').trim().toUpperCase()===r.codigo).forEach(p=>{
           p.rastreioConsultadoEm = agora;
-          if(!r.ok){ falhas++; if(!primeiraFalha) primeiraFalha = `${r.codigo}: ${r.erro}`; if(!p.rastreioStatus) p.rastreioStatus = r.erro; return; }
+          if(!r.ok){ falhas++; if(!primeiraFalha) primeiraFalha = `${r.codigo}: ${r.erro}`; return; }
           const ult = r.eventos[0] || {};
           p.rastreioStatus = ult.desc || '';
           p.rastreioData = ult.data || '';
@@ -3142,7 +3144,7 @@ async function rdAtualizarRastreios(force){
       });
     }
     rdTrackLastRun = new Date().toISOString();
-    if(falhas) rdTrackLastError = `${falhas} falha(s) — ${primeiraFalha}`;
+    if(falhas) rdTrackLastError = (/HTTP 40[13]/.test(primeiraFalha) ? 'Os Correios bloquearam a consulta gratuita automática (HTTP 403). ' : '') + `${falhas} falha(s) — ${primeiraFalha}`;
     persist();
     if(entregues) toast(`${entregues} envio(s) entregue(s) — foram para Finalizados.`);
   }catch(err){
