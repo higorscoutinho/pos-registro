@@ -238,11 +238,20 @@
 
   .vcp-form{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px;}
   .vcp-form .field{margin:0;min-width:180px;}
+  .notes-colors{display:flex;gap:6px;align-items:center;}
+  .notes-colors button{width:24px;height:24px;border-radius:50%;border:2px solid transparent;cursor:pointer;}
+  .notes-colors button.sel{border-color:var(--navy);}
+  .notes-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;align-content:start;padding:4px 2px 30px;}
+  .note{position:relative;border-radius:4px;padding:10px 12px 34px;min-height:170px;box-shadow:0 3px 8px rgba(15,23,42,.18);transform:rotate(-.6deg);display:flex;}
+  .note:nth-child(even){transform:rotate(.7deg);}
+  .note textarea{width:100%;border:none;background:transparent;resize:none;font-family:inherit;font-size:13.5px;line-height:1.45;color:#1E293B;outline:none;padding:0;min-height:120px;}
+  .note.done textarea{text-decoration:line-through;opacity:.55;}
+  .note .nbar{position:absolute;left:10px;right:10px;bottom:6px;display:flex;align-items:center;gap:8px;font-size:11.5px;color:rgba(30,41,59,.7);}
+  .note .nbar button{background:none;border:none;cursor:pointer;font-size:13px;padding:0;color:inherit;}
+  .note .nbar .sp{flex:1;}
+  .notes-empty{grid-column:1/-1;text-align:center;color:var(--muted);font-size:13px;padding:40px 10px;}
   .vcp-concl td{opacity:.5;}
   .vcp-msg{font-size:12.5px;margin:-6px 0 12px;min-height:16px;}
-  .vcp-toast-wrap{position:fixed;top:18px;right:18px;z-index:1000;display:flex;flex-direction:column;gap:10px;max-width:92vw;}
-  .vcp-toast{background:var(--navy);color:#fff;border-left:4px solid var(--gold);border-radius:10px;padding:12px 14px;box-shadow:0 12px 32px rgba(15,23,42,.35);display:flex;align-items:center;gap:12px;font-size:13.5px;}
-  .vcp-toast .x{background:none;border:none;color:#9FB0CC;cursor:pointer;font-size:16px;}
   .rd-count-link{background:none;border:none;padding:2px 8px;border-radius:6px;font-weight:700;font-size:13.5px;cursor:pointer;color:var(--text);}
   .rd-count-link:hover{background:#FDF8ED;color:var(--amber);text-decoration:underline;}
   .rd-donizete-table th{background:#F7DA6B;color:#4A3B00;border-bottom:1px solid #D8BE3F;}
@@ -344,6 +353,10 @@
           <button class="nav-btn" data-view="ex-vcp">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
             <span class="nav-label">Consultar carga (VCP)</span> <span class="count" id="cnt-ex-vcp" style="display:none;">0</span>
+          </button>
+          <button class="nav-btn" data-view="ex-notas">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v11l-5 5H4z"/><path d="M15 20v-5h5"/></svg>
+            <span class="nav-label">Notas</span> <span class="count" id="cnt-ex-notas" style="display:none;">0</span>
           </button>
         </div>
       </div>
@@ -542,6 +555,22 @@
         </div>
       </div>
       <div id="exVcpBody"></div>
+    </section>
+
+    <!-- Extras: NOTAS AUTOADESIVAS -->
+    <section id="view-ex-notas" style="display:none;">
+      <div class="topbar">
+        <div>
+          <h2>Notas</h2>
+          <div class="sub">Anotações rápidas em post-its. Salvas junto com o resto do sistema.</div>
+        </div>
+        <div class="actions">
+          <span class="muted small" style="align-self:center;">Cor:</span>
+          <div class="notes-colors" id="notesColors"></div>
+          <button class="btn btn-gold" id="notesAdd">+ Nova nota</button>
+        </div>
+      </div>
+      <div class="notes-list" id="notesList"></div>
     </section>
 
   </main>
@@ -807,8 +836,6 @@
   <button class="btn btn-sm btn-gold" id="lembreteDonizeteAbrir">Abrir relatório</button>
   <button class="btn btn-sm" id="lembreteDonizeteOk">✓ Concluído</button>
 </div>
-
-<div class="vcp-toast-wrap" id="vcpToastWrap"></div>
 
 <div class="toast" id="toast"></div>
 
@@ -1115,7 +1142,7 @@ function toast(msg){
 }
 
 /* ============ NAV ============ */
-const views = ['board','export','clients','archive','terceiros','rd-dashboard','rd-processos','rd-finalizados','rd-instrucoes','rd-importar','ex-vcp'];
+const views = ['board','export','clients','archive','terceiros','rd-dashboard','rd-processos','rd-finalizados','rd-instrucoes','rd-importar','ex-vcp','ex-notas'];
 document.getElementById('nav').addEventListener('click', e=>{
   const btn = e.target.closest('.nav-btn');
   if(!btn) return;
@@ -1135,6 +1162,7 @@ document.getElementById('nav').addEventListener('click', e=>{
   if(view==='rd-instrucoes') renderRDInstrucoes();
   if(view==='rd-importar') renderRDImportar();
   if(view==='ex-vcp') renderExVCP();
+  if(view==='ex-notas') renderNotes();
 });
 
 /* ============ RENDER: BOARD ============ */
@@ -1415,24 +1443,32 @@ function renderCounts(){
 function renderAll(){ renderBoard(); renderClients(); renderArchive(); renderCounts(); checkReminders(); }
 
 /* ============ LEMBRETES (alerta de horário) ============ */
+let reminderDueCache = [];
 function checkReminders(){
   const now = Date.now();
   const due = state.processes.filter(p=>!p.archived && p.lembreteEm && new Date(p.lembreteEm).getTime() <= now);
   renderReminderBanner(due);
 }
 function renderReminderBanner(due){
+  reminderDueCache = due || [];
+  let vcp = [];
+  try{ vcp = vcpPendentes(); }catch(e){}
   const wrap = document.getElementById('reminderBanner');
-  if(!due.length){ wrap.style.display='none'; wrap.innerHTML=''; return; }
+  if(!reminderDueCache.length && !vcp.length){ wrap.style.display='none'; wrap.innerHTML=''; return; }
   wrap.style.display='';
   wrap.innerHTML = `<div class="reminder-banner">
     <span class="reminder-banner-title">⏰ Lembrete</span>
-    ${due.map(p=>{
+    ${reminderDueCache.map(p=>{
       const cli = clientById(p.clienteId);
       return `<span class="reminder-item">${esc(p.codigo)} · ${cli?esc(cli.nome):'?'}
         <button class="btn" data-snooze="${p.id}">+5 min</button>
         <button class="btn btn-gold" data-done="${p.id}">Concluir</button>
       </span>`;
     }).join('')}
+    ${vcp.map(c=>`<span class="reminder-item">📦 Consulta carga AWB ${esc(c.master)} disponível
+        <button class="btn" data-vcpver="${escAttr(c.id)}">Ver</button>
+        <button class="btn btn-gold" data-vcpdone="${escAttr(c.id)}">Concluir</button>
+      </span>`).join('')}
   </div>`;
   wrap.querySelectorAll('[data-snooze]').forEach(b=>b.addEventListener('click', ()=>{
     const p = state.processes.find(x=>x.id===b.dataset.snooze);
@@ -1442,6 +1478,11 @@ function renderReminderBanner(due){
     const p = state.processes.find(x=>x.id===b.dataset.done);
     if(p){ p.lembreteEm = null; save(); toast('Lembrete concluído'); }
   }));
+  wrap.querySelectorAll('[data-vcpver]').forEach(b=>b.addEventListener('click', ()=>{
+    vcpExpandidas.add(b.dataset.vcpver);
+    document.querySelector('.nav-children .nav-btn[data-view="ex-vcp"]').click();
+  }));
+  wrap.querySelectorAll('[data-vcpdone]').forEach(b=>b.addEventListener('click', ()=>vcpConcluir(b.dataset.vcpdone, true)));
 }
 setInterval(checkReminders, 20000);
 
@@ -3280,55 +3321,23 @@ async function vcpConcluir(id, valor){
   const c = vcpConsultas.find(x=>x.id===id); if(!c) return;
   const anterior = c.concluido;
   c.concluido = valor;
-  if(valor){ vcpFecharToast(id); vcpExpandidas.delete(id); }
-  renderVCPLista(); renderExBadge();
+  if(valor) vcpExpandidas.delete(id);
+  renderVCPLista(); renderExBadge(); renderReminderBanner(reminderDueCache);
   try{ await vcpApi('concluirConsultaVCP', {id, valor: valor?'1':'0'}); }
-  catch(e){ c.concluido = anterior; renderVCPLista(); renderExBadge(); toast('Não consegui salvar: '+(e.message||e)); }
+  catch(e){ c.concluido = anterior; renderVCPLista(); renderExBadge(); renderReminderBanner(reminderDueCache); toast('Não consegui salvar: '+(e.message||e)); }
 }
-/* ---- avisos ---- */
-function vcpBeep(){
-  try{
-    const ac = new (window.AudioContext||window.webkitAudioContext)();
-    const o = ac.createOscillator(), g = ac.createGain();
-    o.type='sine'; o.frequency.value=880; g.gain.value=0.04;
-    o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime+0.18);
-    setTimeout(()=>ac.close(), 400);
-  }catch(e){}
-}
-function vcpFecharToast(id){
-  const el = document.querySelector(`#vcpToastWrap [data-toast="${id}"]`); if(el) el.remove();
-}
-function vcpAvisar(c){
-  if(vcpAvisadas.has(c.id)) return;
-  vcpAvisadas.add(c.id);
-  const texto = `Consulta carga AWB ${c.master} disponível`;
-  const el = document.createElement('div');
-  el.className = 'vcp-toast'; el.dataset.toast = c.id;
-  el.innerHTML = `<span>📦 ${esc(texto)}</span><button class="btn btn-sm btn-gold" type="button">Ver</button>`;
-  el.querySelector('.btn').addEventListener('click', ()=>{
-    vcpExpandidas.add(c.id);
-    document.querySelector('.nav-children .nav-btn[data-view="ex-vcp"]').click();
-    renderVCPLista();
-  });
-  document.getElementById('vcpToastWrap').appendChild(el);
-  vcpBeep();
+/* ---- avisos: banner vermelho (mesmo dos lembretes de processo) + notificação do navegador ---- */
+function vcpNotificarSistema(c){
   try{
     if('Notification' in window && Notification.permission==='granted'){
-      const n = new Notification(texto, {body: c.house ? `HAWB ${c.house}` : 'Resposta da Teca recebida', tag:'vcp-'+c.id});
+      const n = new Notification(`Consulta carga AWB ${c.master} disponível`, {body: c.house ? `HAWB ${c.house}` : 'Resposta da Teca recebida', tag:'vcp-'+c.id});
       n.onclick = ()=>{ window.focus(); n.close(); };
     }
   }catch(e){}
 }
-/* mantém os avisos na tela só enquanto a consulta não for concluída */
 function vcpSincronizarAvisos(){
-  const ids = new Set(vcpPendentes().map(c=>c.id));
-  document.querySelectorAll('#vcpToastWrap [data-toast]').forEach(el=>{ if(!ids.has(el.dataset.toast)) el.remove(); });
-  vcpPendentes().forEach(c=>{
-    if(!document.querySelector(`#vcpToastWrap [data-toast="${c.id}"]`)){
-      if(vcpAvisadas.has(c.id)) vcpAvisadas.delete(c.id);   // recria aviso (ex.: após reabrir)
-      vcpAvisar(c);
-    }
-  });
+  vcpPendentes().forEach(c=>{ if(!vcpAvisadas.has(c.id)){ vcpAvisadas.add(c.id); vcpNotificarSistema(c); } });
+  renderReminderBanner(reminderDueCache);
 }
 /* ---- polling: 20 s com consulta pendente, 2 min sem ---- */
 let vcpUltimoPoll = 0;
@@ -3351,9 +3360,52 @@ async function vcpPoll(agora){
 setTimeout(()=>vcpPoll(false), 3000);
 renderExBadge();
 
+/* ============ Extras › Notas (post-its) ============ */
+const NOTE_COLORS = ['#FEF08A','#FBCFE8','#BAE6FD','#BBF7D0','#FED7AA'];
+let noteNewColor = NOTE_COLORS[0];
+let notesSaveTimer = null;
+function notesPersistSoon(){ clearTimeout(notesSaveTimer); notesSaveTimer = setTimeout(()=>persist(), 700); }
+function renderNotesBadge(){
+  const n = state.notas.filter(x=>!x.feito).length;
+  const el = document.getElementById('cnt-ex-notas'); if(el){ el.textContent=n; el.style.display = n?'':'none'; }
+}
+function renderNotes(){
+  const cw = document.getElementById('notesColors');
+  cw.innerHTML = NOTE_COLORS.map(c=>`<button type="button" data-c="${c}" class="${c===noteNewColor?'sel':''}" style="background:${c};"></button>`).join('');
+  cw.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{ noteNewColor=b.dataset.c; renderNotes(); }));
+  const list = document.getElementById('notesList');
+  const sorted = state.notas.slice().sort((a,b)=>(a.feito-b.feito)||(b.ordem-a.ordem));
+  list.innerHTML = sorted.length ? sorted.map(n=>`
+    <div class="note ${n.feito?'done':''}" style="background:${n.cor};">
+      <textarea data-nt="${escAttr(n.id)}" placeholder="Escreva aqui...">${esc(n.texto)}</textarea>
+      <div class="nbar">
+        <button type="button" data-ndone="${escAttr(n.id)}">${n.feito?'↩ reabrir':'✓ feito'}</button>
+        <span class="sp"></span>
+        <button type="button" data-ndel="${escAttr(n.id)}" title="Apagar nota">🗑</button>
+      </div>
+    </div>`).join('') : '<div class="notes-empty">Nenhuma nota ainda.<br>Clique em "+ Nova nota".</div>';
+  list.querySelectorAll('textarea').forEach(t=>{
+    const fit = ()=>{ t.style.height='auto'; t.style.height = Math.max(120,t.scrollHeight)+'px'; };
+    fit();
+    t.addEventListener('input', ()=>{ fit(); const n=state.notas.find(x=>x.id===t.dataset.nt); if(n){ n.texto=t.value; notesPersistSoon(); } });
+  });
+  list.querySelectorAll('[data-ndone]').forEach(b=>b.addEventListener('click', ()=>{ const n=state.notas.find(x=>x.id===b.dataset.ndone); if(n){ n.feito=!n.feito; persist(); renderNotes(); } }));
+  list.querySelectorAll('[data-ndel]').forEach(b=>b.addEventListener('click', ()=>{
+    const n=state.notas.find(x=>x.id===b.dataset.ndel);
+    if(n && (!n.texto.trim() || confirm('Apagar esta nota?'))){ state.notas=state.notas.filter(x=>x.id!==n.id); persist(); renderNotes(); }
+  }));
+  renderNotesBadge();
+}
+document.getElementById('notesAdd').addEventListener('click', ()=>{
+  const maxOrd = state.notas.reduce((m,n)=>Math.max(m,n.ordem),0);
+  state.notas.push({id:uid(), texto:'', cor:noteNewColor, feito:false, ordem:maxOrd+1, criadoEm:new Date().toISOString()});
+  persist(); renderNotes();
+  const first = document.querySelector('#notesList textarea'); if(first) first.focus();
+});
+
 init();
 initAutoBackup();
-fitBoard(); setTimeout(fitBoard,400);
+fitBoard(); setTimeout(fitBoard,400); renderNotesBadge();
 </script>
 </body>
 </html>
