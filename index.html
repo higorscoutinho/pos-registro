@@ -456,6 +456,10 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
             <span class="nav-label">Consultar carga (VCP)</span> <span class="count" id="cnt-ex-vcp" style="display:none;">0</span>
           </button>
+          <button class="nav-btn" data-view="ex-madeira">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22V12"/><path d="M12 12c-4 0-7-3-7-7 4 0 7 3 7 7z"/><path d="M12 15c3 0 5.5-2.2 5.5-5.5C14.2 9.5 12 11.8 12 15z"/></svg>
+            <span class="nav-label">Verifica madeira</span> <span class="count" id="cnt-ex-mad" style="display:none;">0</span>
+          </button>
         </div>
       </div>
     </nav>
@@ -658,6 +662,17 @@
         </div>
       </div>
       <div id="exVcpBody"></div>
+    </section>
+
+    <!-- Extras: VERIFICA MADEIRA -->
+    <section id="view-ex-madeira" style="display:none;">
+      <div class="topbar">
+        <div>
+          <h2>Verifica madeira</h2>
+          <div class="sub">Envia o "Verifica Madeira" para a Teca (Viracopos) com MAWB, HAWB e volumes, e avisa aqui quando ela responder</div>
+        </div>
+      </div>
+      <div id="exMadBody"></div>
     </section>
 
 
@@ -1247,7 +1262,7 @@ function toast(msg){
 }
 
 /* ============ NAV ============ */
-const views = ['board','export','clients','archive','terceiros','rd-dashboard','rd-processos','rd-finalizados','rd-instrucoes','rd-importar','ex-vcp'];
+const views = ['board','export','clients','archive','terceiros','rd-dashboard','rd-processos','rd-finalizados','rd-instrucoes','rd-importar','ex-vcp','ex-madeira'];
 document.getElementById('nav').addEventListener('click', e=>{
   const btn = e.target.closest('.nav-btn');
   if(!btn) return;
@@ -1267,6 +1282,7 @@ document.getElementById('nav').addEventListener('click', e=>{
   if(view==='rd-instrucoes') renderRDInstrucoes();
   if(view==='rd-importar') renderRDImportar();
   if(view==='ex-vcp') renderExVCP();
+  if(view==='ex-madeira') renderExMadeira();
 });
 
 /* ============ RENDER: BOARD ============ */
@@ -1569,7 +1585,7 @@ function renderReminderBanner(due){
         <button class="btn btn-gold" data-done="${p.id}">Concluir</button>
       </span>`;
     }).join('')}
-    ${vcp.map(c=>`<span class="reminder-item">📦 Consulta carga AWB ${esc(c.master)} disponível
+    ${vcp.map(c=>`<span class="reminder-item">${vcpTipoDe(c)==='madeira'?'🪵 Verifica madeira':'📦 Consulta carga'} AWB ${esc(c.master)} ${vcpTipoDe(c)==='madeira'?'respondido':'disponível'}
         <button class="btn" data-vcpver="${escAttr(c.id)}">Ver</button>
         <button class="btn btn-gold" data-vcpdone="${escAttr(c.id)}">Concluir</button>
       </span>`).join('')}
@@ -1584,7 +1600,8 @@ function renderReminderBanner(due){
   }));
   wrap.querySelectorAll('[data-vcpver]').forEach(b=>b.addEventListener('click', ()=>{
     vcpExpandidas.add(b.dataset.vcpver);
-    document.querySelector('.nav-children .nav-btn[data-view="ex-vcp"]').click();
+    const cc = vcpConsultas.find(x=>x.id===b.dataset.vcpver);
+    document.querySelector('.nav-children .nav-btn[data-view="'+(vcpTipoDe(cc)==='madeira'?'ex-madeira':'ex-vcp')+'"]').click();
   }));
   wrap.querySelectorAll('[data-vcpdone]').forEach(b=>b.addEventListener('click', ()=>vcpConcluir(b.dataset.vcpdone, true)));
 }
@@ -3305,17 +3322,20 @@ setInterval(renderLembreteDonizete, 30*60*1000);
  * Para adicionar uma função nova: 1) novo botão dentro de #navGroupExtras .nav-children
  * (data-view="ex-xxx"), 2) nova <section id="view-ex-xxx">, 3) incluir 'ex-xxx' no array `views`
  * e chamar o render dela no handler do menu. */
-function renderExVCP(){ renderPainelVCP(document.getElementById('exVcpBody')); }
+function renderExVCP(){ const o=document.getElementById('exMadBody'); if(o) o.innerHTML=''; renderPainelVCP(document.getElementById('exVcpBody'),'carga'); }
+function renderExMadeira(){ const o=document.getElementById('exVcpBody'); if(o) o.innerHTML=''; renderPainelVCP(document.getElementById('exMadBody'),'madeira'); }
 function renderExBadge(){
   const n = vcpPendentes().length;
-  ['cnt-ex-vcp','cnt-ex'].forEach(id=>{ const el=document.getElementById(id); if(el){ el.textContent=n; el.style.display = n?'':'none'; } });
+  [['cnt-ex-vcp',vcpPendentes('carga').length],['cnt-ex-mad',vcpPendentes('madeira').length],['cnt-ex',n]].forEach(([id,v])=>{ const el=document.getElementById(id); if(el){ el.textContent=v; el.style.display = v?'':'none'; } });
   if(!window.__tituloBase) window.__tituloBase = document.title.replace(/^\(\d+\)\s*/,'');
   document.title = (n?`(${n}) `:'') + window.__tituloBase;
 }
 
 /* ============ Consulta de embalagem (VCP) ============ */
 let vcpConsultas = [];
-let vcpDraft = {master:'', house:''};
+let vcpTipo = 'carga';
+const vcpDrafts = {carga:{master:'',house:'',volumes:''}, madeira:{master:'',house:'',volumes:'1'}};
+const vcpTipoDe = c => (c && c.tipo==='madeira') ? 'madeira' : 'carga';
 let vcpMsg = {txt:'', cor:''};
 let vcpExpandidas = new Set();
 let vcpAvisadas = new Set();
@@ -3324,7 +3344,7 @@ const VCP_STATUS = {
   enviado:['Enviado','badge-warn'], respondido:['Respondido','badge-ok'],
   sem_resposta:['Sem resposta','badge-danger'], erro:['Erro','badge-danger']
 };
-function vcpPendentes(){ return vcpConsultas.filter(c=>c.status==='respondido' && !c.concluido); }
+function vcpPendentes(tipo){ return vcpConsultas.filter(c=>c.status==='respondido' && !c.concluido && (!tipo || vcpTipoDe(c)===tipo)); }
 async function vcpApi(action, params){
   if(!API_URL) throw new Error('Conecte o Google Sheets (API_URL) para usar esta função.');
   const qs = new URLSearchParams(Object.assign({action}, params||{}));
@@ -3337,23 +3357,29 @@ function vcpHora(iso){
   const d = new Date(iso); if(isNaN(d)) return '';
   return d.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
 }
-function renderPainelVCP(box){
+function renderPainelVCP(box, tipo){
   if(!box) return;
+  vcpTipo = tipo || 'carga';
+  const mad = vcpTipo==='madeira';
+  const d = vcpDrafts[vcpTipo];
   box.innerHTML = `<div class="rd-card">
     <div class="vcp-form">
-      <div class="field"><label>Master (AWB) *</label><input id="vcpMaster" placeholder="Ex: 78338746561" maxlength="40" value="${escAttr(vcpDraft.master)}"></div>
-      <div class="field"><label>House (HAWB) — opcional</label><input id="vcpHouse" placeholder="Vazio = usa o master" maxlength="40" value="${escAttr(vcpDraft.house)}"></div>
-      <button type="button" class="btn btn-gold" id="vcpConsultar">Consultar</button>
+      <div class="field"><label>Master (AWB) *</label><input id="vcpMaster" placeholder="Ex: 992-93669310" maxlength="40" value="${escAttr(d.master)}"></div>
+      <div class="field"><label>House (HAWB) — opcional</label><input id="vcpHouse" placeholder="Vazio = usa o master" maxlength="40" value="${escAttr(d.house)}"></div>
+      ${mad ? `<div class="field" style="min-width:90px;max-width:110px;"><label>Volumes *</label><input id="vcpVols" type="number" min="1" max="99" step="1" value="${escAttr(d.volumes)}"></div>` : ''}
+      <button type="button" class="btn btn-gold" id="vcpConsultar">${mad?'Verificar madeira':'Consultar'}</button>
     </div>
     <div class="vcp-msg" id="vcpMsg" style="color:${vcpMsg.cor||'var(--muted)'};">${esc(vcpMsg.txt)}</div>
     <div id="vcpLista"></div>
   </div>`;
-  const m = box.querySelector('#vcpMaster'), h = box.querySelector('#vcpHouse');
-  m.addEventListener('input', ()=>{ vcpDraft.master = m.value; });
-  h.addEventListener('input', ()=>{ vcpDraft.house = h.value; });
-  box.querySelector('#vcpConsultar').addEventListener('click', ()=>vcpConsultar(m.value, h.value));
-  m.addEventListener('keydown', e=>{ if(e.key==='Enter') vcpConsultar(m.value, h.value); });
-  h.addEventListener('keydown', e=>{ if(e.key==='Enter') vcpConsultar(m.value, h.value); });
+  const m = box.querySelector('#vcpMaster'), h = box.querySelector('#vcpHouse'), v = box.querySelector('#vcpVols');
+  const go = ()=>vcpConsultar(m.value, h.value, v ? v.value : '');
+  m.addEventListener('input', ()=>{ d.master = m.value; });
+  h.addEventListener('input', ()=>{ d.house = h.value; });
+  if(v) v.addEventListener('input', ()=>{ d.volumes = v.value; });
+  box.querySelector('#vcpConsultar').addEventListener('click', go);
+  [m,h,v].forEach(el=>{ if(el) el.addEventListener('keydown', e=>{ if(e.key==='Enter') go(); }); });
+  vcpMsg = {txt:'', cor:''};
   renderVCPLista();
   vcpPoll(true);
 }
@@ -3361,18 +3387,26 @@ function vcpSetMsg(txt, cor){
   vcpMsg = {txt:txt||'', cor:cor||''};
   const el = document.getElementById('vcpMsg'); if(el){ el.textContent = vcpMsg.txt; el.style.color = vcpMsg.cor||'var(--muted)'; }
 }
-async function vcpConsultar(master, house){
+async function vcpConsultar(master, house, volumes){
   master = String(master||'').trim(); house = String(house||'').trim();
+  const mad = vcpTipo==='madeira';
   if(!master){ vcpSetMsg('Informe o Master (AWB).', '#B91C1C'); return; }
+  let vols = '';
+  if(mad){
+    const n = parseInt(String(volumes||'').trim(), 10);
+    if(!(n>=1 && n<=99)){ vcpSetMsg('Informe os volumes (de 1 a 99).', '#B91C1C'); return; }
+    vols = String(n).padStart(2,'0');
+    if(!confirm(`Enviar "Verifica Madeira" para a Teca?\n\nMAWB ${master}\nHAWB ${house||master}\nVols ${vols}`)) return;
+  }
   const btn = document.getElementById('vcpConsultar'); if(btn) btn.disabled = true;
   vcpSetMsg('Enviando consulta...', '');
   try{
     if('Notification' in window && Notification.permission==='default'){ try{ Notification.requestPermission(); }catch(e){} }
-    await vcpApi('criarConsultaVCP', {master, house});
-    vcpDraft = {master:'', house:''};
-    const m = document.getElementById('vcpMaster'), h = document.getElementById('vcpHouse');
-    if(m) m.value=''; if(h) h.value='';
-    vcpSetMsg('Consulta enviada para a Teca. Avisamos aqui quando ela responder.', '#15803D');
+    await vcpApi('criarConsultaVCP', {master, house, tipo:vcpTipo, volumes:vols});
+    vcpDrafts[vcpTipo] = mad ? {master:'', house:'', volumes:'1'} : {master:'', house:'', volumes:''};
+    const m = document.getElementById('vcpMaster'), h = document.getElementById('vcpHouse'), v = document.getElementById('vcpVols');
+    if(m) m.value=''; if(h) h.value=''; if(v) v.value='1';
+    vcpSetMsg(mad ? 'Verifica Madeira enviado para a Teca. Avisamos aqui quando ela responder.' : 'Consulta enviada para a Teca. Avisamos aqui quando ela responder.', '#15803D');
     await vcpPoll(true, true);
   }catch(err){
     vcpSetMsg('Não foi possível enviar: ' + (err.message||err), '#B91C1C');
@@ -3387,12 +3421,28 @@ function vcpLimparResposta(txt){
   if(corte>0) t = t.slice(0, corte);
   return t.replace(/[ \t]+$/gm,'').replace(/\n{3,}/g,'\n\n').trim();
 }
+/* Verifica madeira: linhas "VCP251059437C - PCG Liberada!" viram etiquetas coloridas */
+function vcpMadeiraPcgs(txt){
+  const out=[]; String(txt||'').split(/\r?\n/).forEach(l=>{
+    const m=l.match(/^\s*([A-Za-z0-9]{6,})\s*-\s*PCG\s+(.+?)\s*!?\s*$/i); if(m) out.push({pcg:m[1], status:m[2].replace(/!+$/,'')});
+  }); return out;
+}
+function vcpMadeiraChips(c){
+  const l = vcpMadeiraPcgs(vcpLimparResposta(c.respostaBruta)); if(!l.length) return '';
+  return `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;">${l.map(i=>{
+    const ok=/liberad/i.test(i.status);
+    return `<span class="badge ${ok?'badge-ok':'badge-danger'}" style="font-size:12.5px;padding:5px 11px;border-radius:20px;">${ok?'✅':'⚠️'} ${esc(i.pcg)} — PCG ${esc(i.status)}</span>`;
+  }).join('')}</div>`;
+}
 function renderVCPLista(){
   const el = document.getElementById('vcpLista'); if(!el) return;
-  if(!vcpConsultas.length){ el.innerHTML = '<div class="muted small">Nenhuma consulta ainda.</div>'; return; }
+  const mad = vcpTipo==='madeira';
+  const lista = vcpConsultas.filter(c=>vcpTipoDe(c)===vcpTipo);
+  if(!lista.length){ el.innerHTML = '<div class="muted small">Nenhuma consulta ainda.</div>'; return; }
+  const ncol = mad ? 6 : 5;
   el.innerHTML = `<div class="table-wrap"><table>
-    <thead><tr><th>Master</th><th>House</th><th>Hora</th><th>Status</th><th></th></tr></thead>
-    <tbody>${vcpConsultas.map(c=>{
+    <thead><tr><th>Master</th><th>House</th>${mad?'<th>Vols</th>':''}<th>Hora</th><th>Status</th><th></th></tr></thead>
+    <tbody>${lista.map(c=>{
       const concl = c.status==='respondido' && c.concluido;
       const [lbl,cls] = concl ? ['Concluído',''] : (VCP_STATUS[c.status] || [c.status,'badge-warn']);
       const novo = c.status==='respondido' && !c.concluido;
@@ -3400,18 +3450,18 @@ function renderVCPLista(){
       const acao = c.status==='respondido'
         ? `<button class="btn btn-sm ${novo?'btn-gold':''}" data-vcpver="${escAttr(c.id)}">${aberta?'Ocultar':'Ver resposta'}</button>`
         : (c.status==='sem_resposta'||c.status==='erro') ? `<button class="btn btn-sm" data-vcpreenviar="${escAttr(c.id)}">Reenviar</button>` : '';
-      const detalhe = (c.status==='respondido' && aberta) ? `<tr class="${concl?'vcp-concl':''}"><td colspan="5" style="background:var(--surface-2);">
+      const detalhe = (c.status==='respondido' && aberta) ? `<tr class="${concl?'vcp-concl':''}"><td colspan="${ncol}" style="background:var(--surface-2);">${mad?`<div style="margin-bottom:8px;font-weight:700;color:var(--heading);">🪵 Retorno da Teca · MAWB ${esc(c.master)} · HAWB ${esc(c.house||c.master)} · Vols ${esc(c.volumes||'')}</div>${vcpMadeiraChips(c)}`:''}
         <textarea readonly rows="7" id="vcpTxt-${escAttr(c.id)}" style="width:100%;font-family:inherit;font-size:13px;line-height:1.5;resize:vertical;">${esc(vcpLimparResposta(c.respostaBruta)||'(resposta vazia)')}</textarea>
         <div style="display:flex;gap:8px;margin-top:8px;">
           <button class="btn btn-sm" data-vcpcopiar="${escAttr(c.id)}">📋 Copiar texto</button>
           ${concl ? `<button class="btn btn-sm" data-vcpreabrir="${escAttr(c.id)}">↩ Reabrir</button>` : `<button class="btn btn-sm btn-gold" data-vcpconcluir="${escAttr(c.id)}">✓ Concluir</button>`}
         </div></td></tr>` : '';
-      return `<tr class="${concl?'vcp-concl':''}"><td class="mono">${esc(c.master)}</td><td class="mono">${esc(c.house||'—')}</td><td>${vcpHora(c.criadoEm)}</td>
+      return `<tr class="${concl?'vcp-concl':''}"><td class="mono">${esc(c.master)}</td><td class="mono">${esc(c.house||'—')}</td>${mad?`<td class="mono">${esc(c.volumes||'')}</td>`:''}<td>${vcpHora(c.criadoEm)}</td>
         <td>${concl?'<span class="badge" style="background:var(--hover);color:var(--muted);">Concluído</span>':`<span class="badge ${cls}">${lbl}</span>`}${novo?' <span class="badge badge-ok">novo</span>':''}</td><td>${acao}</td></tr>${detalhe}`;
     }).join('')}</tbody></table></div>`;
   el.querySelectorAll('[data-vcpver]').forEach(b=>b.addEventListener('click', ()=>{ const id=b.dataset.vcpver; if(vcpExpandidas.has(id)) vcpExpandidas.delete(id); else vcpExpandidas.add(id); renderVCPLista(); }));
   el.querySelectorAll('[data-vcpreenviar]').forEach(b=>b.addEventListener('click', ()=>{
-    const c = vcpConsultas.find(x=>x.id===b.dataset.vcpreenviar); if(c) vcpConsultar(c.master, c.house);
+    const c = vcpConsultas.find(x=>x.id===b.dataset.vcpreenviar); if(c) vcpConsultar(c.master, c.house, c.volumes);
   }));
   el.querySelectorAll('[data-vcpcopiar]').forEach(b=>b.addEventListener('click', async ()=>{
     const c = vcpConsultas.find(x=>x.id===b.dataset.vcpcopiar); if(!c) return;
@@ -3435,7 +3485,7 @@ async function vcpConcluir(id, valor){
 function vcpNotificarSistema(c){
   try{
     if('Notification' in window && Notification.permission==='granted'){
-      const n = new Notification(`Consulta carga AWB ${c.master} disponível`, {body: c.house ? `HAWB ${c.house}` : 'Resposta da Teca recebida', tag:'vcp-'+c.id});
+      const n = new Notification(vcpTipoDe(c)==='madeira' ? `Verifica madeira AWB ${c.master} respondido` : `Consulta carga AWB ${c.master} disponível`, {body: c.house ? `HAWB ${c.house}` : 'Resposta da Teca recebida', tag:'vcp-'+c.id});
       n.onclick = ()=>{ window.focus(); n.close(); };
     }
   }catch(e){}
