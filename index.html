@@ -236,26 +236,12 @@
   .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
   .checkbox-col{width:28px;}
 
-  /* ===== Notas rápidas (post-its) ===== */
-  .notes-fab{position:fixed;right:22px;bottom:22px;z-index:900;width:52px;height:52px;border-radius:50%;border:none;background:var(--gold);color:var(--navy);font-size:22px;cursor:pointer;box-shadow:0 8px 22px rgba(15,23,42,.3);display:flex;align-items:center;justify-content:center;}
-  .notes-fab:hover{transform:scale(1.06);}
-  .notes-fab .nb{position:absolute;top:-4px;right:-4px;background:var(--navy);color:#fff;font-size:11px;font-weight:700;min-width:20px;height:20px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 5px;}
-  .notes-drawer{position:fixed;top:0;right:0;height:100vh;width:400px;max-width:100vw;background:#F8FAFC;border-left:1px solid var(--border);box-shadow:-12px 0 40px rgba(15,23,42,.18);z-index:950;transform:translateX(105%);transition:transform .2s;display:flex;flex-direction:column;}
-  .notes-drawer.open{transform:none;}
-  .notes-head{display:flex;align-items:center;gap:8px;padding:16px 18px 10px;}
-  .notes-head h3{margin:0;font-size:16px;flex:1;}
-  .notes-colors{display:flex;gap:6px;padding:0 18px 10px;align-items:center;font-size:12px;color:var(--muted);}
-  .notes-colors button{width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;}
-  .notes-colors button.sel{border-color:var(--navy);}
-  .notes-list{flex:1;overflow-y:auto;padding:4px 18px 24px;display:grid;grid-template-columns:1fr 1fr;gap:12px;align-content:start;}
-  .note{position:relative;border-radius:4px;padding:8px 10px 30px;min-height:130px;box-shadow:0 3px 8px rgba(15,23,42,.18);transform:rotate(-.6deg);display:flex;}
-  .note:nth-child(even){transform:rotate(.7deg);}
-  .note textarea{width:100%;border:none;background:transparent;resize:none;font-family:inherit;font-size:13px;line-height:1.4;color:#1E293B;outline:none;padding:0;min-height:90px;}
-  .note.done textarea{text-decoration:line-through;opacity:.55;}
-  .note .nbar{position:absolute;left:8px;right:8px;bottom:5px;display:flex;align-items:center;gap:8px;font-size:11px;color:rgba(30,41,59,.7);}
-  .note .nbar button{background:none;border:none;cursor:pointer;font-size:13px;padding:0;color:inherit;}
-  .note .nbar .sp{flex:1;}
-  .notes-empty{grid-column:1/-1;text-align:center;color:var(--muted);font-size:13px;padding:30px 10px;}
+  .vcp-form{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px;}
+  .vcp-form .field{margin:0;min-width:180px;}
+  .vcp-msg{font-size:12.5px;margin:-6px 0 12px;min-height:16px;}
+  .vcp-toast-wrap{position:fixed;top:18px;right:18px;z-index:1000;display:flex;flex-direction:column;gap:10px;max-width:92vw;}
+  .vcp-toast{background:var(--navy);color:#fff;border-left:4px solid var(--gold);border-radius:10px;padding:12px 14px;box-shadow:0 12px 32px rgba(15,23,42,.35);display:flex;align-items:center;gap:12px;font-size:13.5px;}
+  .vcp-toast .x{background:none;border:none;color:#9FB0CC;cursor:pointer;font-size:16px;}
   .rd-count-link{background:none;border:none;padding:2px 8px;border-radius:6px;font-weight:700;font-size:13.5px;cursor:pointer;color:var(--text);}
   .rd-count-link:hover{background:#FDF8ED;color:var(--amber);text-decoration:underline;}
   .rd-donizete-table th{background:#F7DA6B;color:#4A3B00;border-bottom:1px solid #D8BE3F;}
@@ -343,6 +329,20 @@
           <button class="nav-btn" data-view="rd-importar">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/><path d="M7 9l5-5 5 5"/><path d="M12 4v12"/></svg>
             <span class="nav-label">Importar/Exportar</span>
+          </button>
+        </div>
+      </div>
+      <div class="nav-group nav-top" id="navGroupExtras">
+        <button class="nav-btn nav-parent" data-view="ex-vcp">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M17.5 14v7M14 17.5h7"/></svg>
+          <span class="nav-label">EXTRAS</span>
+          <span class="count" id="cnt-ex" style="display:none;">0</span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="nav-children">
+          <button class="nav-btn" data-view="ex-vcp">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+            <span class="nav-label">Consultar carga (VCP)</span> <span class="count" id="cnt-ex-vcp" style="display:none;">0</span>
           </button>
         </div>
       </div>
@@ -529,6 +529,18 @@
         </div>
       </div>
       <div id="rdImportarBody"></div>
+    </section>
+
+    <footer id="siteFooter" style="margin-top:28px;padding-top:12px;font-size:12px;text-align:center;"><a href="https://www.siterastreio.com.br/" target="_blank" style="color:var(--bg);text-decoration:none;">Rastreamento</a></footer>
+    <!-- EXTRAS: CONSULTAR CARGA VCP -->
+    <section id="view-ex-vcp" style="display:none;">
+      <div class="topbar">
+        <div>
+          <h2>Consultar carga (VCP)</h2>
+          <div class="sub">Envia a consulta para a Teca (Viracopos) e avisa aqui quando ela responder</div>
+        </div>
+      </div>
+      <div id="exVcpBody"></div>
     </section>
 
   </main>
@@ -795,12 +807,7 @@
   <button class="btn btn-sm" id="lembreteDonizeteOk">✓ Concluído</button>
 </div>
 
-<button class="notes-fab" id="notesFab" title="Notas rápidas">📝<span class="nb" id="notesBadge" style="display:none;">0</span></button>
-<aside class="notes-drawer" id="notesDrawer">
-  <div class="notes-head"><h3>📝 Notas rápidas</h3><button class="btn btn-sm" id="notesAdd">+ Nova nota</button><button class="btn btn-ghost btn-sm" id="notesClose">✕</button></div>
-  <div class="notes-colors" id="notesColors">Cor da nova nota:</div>
-  <div class="notes-list" id="notesList"></div>
-</aside>
+<div class="vcp-toast-wrap" id="vcpToastWrap"></div>
 
 <div class="toast" id="toast"></div>
 
@@ -1107,7 +1114,7 @@ function toast(msg){
 }
 
 /* ============ NAV ============ */
-const views = ['board','export','clients','archive','terceiros','rd-dashboard','rd-processos','rd-finalizados','rd-instrucoes','rd-importar'];
+const views = ['board','export','clients','archive','terceiros','rd-dashboard','rd-processos','rd-finalizados','rd-instrucoes','rd-importar','ex-vcp'];
 document.getElementById('nav').addEventListener('click', e=>{
   const btn = e.target.closest('.nav-btn');
   if(!btn) return;
@@ -1126,6 +1133,7 @@ document.getElementById('nav').addEventListener('click', e=>{
   if(view==='rd-finalizados') renderRDFinalizados();
   if(view==='rd-instrucoes') renderRDInstrucoes();
   if(view==='rd-importar') renderRDImportar();
+  if(view==='ex-vcp') renderExVCP();
 });
 
 /* ============ RENDER: BOARD ============ */
@@ -2993,57 +3001,6 @@ document.getElementById('btnAutoBackup').addEventListener('click', async ()=>{
 });
 
 /* ============ INIT ============ */
-/* ============ NOTAS RÁPIDAS (post-its) ============ */
-const NOTE_COLORS = ['#FEF08A','#FBCFE8','#BAE6FD','#BBF7D0','#FED7AA'];
-let noteNewColor = NOTE_COLORS[0];
-let notesSaveTimer = null;
-function notesPersistSoon(){ clearTimeout(notesSaveTimer); notesSaveTimer = setTimeout(()=>persist(), 700); }
-function renderNotesBadge(){
-  const n = state.notas.filter(x=>!x.feito).length;
-  const b = document.getElementById('notesBadge');
-  b.textContent = n; b.style.display = n ? '' : 'none';
-}
-function renderNotes(){
-  const cw = document.getElementById('notesColors');
-  cw.innerHTML = 'Cor da nova nota: ' + NOTE_COLORS.map(c=>`<button type="button" data-c="${c}" class="${c===noteNewColor?'sel':''}" style="background:${c};"></button>`).join('');
-  cw.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{ noteNewColor=b.dataset.c; renderNotes(); }));
-  const list = document.getElementById('notesList');
-  const sorted = state.notas.slice().sort((a,b)=>(a.feito-b.feito)||(b.ordem-a.ordem));
-  list.innerHTML = sorted.length ? sorted.map(n=>`
-    <div class="note ${n.feito?'done':''}" style="background:${n.cor};" data-id="${escAttr(n.id)}">
-      <textarea data-nt="${escAttr(n.id)}" placeholder="Escreva aqui...">${esc(n.texto)}</textarea>
-      <div class="nbar">
-        <button type="button" data-ndone="${escAttr(n.id)}" title="${n.feito?'Reabrir':'Marcar como feita'}">${n.feito?'↩ reabrir':'✓ feito'}</button>
-        <span class="sp"></span>
-        <button type="button" data-ndel="${escAttr(n.id)}" title="Apagar nota">🗑</button>
-      </div>
-    </div>`).join('') : '<div class="notes-empty">Nenhuma nota ainda.<br>Clique em "+ Nova nota".</div>';
-  list.querySelectorAll('textarea').forEach(t=>{
-    const fit = ()=>{ t.style.height='auto'; t.style.height = Math.max(90,t.scrollHeight)+'px'; };
-    fit();
-    t.addEventListener('input', ()=>{ fit(); const n=state.notas.find(x=>x.id===t.dataset.nt); if(n){ n.texto=t.value; notesPersistSoon(); } });
-  });
-  list.querySelectorAll('[data-ndone]').forEach(b=>b.addEventListener('click', ()=>{ const n=state.notas.find(x=>x.id===b.dataset.ndone); if(n){ n.feito=!n.feito; persist(); renderNotes(); } }));
-  list.querySelectorAll('[data-ndel]').forEach(b=>b.addEventListener('click', ()=>{
-    const n=state.notas.find(x=>x.id===b.dataset.ndel);
-    if(n && (!n.texto.trim() || confirm('Apagar esta nota?'))){ state.notas=state.notas.filter(x=>x.id!==n.id); persist(); renderNotes(); }
-  }));
-  renderNotesBadge();
-}
-function openNotes(open){
-  document.getElementById('notesDrawer').classList.toggle('open', open);
-  if(open) renderNotes();
-}
-document.getElementById('notesFab').addEventListener('click', ()=>openNotes(!document.getElementById('notesDrawer').classList.contains('open')));
-document.getElementById('notesClose').addEventListener('click', ()=>openNotes(false));
-document.getElementById('notesAdd').addEventListener('click', ()=>{
-  const maxOrd = state.notas.reduce((m,n)=>Math.max(m,n.ordem),0);
-  state.notas.push({id:uid(), texto:'', cor:noteNewColor, feito:false, ordem:maxOrd+1, criadoEm:new Date().toISOString()});
-  persist(); renderNotes();
-  const first = document.querySelector('#notesList textarea'); if(first) first.focus();
-});
-document.addEventListener('keydown', e=>{ if(e.key==='Escape') openNotes(false); });
-
 /* ============ Altura do quadro = ocupa a tela toda ============ */
 function fitBoard(){
   const b = document.getElementById('board');
@@ -3197,9 +3154,191 @@ document.getElementById('lembreteDonizeteOk').addEventListener('click', ()=>{
 setTimeout(renderLembreteDonizete, 1500);
 setInterval(renderLembreteDonizete, 30*60*1000);
 
+/* ============ EXTRAS (menu lateral) ============
+ * Para adicionar uma função nova: 1) novo botão dentro de #navGroupExtras .nav-children
+ * (data-view="ex-xxx"), 2) nova <section id="view-ex-xxx">, 3) incluir 'ex-xxx' no array `views`
+ * e chamar o render dela no handler do menu. */
+function renderExVCP(){ renderPainelVCP(document.getElementById('exVcpBody')); }
+function renderExBadge(){
+  const n = vcpNaoVistas().length;
+  ['cnt-ex-vcp','cnt-ex'].forEach(id=>{ const el=document.getElementById(id); if(el){ el.textContent=n; el.style.display = n?'':'none'; } });
+}
+
+/* ============ Consulta de embalagem (VCP) ============ */
+let vcpConsultas = [];
+let vcpDraft = {master:'', house:''};
+let vcpMsg = {txt:'', cor:''};
+let vcpExpandidas = new Set();
+let vcpAvisadas = new Set();
+let vcpPollTimer = null;
+const VCP_STATUS = {
+  enviado:['Enviado','badge-warn'], respondido:['Respondido','badge-ok'],
+  sem_resposta:['Sem resposta','badge-danger'], erro:['Erro','badge-danger']
+};
+function vcpNaoVistas(){ return vcpConsultas.filter(c=>c.status==='respondido' && !c.visto); }
+function vcpFormatMaster(v){
+  const d = String(v||'').replace(/\D/g,'').slice(0,11);
+  return d.length>3 ? d.slice(0,3)+'-'+d.slice(3) : d;
+}
+async function vcpApi(action, params){
+  if(!API_URL) throw new Error('Conecte o Google Sheets (API_URL) para usar esta função.');
+  const qs = new URLSearchParams(Object.assign({action}, params||{}));
+  const resp = await fetch(API_URL + '?' + qs.toString());
+  const data = await resp.json();
+  if(!data.ok) throw new Error(data.error || 'Erro no servidor');
+  return data;
+}
+function vcpHora(iso){
+  const d = new Date(iso); if(isNaN(d)) return '';
+  return d.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+}
+function renderPainelVCP(box){
+  if(!box) return;
+  box.innerHTML = `<div class="rd-card">
+    <div class="vcp-form">
+      <div class="field"><label>Master (AWB) *</label><input id="vcpMaster" placeholder="000-00000000" maxlength="12" inputmode="numeric" value="${escAttr(vcpDraft.master)}"></div>
+      <div class="field"><label>House (HAWB) — opcional</label><input id="vcpHouse" placeholder="Opcional" maxlength="30" value="${escAttr(vcpDraft.house)}"></div>
+      <button type="button" class="btn btn-gold" id="vcpConsultar">Consultar</button>
+    </div>
+    <div class="vcp-msg" id="vcpMsg" style="color:${vcpMsg.cor||'var(--muted)'};">${esc(vcpMsg.txt)}</div>
+    <div id="vcpLista"></div>
+  </div>`;
+  const m = box.querySelector('#vcpMaster'), h = box.querySelector('#vcpHouse');
+  m.addEventListener('input', ()=>{ m.value = vcpFormatMaster(m.value); vcpDraft.master = m.value; });
+  h.addEventListener('input', ()=>{ h.value = h.value.toUpperCase(); vcpDraft.house = h.value; });
+  box.querySelector('#vcpConsultar').addEventListener('click', ()=>vcpConsultar(m.value, h.value));
+  m.addEventListener('keydown', e=>{ if(e.key==='Enter') vcpConsultar(m.value, h.value); });
+  h.addEventListener('keydown', e=>{ if(e.key==='Enter') vcpConsultar(m.value, h.value); });
+  renderVCPLista();
+  vcpPoll(true);
+}
+function vcpSetMsg(txt, cor){
+  vcpMsg = {txt:txt||'', cor:cor||''};
+  const el = document.getElementById('vcpMsg'); if(el){ el.textContent = vcpMsg.txt; el.style.color = vcpMsg.cor||'var(--muted)'; }
+}
+async function vcpConsultar(master, house){
+  const d = String(master||'').replace(/\D/g,'');
+  if(d.length!==11){ vcpSetMsg('Master inválido: informe 11 dígitos (000-00000000).', '#B91C1C'); return; }
+  const btn = document.getElementById('vcpConsultar'); if(btn) btn.disabled = true;
+  vcpSetMsg('Enviando consulta...', '');
+  try{
+    if('Notification' in window && Notification.permission==='default'){ try{ Notification.requestPermission(); }catch(e){} }
+    await vcpApi('criarConsultaVCP', {master:vcpFormatMaster(d), house:String(house||'').trim().toUpperCase()});
+    vcpDraft = {master:'', house:''};
+    const m = document.getElementById('vcpMaster'), h = document.getElementById('vcpHouse');
+    if(m) m.value=''; if(h) h.value='';
+    vcpSetMsg('Consulta enviada para a Teca. Avisamos aqui quando ela responder.', '#15803D');
+    await vcpPoll(true, true);
+  }catch(err){
+    vcpSetMsg('Não foi possível enviar: ' + (err.message||err), '#B91C1C');
+  }finally{
+    const b = document.getElementById('vcpConsultar'); if(b) b.disabled = false;
+  }
+}
+function renderVCPLista(){
+  const el = document.getElementById('vcpLista'); if(!el) return;
+  if(!vcpConsultas.length){ el.innerHTML = '<div class="muted small">Nenhuma consulta ainda.</div>'; return; }
+  el.innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>Master</th><th>House</th><th>Hora</th><th>Status</th><th></th></tr></thead>
+    <tbody>${vcpConsultas.map(c=>{
+      const [lbl,cls] = VCP_STATUS[c.status] || [c.status,'badge-warn'];
+      const novo = c.status==='respondido' && !c.visto;
+      const aberta = vcpExpandidas.has(c.id);
+      const acao = c.status==='respondido'
+        ? `<button class="btn btn-sm ${novo?'btn-gold':''}" data-vcpver="${escAttr(c.id)}">${aberta?'Ocultar':'Ver resposta'}</button>`
+        : (c.status==='sem_resposta'||c.status==='erro') ? `<button class="btn btn-sm" data-vcpreenviar="${escAttr(c.id)}">Reenviar</button>` : '';
+      const detalhe = (c.status==='respondido' && aberta) ? `<tr><td colspan="5" style="background:#F8FAFC;">${vcpItensHtml(c)}</td></tr>` : '';
+      return `<tr><td class="mono">${esc(c.master)}</td><td class="mono">${esc(c.house||'—')}</td><td>${vcpHora(c.criadoEm)}</td>
+        <td><span class="badge ${cls}">${lbl}</span>${novo?' <span class="badge badge-ok">novo</span>':''}</td><td>${acao}</td></tr>${detalhe}`;
+    }).join('')}</tbody></table></div>`;
+  el.querySelectorAll('[data-vcpver]').forEach(b=>b.addEventListener('click', ()=>vcpAbrir(b.dataset.vcpver)));
+  el.querySelectorAll('[data-vcpreenviar]').forEach(b=>b.addEventListener('click', ()=>{
+    const c = vcpConsultas.find(x=>x.id===b.dataset.vcpreenviar); if(c) vcpConsultar(c.master, c.house);
+  }));
+}
+function vcpItensHtml(c){
+  if(c.itens && c.itens.length){
+    return `<table><thead><tr><th>PCG</th><th>Volume</th><th>Peso</th><th>Embalagem</th><th>Avaria</th><th>Área</th></tr></thead>
+      <tbody>${c.itens.map(i=>`<tr><td class="mono">${esc(i.pcg)}</td><td>${esc(i.volume)}</td><td>${esc(i.peso)}</td><td>${esc(i.embalagem)}</td><td>${esc(i.avaria)}</td><td>${esc(i.area)}</td></tr>`).join('')}</tbody></table>`;
+  }
+  return `<div class="muted small" style="margin-bottom:4px;">Não consegui separar os itens — resposta da Teca:</div><pre style="white-space:pre-wrap;font-size:12.5px;margin:0;">${esc(c.respostaBruta||'(vazia)')}</pre>`;
+}
+async function vcpAbrir(id){
+  if(vcpExpandidas.has(id)) vcpExpandidas.delete(id); else vcpExpandidas.add(id);
+  const c = vcpConsultas.find(x=>x.id===id);
+  if(c && c.status==='respondido' && !c.visto){
+    c.visto = true;
+    vcpFecharToast(id);
+    vcpApi('marcarConsultaVista', {id}).catch(()=>{ c.visto = false; });
+  }
+  renderVCPLista(); renderExBadge();
+}
+/* ---- avisos ---- */
+function vcpBeep(){
+  try{
+    const ac = new (window.AudioContext||window.webkitAudioContext)();
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type='sine'; o.frequency.value=880; g.gain.value=0.04;
+    o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime+0.18);
+    setTimeout(()=>ac.close(), 400);
+  }catch(e){}
+}
+function vcpFecharToast(id){
+  const el = document.querySelector(`#vcpToastWrap [data-toast="${id}"]`); if(el) el.remove();
+}
+function vcpAvisar(c){
+  if(vcpAvisadas.has(c.id)) return;
+  vcpAvisadas.add(c.id);
+  const texto = `Consulta carga AWB ${c.master} disponível`;
+  const el = document.createElement('div');
+  el.className = 'vcp-toast'; el.dataset.toast = c.id;
+  el.innerHTML = `<span>📦 ${esc(texto)}</span><button class="btn btn-sm btn-gold" type="button">Ver</button><button class="x" type="button" title="Dispensar">✕</button>`;
+  el.querySelector('.btn').addEventListener('click', ()=>{
+    vcpExpandidas.add(c.id);
+    document.querySelector('.nav-children .nav-btn[data-view="ex-vcp"]').click();
+    vcpAbrirSemAlternar(c.id);
+    el.remove();
+  });
+  el.querySelector('.x').addEventListener('click', ()=>el.remove());
+  document.getElementById('vcpToastWrap').appendChild(el);
+  vcpBeep();
+  try{
+    if('Notification' in window && Notification.permission==='granted'){
+      const n = new Notification(texto, {body: c.house ? `HAWB ${c.house}` : 'Resposta da Teca recebida', tag:'vcp-'+c.id});
+      n.onclick = ()=>{ window.focus(); n.close(); };
+    }
+  }catch(e){}
+}
+function vcpAbrirSemAlternar(id){
+  vcpExpandidas.add(id);
+  const c = vcpConsultas.find(x=>x.id===id);
+  if(c && !c.visto){ c.visto = true; vcpApi('marcarConsultaVista',{id}).catch(()=>{ c.visto=false; }); }
+  renderVCPLista(); renderExBadge();
+}
+/* ---- polling: 20 s com consulta pendente, 2 min sem ---- */
+let vcpUltimoPoll = 0;
+async function vcpPoll(agora){
+  if(agora===true && Date.now()-vcpUltimoPoll < 8000 && !arguments[1]) { renderVCPLista(); return; }
+  clearTimeout(vcpPollTimer);
+  vcpUltimoPoll = Date.now();
+  let pendente = vcpConsultas.some(c=>c.status==='enviado');
+  try{
+    if(API_URL){
+      const data = await vcpApi('listarConsultasVCP');
+      vcpConsultas = data.consultas || [];
+      vcpNaoVistas().forEach(vcpAvisar);
+      pendente = vcpConsultas.some(c=>c.status==='enviado');
+      renderVCPLista(); renderExBadge();
+    }
+  }catch(e){ /* silencioso: tenta de novo no próximo ciclo */ }
+  vcpPollTimer = setTimeout(()=>vcpPoll(false), pendente ? 20000 : 120000);
+}
+setTimeout(()=>vcpPoll(false), 3000);
+renderExBadge();
+
 init();
 initAutoBackup();
-fitBoard(); setTimeout(fitBoard,400); renderNotesBadge();
+fitBoard(); setTimeout(fitBoard,400);
 </script>
 </body>
 </html>
