@@ -238,6 +238,7 @@
 
   .vcp-form{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px;}
   .vcp-form .field{margin:0;min-width:180px;}
+  .vcp-concl td{opacity:.5;}
   .vcp-msg{font-size:12.5px;margin:-6px 0 12px;min-height:16px;}
   .vcp-toast-wrap{position:fixed;top:18px;right:18px;z-index:1000;display:flex;flex-direction:column;gap:10px;max-width:92vw;}
   .vcp-toast{background:var(--navy);color:#fff;border-left:4px solid var(--gold);border-radius:10px;padding:12px 14px;box-shadow:0 12px 32px rgba(15,23,42,.35);display:flex;align-items:center;gap:12px;font-size:13.5px;}
@@ -335,7 +336,7 @@
       <div class="nav-group nav-top" id="navGroupExtras">
         <button class="nav-btn nav-parent" data-view="ex-vcp">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M17.5 14v7M14 17.5h7"/></svg>
-          <span class="nav-label">EXTRAS</span>
+          <span class="nav-label">Extras</span>
           <span class="count" id="cnt-ex" style="display:none;">0</span>
           <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
         </button>
@@ -532,7 +533,7 @@
     </section>
 
     <footer id="siteFooter" style="margin-top:28px;padding-top:12px;font-size:12px;text-align:center;"><a href="https://www.siterastreio.com.br/" target="_blank" style="color:var(--bg);text-decoration:none;">Rastreamento</a></footer>
-    <!-- EXTRAS: CONSULTAR CARGA VCP -->
+    <!-- Extras: CONSULTAR CARGA VCP -->
     <section id="view-ex-vcp" style="display:none;">
       <div class="topbar">
         <div>
@@ -3160,8 +3161,10 @@ setInterval(renderLembreteDonizete, 30*60*1000);
  * e chamar o render dela no handler do menu. */
 function renderExVCP(){ renderPainelVCP(document.getElementById('exVcpBody')); }
 function renderExBadge(){
-  const n = vcpNaoVistas().length;
+  const n = vcpPendentes().length;
   ['cnt-ex-vcp','cnt-ex'].forEach(id=>{ const el=document.getElementById(id); if(el){ el.textContent=n; el.style.display = n?'':'none'; } });
+  if(!window.__tituloBase) window.__tituloBase = document.title.replace(/^\(\d+\)\s*/,'');
+  document.title = (n?`(${n}) `:'') + window.__tituloBase;
 }
 
 /* ============ Consulta de embalagem (VCP) ============ */
@@ -3175,11 +3178,7 @@ const VCP_STATUS = {
   enviado:['Enviado','badge-warn'], respondido:['Respondido','badge-ok'],
   sem_resposta:['Sem resposta','badge-danger'], erro:['Erro','badge-danger']
 };
-function vcpNaoVistas(){ return vcpConsultas.filter(c=>c.status==='respondido' && !c.visto); }
-function vcpFormatMaster(v){
-  const d = String(v||'').replace(/\D/g,'').slice(0,11);
-  return d.length>3 ? d.slice(0,3)+'-'+d.slice(3) : d;
-}
+function vcpPendentes(){ return vcpConsultas.filter(c=>c.status==='respondido' && !c.concluido); }
 async function vcpApi(action, params){
   if(!API_URL) throw new Error('Conecte o Google Sheets (API_URL) para usar esta função.');
   const qs = new URLSearchParams(Object.assign({action}, params||{}));
@@ -3196,16 +3195,16 @@ function renderPainelVCP(box){
   if(!box) return;
   box.innerHTML = `<div class="rd-card">
     <div class="vcp-form">
-      <div class="field"><label>Master (AWB) *</label><input id="vcpMaster" placeholder="000-00000000" maxlength="12" inputmode="numeric" value="${escAttr(vcpDraft.master)}"></div>
-      <div class="field"><label>House (HAWB) — opcional</label><input id="vcpHouse" placeholder="Opcional" maxlength="30" value="${escAttr(vcpDraft.house)}"></div>
+      <div class="field"><label>Master (AWB) *</label><input id="vcpMaster" placeholder="Ex: 78338746561" maxlength="40" value="${escAttr(vcpDraft.master)}"></div>
+      <div class="field"><label>House (HAWB) — opcional</label><input id="vcpHouse" placeholder="Vazio = usa o master" maxlength="40" value="${escAttr(vcpDraft.house)}"></div>
       <button type="button" class="btn btn-gold" id="vcpConsultar">Consultar</button>
     </div>
     <div class="vcp-msg" id="vcpMsg" style="color:${vcpMsg.cor||'var(--muted)'};">${esc(vcpMsg.txt)}</div>
     <div id="vcpLista"></div>
   </div>`;
   const m = box.querySelector('#vcpMaster'), h = box.querySelector('#vcpHouse');
-  m.addEventListener('input', ()=>{ m.value = vcpFormatMaster(m.value); vcpDraft.master = m.value; });
-  h.addEventListener('input', ()=>{ h.value = h.value.toUpperCase(); vcpDraft.house = h.value; });
+  m.addEventListener('input', ()=>{ vcpDraft.master = m.value; });
+  h.addEventListener('input', ()=>{ vcpDraft.house = h.value; });
   box.querySelector('#vcpConsultar').addEventListener('click', ()=>vcpConsultar(m.value, h.value));
   m.addEventListener('keydown', e=>{ if(e.key==='Enter') vcpConsultar(m.value, h.value); });
   h.addEventListener('keydown', e=>{ if(e.key==='Enter') vcpConsultar(m.value, h.value); });
@@ -3217,13 +3216,13 @@ function vcpSetMsg(txt, cor){
   const el = document.getElementById('vcpMsg'); if(el){ el.textContent = vcpMsg.txt; el.style.color = vcpMsg.cor||'var(--muted)'; }
 }
 async function vcpConsultar(master, house){
-  const d = String(master||'').replace(/\D/g,'');
-  if(d.length!==11){ vcpSetMsg('Master inválido: informe 11 dígitos (000-00000000).', '#B91C1C'); return; }
+  master = String(master||'').trim(); house = String(house||'').trim();
+  if(!master){ vcpSetMsg('Informe o Master (AWB).', '#B91C1C'); return; }
   const btn = document.getElementById('vcpConsultar'); if(btn) btn.disabled = true;
   vcpSetMsg('Enviando consulta...', '');
   try{
     if('Notification' in window && Notification.permission==='default'){ try{ Notification.requestPermission(); }catch(e){} }
-    await vcpApi('criarConsultaVCP', {master:vcpFormatMaster(d), house:String(house||'').trim().toUpperCase()});
+    await vcpApi('criarConsultaVCP', {master, house});
     vcpDraft = {master:'', house:''};
     const m = document.getElementById('vcpMaster'), h = document.getElementById('vcpHouse');
     if(m) m.value=''; if(h) h.value='';
@@ -3235,43 +3234,56 @@ async function vcpConsultar(master, house){
     const b = document.getElementById('vcpConsultar'); if(b) b.disabled = false;
   }
 }
+/* tira o histórico citado (resposta do e-mail) e deixa só o texto novo, como chega */
+function vcpLimparResposta(txt){
+  let t = String(txt||'').replace(/\r/g,'');
+  const corte = t.search(/^\s*(De:|From:|Enviado:|Sent:|-{2,}\s*(Original|Mensagem)|Em .{5,80}escreveu:|On .{5,80}wrote:|>)/mi);
+  if(corte>0) t = t.slice(0, corte);
+  return t.replace(/[ \t]+$/gm,'').replace(/\n{3,}/g,'\n\n').trim();
+}
 function renderVCPLista(){
   const el = document.getElementById('vcpLista'); if(!el) return;
   if(!vcpConsultas.length){ el.innerHTML = '<div class="muted small">Nenhuma consulta ainda.</div>'; return; }
   el.innerHTML = `<div class="table-wrap"><table>
     <thead><tr><th>Master</th><th>House</th><th>Hora</th><th>Status</th><th></th></tr></thead>
     <tbody>${vcpConsultas.map(c=>{
-      const [lbl,cls] = VCP_STATUS[c.status] || [c.status,'badge-warn'];
-      const novo = c.status==='respondido' && !c.visto;
+      const concl = c.status==='respondido' && c.concluido;
+      const [lbl,cls] = concl ? ['Concluído',''] : (VCP_STATUS[c.status] || [c.status,'badge-warn']);
+      const novo = c.status==='respondido' && !c.concluido;
       const aberta = vcpExpandidas.has(c.id);
       const acao = c.status==='respondido'
         ? `<button class="btn btn-sm ${novo?'btn-gold':''}" data-vcpver="${escAttr(c.id)}">${aberta?'Ocultar':'Ver resposta'}</button>`
         : (c.status==='sem_resposta'||c.status==='erro') ? `<button class="btn btn-sm" data-vcpreenviar="${escAttr(c.id)}">Reenviar</button>` : '';
-      const detalhe = (c.status==='respondido' && aberta) ? `<tr><td colspan="5" style="background:#F8FAFC;">${vcpItensHtml(c)}</td></tr>` : '';
-      return `<tr><td class="mono">${esc(c.master)}</td><td class="mono">${esc(c.house||'—')}</td><td>${vcpHora(c.criadoEm)}</td>
-        <td><span class="badge ${cls}">${lbl}</span>${novo?' <span class="badge badge-ok">novo</span>':''}</td><td>${acao}</td></tr>${detalhe}`;
+      const detalhe = (c.status==='respondido' && aberta) ? `<tr class="${concl?'vcp-concl':''}"><td colspan="5" style="background:#F8FAFC;">
+        <textarea readonly rows="7" id="vcpTxt-${escAttr(c.id)}" style="width:100%;font-family:inherit;font-size:13px;line-height:1.5;resize:vertical;">${esc(vcpLimparResposta(c.respostaBruta)||'(resposta vazia)')}</textarea>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button class="btn btn-sm" data-vcpcopiar="${escAttr(c.id)}">📋 Copiar texto</button>
+          ${concl ? `<button class="btn btn-sm" data-vcpreabrir="${escAttr(c.id)}">↩ Reabrir</button>` : `<button class="btn btn-sm btn-gold" data-vcpconcluir="${escAttr(c.id)}">✓ Concluir</button>`}
+        </div></td></tr>` : '';
+      return `<tr class="${concl?'vcp-concl':''}"><td class="mono">${esc(c.master)}</td><td class="mono">${esc(c.house||'—')}</td><td>${vcpHora(c.criadoEm)}</td>
+        <td>${concl?'<span class="badge" style="background:#E2E8F0;color:#64748B;">Concluído</span>':`<span class="badge ${cls}">${lbl}</span>`}${novo?' <span class="badge badge-ok">novo</span>':''}</td><td>${acao}</td></tr>${detalhe}`;
     }).join('')}</tbody></table></div>`;
-  el.querySelectorAll('[data-vcpver]').forEach(b=>b.addEventListener('click', ()=>vcpAbrir(b.dataset.vcpver)));
+  el.querySelectorAll('[data-vcpver]').forEach(b=>b.addEventListener('click', ()=>{ const id=b.dataset.vcpver; if(vcpExpandidas.has(id)) vcpExpandidas.delete(id); else vcpExpandidas.add(id); renderVCPLista(); }));
   el.querySelectorAll('[data-vcpreenviar]').forEach(b=>b.addEventListener('click', ()=>{
     const c = vcpConsultas.find(x=>x.id===b.dataset.vcpreenviar); if(c) vcpConsultar(c.master, c.house);
   }));
+  el.querySelectorAll('[data-vcpcopiar]').forEach(b=>b.addEventListener('click', async ()=>{
+    const c = vcpConsultas.find(x=>x.id===b.dataset.vcpcopiar); if(!c) return;
+    const txt = vcpLimparResposta(c.respostaBruta);
+    try{ await navigator.clipboard.writeText(txt); toast('Texto copiado.'); }
+    catch(e){ const ta=document.getElementById('vcpTxt-'+c.id); if(ta){ ta.select(); document.execCommand('copy'); toast('Texto copiado.'); } }
+  }));
+  el.querySelectorAll('[data-vcpconcluir]').forEach(b=>b.addEventListener('click', ()=>vcpConcluir(b.dataset.vcpconcluir, true)));
+  el.querySelectorAll('[data-vcpreabrir]').forEach(b=>b.addEventListener('click', ()=>vcpConcluir(b.dataset.vcpreabrir, false)));
 }
-function vcpItensHtml(c){
-  if(c.itens && c.itens.length){
-    return `<table><thead><tr><th>PCG</th><th>Volume</th><th>Peso</th><th>Embalagem</th><th>Avaria</th><th>Área</th></tr></thead>
-      <tbody>${c.itens.map(i=>`<tr><td class="mono">${esc(i.pcg)}</td><td>${esc(i.volume)}</td><td>${esc(i.peso)}</td><td>${esc(i.embalagem)}</td><td>${esc(i.avaria)}</td><td>${esc(i.area)}</td></tr>`).join('')}</tbody></table>`;
-  }
-  return `<div class="muted small" style="margin-bottom:4px;">Não consegui separar os itens — resposta da Teca:</div><pre style="white-space:pre-wrap;font-size:12.5px;margin:0;">${esc(c.respostaBruta||'(vazia)')}</pre>`;
-}
-async function vcpAbrir(id){
-  if(vcpExpandidas.has(id)) vcpExpandidas.delete(id); else vcpExpandidas.add(id);
-  const c = vcpConsultas.find(x=>x.id===id);
-  if(c && c.status==='respondido' && !c.visto){
-    c.visto = true;
-    vcpFecharToast(id);
-    vcpApi('marcarConsultaVista', {id}).catch(()=>{ c.visto = false; });
-  }
+async function vcpConcluir(id, valor){
+  const c = vcpConsultas.find(x=>x.id===id); if(!c) return;
+  const anterior = c.concluido;
+  c.concluido = valor;
+  if(valor){ vcpFecharToast(id); vcpExpandidas.delete(id); }
   renderVCPLista(); renderExBadge();
+  try{ await vcpApi('concluirConsultaVCP', {id, valor: valor?'1':'0'}); }
+  catch(e){ c.concluido = anterior; renderVCPLista(); renderExBadge(); toast('Não consegui salvar: '+(e.message||e)); }
 }
 /* ---- avisos ---- */
 function vcpBeep(){
@@ -3292,14 +3304,12 @@ function vcpAvisar(c){
   const texto = `Consulta carga AWB ${c.master} disponível`;
   const el = document.createElement('div');
   el.className = 'vcp-toast'; el.dataset.toast = c.id;
-  el.innerHTML = `<span>📦 ${esc(texto)}</span><button class="btn btn-sm btn-gold" type="button">Ver</button><button class="x" type="button" title="Dispensar">✕</button>`;
+  el.innerHTML = `<span>📦 ${esc(texto)}</span><button class="btn btn-sm btn-gold" type="button">Ver</button>`;
   el.querySelector('.btn').addEventListener('click', ()=>{
     vcpExpandidas.add(c.id);
     document.querySelector('.nav-children .nav-btn[data-view="ex-vcp"]').click();
-    vcpAbrirSemAlternar(c.id);
-    el.remove();
+    renderVCPLista();
   });
-  el.querySelector('.x').addEventListener('click', ()=>el.remove());
   document.getElementById('vcpToastWrap').appendChild(el);
   vcpBeep();
   try{
@@ -3309,11 +3319,16 @@ function vcpAvisar(c){
     }
   }catch(e){}
 }
-function vcpAbrirSemAlternar(id){
-  vcpExpandidas.add(id);
-  const c = vcpConsultas.find(x=>x.id===id);
-  if(c && !c.visto){ c.visto = true; vcpApi('marcarConsultaVista',{id}).catch(()=>{ c.visto=false; }); }
-  renderVCPLista(); renderExBadge();
+/* mantém os avisos na tela só enquanto a consulta não for concluída */
+function vcpSincronizarAvisos(){
+  const ids = new Set(vcpPendentes().map(c=>c.id));
+  document.querySelectorAll('#vcpToastWrap [data-toast]').forEach(el=>{ if(!ids.has(el.dataset.toast)) el.remove(); });
+  vcpPendentes().forEach(c=>{
+    if(!document.querySelector(`#vcpToastWrap [data-toast="${c.id}"]`)){
+      if(vcpAvisadas.has(c.id)) vcpAvisadas.delete(c.id);   // recria aviso (ex.: após reabrir)
+      vcpAvisar(c);
+    }
+  });
 }
 /* ---- polling: 20 s com consulta pendente, 2 min sem ---- */
 let vcpUltimoPoll = 0;
@@ -3326,7 +3341,7 @@ async function vcpPoll(agora){
     if(API_URL){
       const data = await vcpApi('listarConsultasVCP');
       vcpConsultas = data.consultas || [];
-      vcpNaoVistas().forEach(vcpAvisar);
+      vcpSincronizarAvisos();
       pendente = vcpConsultas.some(c=>c.status==='enviado');
       renderVCPLista(); renderExBadge();
     }
