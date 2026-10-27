@@ -3367,7 +3367,7 @@ function renderPainelVCP(box, tipo){
       <div class="field"><label>Master (AWB) *</label><input id="vcpMaster" placeholder="Ex: 992-93669310" maxlength="40" value="${escAttr(d.master)}"></div>
       <div class="field"><label>House (HAWB) — opcional</label><input id="vcpHouse" placeholder="Vazio = usa o master" maxlength="40" value="${escAttr(d.house)}"></div>
       ${mad ? `<div class="field" style="min-width:90px;max-width:110px;"><label>Volumes *</label><input id="vcpVols" type="number" min="1" max="99" step="1" value="${escAttr(d.volumes)}"></div>` : ''}
-      <button type="button" class="btn btn-gold" id="vcpConsultar">${mad?'Verificar madeira':'Consultar'}</button>
+      <button type="button" class="btn btn-gold" id="vcpConsultar">${mad?'Verificar madeira':'Consultar carga'}</button>
     </div>
     <div class="vcp-msg" id="vcpMsg" style="color:${vcpMsg.cor||'var(--muted)'};">${esc(vcpMsg.txt)}</div>
     <div id="vcpLista"></div>
@@ -3396,7 +3396,6 @@ async function vcpConsultar(master, house, volumes){
     const n = parseInt(String(volumes||'').trim(), 10);
     if(!(n>=1 && n<=99)){ vcpSetMsg('Informe os volumes (de 1 a 99).', '#B91C1C'); return; }
     vols = String(n).padStart(2,'0');
-    if(!confirm(`Enviar "Verifica Madeira" para a Teca?\n\nMAWB ${master}\nHAWB ${house||master}\nVols ${vols}`)) return;
   }
   const btn = document.getElementById('vcpConsultar'); if(btn) btn.disabled = true;
   vcpSetMsg('Enviando consulta...', '');
