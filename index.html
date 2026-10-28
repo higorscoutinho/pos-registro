@@ -3442,13 +3442,15 @@ function renderVCPLista(){
   el.innerHTML = `<div class="table-wrap"><table>
     <thead><tr><th>Master</th><th>House</th>${mad?'<th>Vols</th>':''}<th>Hora</th><th>Status</th><th></th></tr></thead>
     <tbody>${lista.map(c=>{
-      const concl = c.status==='respondido' && c.concluido;
+      const concl = !!c.concluido;
       const [lbl,cls] = concl ? ['Concluído',''] : (VCP_STATUS[c.status] || [c.status,'badge-warn']);
       const novo = c.status==='respondido' && !c.concluido;
       const aberta = vcpExpandidas.has(c.id);
-      const acao = c.status==='respondido'
+      const btnConc = (c.status!=='respondido') ? (concl ? `<button class="btn btn-sm" data-vcpreabrir="${escAttr(c.id)}">↩ Reabrir</button>` : `<button class="btn btn-sm" data-vcpconcluir="${escAttr(c.id)}">✓ Concluir</button>`) : '';
+      const acao = '<div style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap;">' + (c.status==='respondido'
         ? `<button class="btn btn-sm ${novo?'btn-gold':''}" data-vcpver="${escAttr(c.id)}">${aberta?'Ocultar':'Ver resposta'}</button>`
-        : (c.status==='sem_resposta'||c.status==='erro') ? `<button class="btn btn-sm" data-vcpreenviar="${escAttr(c.id)}">Reenviar</button>` : '';
+        : (c.status==='sem_resposta'||c.status==='erro') ? `<button class="btn btn-sm" data-vcpreenviar="${escAttr(c.id)}">Reenviar</button>` : '')
+        + btnConc + `<button class="btn btn-sm btn-ghost btn-danger" data-vcpexcluir="${escAttr(c.id)}" title="Excluir da lista">🗑</button></div>`;
       const detalhe = (c.status==='respondido' && aberta) ? `<tr class="${concl?'vcp-concl':''}"><td colspan="${ncol}" style="background:var(--surface-2);">${mad?`<div style="margin-bottom:8px;font-weight:700;color:var(--heading);">🪵 Retorno da Teca · MAWB ${esc(c.master)} · HAWB ${esc(c.house||c.master)} · Vols ${esc(c.volumes||'')}</div>${vcpMadeiraChips(c)}`:''}
         <textarea readonly rows="7" id="vcpTxt-${escAttr(c.id)}" style="width:100%;font-family:inherit;font-size:13px;line-height:1.5;resize:vertical;">${esc(vcpLimparResposta(c.respostaBruta)||'(resposta vazia)')}</textarea>
         <div style="display:flex;gap:8px;margin-top:8px;">
@@ -3468,8 +3470,18 @@ function renderVCPLista(){
     try{ await navigator.clipboard.writeText(txt); toast('Texto copiado.'); }
     catch(e){ const ta=document.getElementById('vcpTxt-'+c.id); if(ta){ ta.select(); document.execCommand('copy'); toast('Texto copiado.'); } }
   }));
+  el.querySelectorAll('[data-vcpexcluir]').forEach(b=>b.addEventListener('click', ()=>vcpExcluir(b.dataset.vcpexcluir)));
   el.querySelectorAll('[data-vcpconcluir]').forEach(b=>b.addEventListener('click', ()=>vcpConcluir(b.dataset.vcpconcluir, true)));
   el.querySelectorAll('[data-vcpreabrir]').forEach(b=>b.addEventListener('click', ()=>vcpConcluir(b.dataset.vcpreabrir, false)));
+}
+async function vcpExcluir(id){
+  const c = vcpConsultas.find(x=>x.id===id); if(!c) return;
+  if(!confirm(`Excluir esta consulta da lista?\n\n${c.master}${c.house?' / '+c.house:''}`)) return;
+  const antes = vcpConsultas.slice();
+  vcpConsultas = vcpConsultas.filter(x=>x.id!==id); vcpExpandidas.delete(id);
+  renderVCPLista(); renderExBadge(); renderReminderBanner(reminderDueCache);
+  try{ await vcpApi('excluirConsultaVCP', {id}); toast('Consulta excluída.'); }
+  catch(e){ vcpConsultas = antes; renderVCPLista(); renderExBadge(); renderReminderBanner(reminderDueCache); toast('Não consegui excluir: '+(e.message||e)); }
 }
 async function vcpConcluir(id, valor){
   const c = vcpConsultas.find(x=>x.id===id); if(!c) return;
