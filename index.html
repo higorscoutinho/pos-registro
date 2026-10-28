@@ -3690,10 +3690,6 @@ function renderGeral(){
   const sdaPagar = ativos.filter(p=>!isSdaPago(p)).length;
   const clientesAtivos = new Set(ativos.map(p=>p.clienteId)).size;
 
-  // --- funil por etapa
-  const porEtapa = state.stages.map(st=>({st, n: ativos.filter(p=>p.status===st.id).length}));
-  const maxN = Math.max(1, ...porEtapa.map(x=>x.n));
-
   // --- clientes
   const porCli = {}; ativos.forEach(p=>{ porCli[nome(p)] = (porCli[nome(p)]||0)+1; });
   const topCli = Object.entries(porCli).sort((a,b)=>b[1]-a[1]).slice(0,5);
@@ -3741,12 +3737,6 @@ function renderGeral(){
               <div><div class="gd-code">${esc(p.codigo)||'—'}</div><div class="gd-cli">${esc(nome(p))}</div></div>
               <div>${d>3?`<span class="gd-chip red">FATURAR URGENTE (passou de 3 dias)</span>`:`<span class="gd-chip none">${d===0?'desde hoje':'há '+d+' dia'+(d===1?'':'s')}</span>`}</div>
             </div>`).join('') : '<div class="gd-empty">Nada aguardando faturamento. ✅</div>'}
-        </div>
-
-        <div class="gd-card">
-          <h3>📊 Processos por etapa</h3>
-          <div class="hint">Onde estão os ${ativos.length} processos em aberto. Clique para ir ao quadro.</div>
-          ${porEtapa.map(({st,n})=>`<div class="gd-bar" data-gdgo="board"><div class="gd-bar-l" title="${escAttr(st.label)}"><i style="background:${escAttr(st.color)}"></i>${esc(st.label)}</div><div class="gd-bar-t"><b style="width:${Math.round(n/maxN*100)}%;background:${escAttr(st.color)};${n?'':'opacity:.25;'}"></b></div><div class="gd-bar-n">${n}</div></div>`).join('')}
         </div>
       </div>
 
