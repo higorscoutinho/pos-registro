@@ -346,6 +346,56 @@
   .nd-tools{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;}
   #notesDrawer .notes-list{grid-template-columns:1fr 1fr;overflow-y:auto;flex:1;}
   @media(max-width:520px){#notesDrawer .notes-list{grid-template-columns:1fr;}}
+  /* ---------- Geral (dashboard principal) ---------- */
+  .nav-solo{margin-bottom:2px;}
+  .gd-kpis{display:grid;grid-template-columns:1.25fr repeat(4,1fr);gap:14px;margin-bottom:18px;}
+  .gd-kpi{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow);cursor:pointer;transition:.15s;position:relative;overflow:hidden;}
+  .gd-kpi:hover{transform:translateY(-2px);border-color:var(--border-2);}
+  .gd-kpi .l{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);}
+  .gd-kpi .v{font-family:'Montserrat','Inter',sans-serif;font-size:34px;font-weight:800;line-height:1.1;margin:6px 0 2px;color:var(--heading);}
+  .gd-kpi .s{font-size:12px;color:var(--muted);}
+  .gd-kpi.hero{background:linear-gradient(135deg,#001594,#162A89 70%,#0B1A78);border-color:transparent;color:#fff;box-shadow:0 10px 26px rgba(0,21,148,.28);}
+  .gd-kpi.hero .l,.gd-kpi.hero .s{color:rgba(255,255,255,.78);} .gd-kpi.hero .v{color:#fff;font-size:44px;}
+  .gd-kpi.warn .v{color:var(--red);} .gd-kpi.warn{border-color:var(--red-border);background:var(--red-bg);}
+  .gd-grid{display:grid;grid-template-columns:minmax(0,2.1fr) minmax(280px,1fr);gap:18px;align-items:start;}
+  .gd-card{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:18px;margin-bottom:18px;}
+  .gd-card h3{margin:0 0 3px;font-size:15px;color:var(--heading);display:flex;align-items:center;gap:8px;}
+  .gd-card .hint{font-size:12px;color:var(--muted);margin-bottom:12px;}
+  .gd-card.main{border-top:3px solid var(--accent);}
+  .gd-side .gd-card{padding:14px 15px;}
+  .gd-side .gd-card h3{font-size:13px;}
+  .gd-row{display:grid;grid-template-columns:96px minmax(0,1fr) auto auto;gap:12px;align-items:center;padding:10px 4px;border-bottom:1px solid var(--border);}
+  .gd-row:last-child{border-bottom:none;}
+  .gd-row:hover{background:var(--surface-2);}
+  .gd-time{font-family:'Montserrat','Inter',sans-serif;font-weight:800;font-size:18px;color:var(--heading);}
+  .gd-time small{display:block;font-family:'Inter',sans-serif;font-size:10.5px;font-weight:600;color:var(--muted);}
+  .gd-code{font-weight:700;font-size:13.5px;} .gd-cli{font-size:12.5px;color:var(--muted);font-weight:600;}
+  .gd-chip{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap;}
+  .gd-chip.late{background:var(--red-bg);color:var(--red-text);border:1px solid var(--red-border);}
+  .gd-chip.soon{background:var(--amber-bg);color:var(--amber);}
+  .gd-chip.today{background:var(--info-bg);color:var(--info);}
+  .gd-chip.later,.gd-chip.none{background:var(--hover);color:var(--muted);}
+  .gd-chip.red{background:var(--red-bg);color:var(--red-text);border:1px solid var(--red-border);}
+  .gd-chip.amber{background:var(--amber-bg);color:var(--amber);}
+  .gd-reasons{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;}
+  .gd-bar{display:grid;grid-template-columns:minmax(150px,250px) minmax(0,1fr) 34px;gap:10px;align-items:center;padding:6px 0;cursor:pointer;}
+  .gd-bar:hover .gd-bar-l{color:var(--accent);}
+  .gd-bar-l{font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:7px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .gd-bar-l i{width:9px;height:9px;border-radius:50%;flex-shrink:0;display:inline-block;}
+  .gd-bar-t{height:10px;background:var(--track);border-radius:6px;overflow:hidden;}
+  .gd-bar-t b{display:block;height:100%;border-radius:6px;min-width:3px;}
+  .gd-bar-n{font-weight:800;font-size:13px;text-align:right;}
+  .gd-mini{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .gd-mini button{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:9px 10px;text-align:left;cursor:pointer;color:var(--text);transition:.12s;}
+  .gd-mini button:hover{border-color:var(--border-2);background:var(--hover);}
+  .gd-mini b{display:block;font-family:'Montserrat','Inter',sans-serif;font-size:20px;color:var(--heading);}
+  .gd-mini span{font-size:11px;color:var(--muted);font-weight:600;}
+  .gd-list{display:flex;flex-direction:column;}
+  .gd-li{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);font-size:12.5px;cursor:pointer;}
+  .gd-li:last-child{border-bottom:none;} .gd-li:hover{color:var(--accent);}
+  .gd-empty{color:var(--muted);font-size:12.5px;padding:14px 4px;text-align:center;}
+  @media(max-width:1180px){.gd-kpis{grid-template-columns:1fr 1fr 1fr;} .gd-grid{grid-template-columns:1fr;}}
+  @media(max-width:700px){.gd-kpis{grid-template-columns:1fr 1fr;} .gd-row{grid-template-columns:80px 1fr;} .gd-row>:nth-child(n+3){grid-column:2;}}
   .vcp-concl td{opacity:.5;}
   .vcp-msg{font-size:12.5px;margin:-6px 0 12px;min-height:16px;}
   .rd-count-link{background:none;border:none;padding:2px 8px;border-radius:6px;font-weight:700;font-size:13.5px;cursor:pointer;color:var(--text);}
@@ -392,8 +442,13 @@
       <p>Controle diário</p>
     </div>
     <nav class="nav" id="nav">
-      <div class="nav-group" id="navGroupProcessos">
-        <button class="nav-btn nav-parent active" data-view="board">
+      <button class="nav-btn nav-parent nav-solo active" data-view="geral" id="navGeral">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        <span class="nav-label">Geral</span>
+        <span class="count" id="cnt-geral-att" style="display:none;">0</span>
+      </button>
+      <div class="nav-group nav-top" id="navGroupProcessos">
+        <button class="nav-btn nav-parent" data-view="board">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="7" height="16" rx="1.5"/><rect x="14" y="4" width="7" height="9" rx="1.5"/></svg>
           <span class="nav-label">Processos</span>
           <span class="count" id="cnt-active">0</span>
@@ -475,8 +530,23 @@
   <main class="main">
     <div id="reminderBanner" style="display:none;"></div>
 
+    <!-- GERAL (dashboard principal) -->
+    <section id="view-geral">
+      <div class="topbar">
+        <div>
+          <h2>Geral</h2>
+          <div class="sub" id="gdSub">Visão dos processos em aberto</div>
+        </div>
+        <div class="actions">
+          <button class="btn" id="gdRefresh" type="button">↻ Atualizar</button>
+          <button class="btn btn-gold" id="gdNovo" type="button">+ Novo processo</button>
+        </div>
+      </div>
+      <div id="geralBody"></div>
+    </section>
+
     <!-- BOARD VIEW -->
-    <section id="view-board">
+    <section id="view-board" style="display:none;">
       <div class="topbar">
         <div>
           <h2>Processos ativos</h2>
@@ -590,7 +660,7 @@
     <section id="view-rd-dashboard" style="display:none;">
       <div class="topbar">
         <div>
-          <h2>Dashboard</h2>
+          <h2>Retirada documental</h2>
           <div class="sub">Retirada e envio de documentos originais — visão geral</div>
         </div>
         <div class="actions">
@@ -1262,7 +1332,7 @@ function toast(msg){
 }
 
 /* ============ NAV ============ */
-const views = ['board','export','clients','archive','terceiros','rd-dashboard','rd-processos','rd-finalizados','rd-instrucoes','rd-importar','ex-vcp','ex-madeira'];
+const views = ['geral','board','export','clients','archive','terceiros','rd-dashboard','rd-processos','rd-finalizados','rd-instrucoes','rd-importar','ex-vcp','ex-madeira'];
 document.getElementById('nav').addEventListener('click', e=>{
   const btn = e.target.closest('.nav-btn');
   if(!btn) return;
@@ -1274,6 +1344,8 @@ document.getElementById('nav').addEventListener('click', e=>{
     const grp = btn.closest('.nav-group');
     if(grp) grp.classList.toggle('collapsed');
   }
+  if(view==='geral') renderGeral();
+  if(view==='board') setTimeout(fitBoard,0);
   if(view==='export') buildExportBox();
   if(view==='terceiros') loadTerceiros();
   if(view==='rd-dashboard') renderRDDashboard();
@@ -1560,7 +1632,7 @@ function renderCounts(){
   document.getElementById('cnt-rd-finalizados').textContent = state.retirada.processos.filter(rdEntregue).length;
 }
 
-function renderAll(){ renderBoard(); renderClients(); renderArchive(); renderCounts(); checkReminders(); }
+function renderAll(){ renderBoard(); renderClients(); renderArchive(); renderCounts(); checkReminders(); try{ renderGeral(); }catch(e){} }
 
 /* ============ LEMBRETES (alerta de horário) ============ */
 let reminderDueCache = [];
@@ -3568,6 +3640,169 @@ document.getElementById('notesAdd').addEventListener('click', ()=>{
   persist(); renderNotes();
   const first = document.querySelector('#notesList textarea'); if(first) first.focus();
 });
+
+
+/* ============ GERAL — dashboard principal ============ */
+function gdHM(d){ return d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); }
+function gdLembrete(iso){
+  if(!iso) return {k:'none', t:'—', sub:'sem horário', min:Infinity};
+  const d = new Date(iso); if(isNaN(d)) return {k:'none', t:'—', sub:'sem horário', min:Infinity};
+  const min = Math.round((d.getTime()-Date.now())/60000);
+  const hoje = new Date(); const mesmoDia = d.toDateString()===hoje.toDateString();
+  const amanha = new Date(Date.now()+86400000).toDateString()===d.toDateString();
+  const dia = mesmoDia ? 'hoje' : amanha ? 'amanhã' : d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
+  if(min<0){
+    const a=-min; const txt = a<60 ? `${a} min` : a<1440 ? `${Math.floor(a/60)}h${String(a%60).padStart(2,'0')}` : `${Math.floor(a/1440)} dia(s)`;
+    return {k:'late', t:gdHM(d), sub:dia, chip:`Atrasado há ${txt}`, min};
+  }
+  if(min<=60) return {k:'soon', t:gdHM(d), sub:dia, chip:`Em ${min} min`, min};
+  if(mesmoDia) return {k:'today', t:gdHM(d), sub:dia, chip:'Hoje', min};
+  return {k:'later', t:gdHM(d), sub:dia, chip:dia==='amanhã'?'Amanhã':dia, min};
+}
+function gdIdade(p){ const t=new Date(p.createdAt).getTime(); return isNaN(t)?0:Math.max(0,Math.floor((Date.now()-t)/86400000)); }
+function gdGo(view){ const b=document.querySelector('.nav-btn[data-view="'+view+'"]'); if(b) b.click(); }
+function gdRdAbrir(stage){ try{ rdProcessosState.stage = stage; }catch(e){} const b=document.querySelector('#navGroupRetirada .nav-children .nav-btn[data-view="rd-processos"]'); if(b) b.click(); }
+function renderGeral(){
+  const box = document.getElementById('geralBody'); if(!box) return;
+  const ativos = state.processes.filter(p=>!p.archived);
+  const nome = p => { const c=clientById(p.clienteId); return c?c.nome:'(cliente removido)'; };
+  const agora = new Date();
+  const h = agora.getHours();
+  document.getElementById('gdSub').textContent = (h<12?'Bom dia':h<18?'Boa tarde':'Boa noite') + ' · ' +
+    agora.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'}) + ' · atualizado às ' + gdHM(agora);
+
+  // --- desembaraço (com horário)
+  const desemb = ativos.filter(p=>p.status==='desembaraco').map(p=>({p, l:gdLembrete(p.lembreteEm)}))
+    .sort((a,b)=>a.l.min-b.l.min);
+  const comHorario = desemb.filter(x=>x.l.k!=='none');
+  const proximo = comHorario.find(x=>x.l.min>=0) || comHorario[0];
+
+  // --- atenção
+  const atencao = [];
+  ativos.forEach(p=>{
+    const motivos=[]; let peso=0;
+    if(p.alerta){ motivos.push({t:'🔴 Alerta', c:'red'}); peso+=100; }
+    const l = gdLembrete(p.lembreteEm);
+    if(l.k==='late'){ motivos.push({t:'⏰ '+l.chip, c:'red'}); peso+=80; }
+    const idade = gdIdade(p);
+    if(idade>=10){ motivos.push({t:`${idade} dias em aberto`, c:'amber'}); peso+=idade; }
+    if(motivos.length) atencao.push({p, motivos, peso});
+  });
+  atencao.sort((a,b)=>b.peso-a.peso);
+
+  const sdaPagar = ativos.filter(p=>!isSdaPago(p)).length;
+  const maisAntigo = ativos.slice().sort((a,b)=>gdIdade(b)-gdIdade(a))[0];
+  const clientesAtivos = new Set(ativos.map(p=>p.clienteId)).size;
+
+  // --- funil por etapa
+  const porEtapa = state.stages.map(st=>({st, n: ativos.filter(p=>p.status===st.id).length}));
+  const maxN = Math.max(1, ...porEtapa.map(x=>x.n));
+
+  // --- clientes
+  const porCli = {}; ativos.forEach(p=>{ porCli[nome(p)] = (porCli[nome(p)]||0)+1; });
+  const topCli = Object.entries(porCli).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const antigos = ativos.slice().sort((a,b)=>gdIdade(b)-gdIdade(a)).slice(0,5);
+
+  // --- retirada documental
+  const rd = rdProcessos();
+  const rdAguard = rd.filter(p=>rdStageOf(p)==='AGUARDANDO_RETIRADA').length;
+  const rdTrans = rd.filter(p=>rdStageOf(p)==='RETIRADO').length;
+  const rdElab = rd.filter(p=>rdStageOf(p)==='EM_ELABORACAO').length;
+  const rdCam = rd.filter(rdACaminho).length;
+  const sete = Date.now()-7*86400000;
+  const rdEntSemana = rd.filter(p=>rdEntregue(p) && p.dataEntrega && new Date(p.dataEntrega).getTime()>=sete).length;
+  const rdParados = rd.filter(p=>rdStageOf(p)==='EM_ELABORACAO').filter(p=>{ const d=rdDaysSince(p.dataRecebimentoSVS); return d!==null && d>=5; }).length;
+
+  let vcpC=0, vcpM=0; try{ vcpC=vcpPendentes('carga').length; vcpM=vcpPendentes('madeira').length; }catch(e){}
+  const notasAbertas = state.notas.filter(n=>!n.feito).length;
+
+  const badgeAtt = document.getElementById('cnt-geral-att'); if(badgeAtt){ badgeAtt.textContent=atencao.length; badgeAtt.style.display=atencao.length?'':'none'; }
+
+  const linhaDesemb = ({p,l}) => `<div class="gd-row" data-gdopen="${p.id}" style="cursor:pointer;">
+      <div class="gd-time">${l.t}<small>${l.sub}</small></div>
+      <div><div class="gd-code">${esc(p.codigo)||'—'}</div><div class="gd-cli">${esc(nome(p))}</div></div>
+      <div>${l.chip?`<span class="gd-chip ${l.k}">${esc(l.chip)}</span>`:`<span class="gd-chip none">Sem horário</span>`}</div>
+      <div>${isSdaPago(p)?'':'<span class="gd-chip amber" title="SDA ainda não paga">SDA</span>'}</div>
+    </div>`;
+
+  box.innerHTML = `
+    <div class="gd-kpis">
+      <div class="gd-kpi hero" data-gdgo="board"><div class="l">Processos em aberto</div><div class="v">${ativos.length}</div><div class="s">em ${clientesAtivos} cliente${clientesAtivos===1?'':'s'}</div></div>
+      <div class="gd-kpi" data-gdgo="board"><div class="l">Aguardando desembaraço</div><div class="v">${desemb.length}</div><div class="s">${proximo?`próximo: ${proximo.l.t} · ${esc(proximo.p.codigo)}`:'sem horário definido'}</div></div>
+      <div class="gd-kpi ${atencao.length?'warn':''}" data-gdscroll="gdAtencao"><div class="l">Precisam de atenção</div><div class="v">${atencao.length}</div><div class="s">${atencao.length?'alertas, atrasos e antigos':'tudo em dia'}</div></div>
+      <div class="gd-kpi" data-gdgo="board"><div class="l">SDA a pagar</div><div class="v">${sdaPagar}</div><div class="s">processos com SDA pendente</div></div>
+      <div class="gd-kpi" data-gdopen="${maisAntigo?maisAntigo.id:''}"><div class="l">Mais antigo em aberto</div><div class="v">${maisAntigo?gdIdade(maisAntigo):0}<span style="font-size:15px;font-weight:700;"> dias</span></div><div class="s">${maisAntigo?esc(maisAntigo.codigo)+' · '+esc(nome(maisAntigo)):'—'}</div></div>
+    </div>
+
+    <div class="gd-grid">
+      <div class="gd-main">
+        <div class="gd-card main">
+          <h3>🕒 Agenda de desembaraço</h3>
+          <div class="hint">Processos aguardando desembaraço, por horário. Clique para abrir.</div>
+          ${desemb.length ? desemb.map(linhaDesemb).join('') : '<div class="gd-empty">Nenhum processo aguardando desembaraço agora. 🎉</div>'}
+        </div>
+
+        <div class="gd-card" id="gdAtencao">
+          <h3>⚠ Fila de atenção</h3>
+          <div class="hint">Alertas ativos, lembretes vencidos e processos abertos há 10+ dias.</div>
+          ${atencao.length ? atencao.slice(0,8).map(({p,motivos})=>`
+            <div class="gd-row" data-gdopen="${p.id}" style="cursor:pointer;grid-template-columns:minmax(0,1fr) auto;">
+              <div><div class="gd-code">${esc(p.codigo)||'—'} <span class="gd-cli">· ${esc(nome(p))}</span></div>
+                   <div class="gd-cli" style="font-weight:500;">${esc(statusDescription(p))}${p.observacao?' — '+esc(p.observacao):''}</div></div>
+              <div class="gd-reasons">${motivos.map(m=>`<span class="gd-chip ${m.c}">${esc(m.t)}</span>`).join('')}</div>
+            </div>`).join('') + (atencao.length>8?`<div class="gd-empty">+ ${atencao.length-8} outros — veja no quadro de processos.</div>`:'')
+          : '<div class="gd-empty">Nada exigindo atenção. ✅</div>'}
+        </div>
+
+        <div class="gd-card">
+          <h3>📊 Processos por etapa</h3>
+          <div class="hint">Onde estão os ${ativos.length} processos em aberto. Clique para ir ao quadro.</div>
+          ${porEtapa.map(({st,n})=>`<div class="gd-bar" data-gdgo="board"><div class="gd-bar-l" title="${escAttr(st.label)}"><i style="background:${escAttr(st.color)}"></i>${esc(st.label)}</div><div class="gd-bar-t"><b style="width:${Math.round(n/maxN*100)}%;background:${escAttr(st.color)};${n?'':'opacity:.25;'}"></b></div><div class="gd-bar-n">${n}</div></div>`).join('')}
+        </div>
+      </div>
+
+      <div class="gd-side">
+        <div class="gd-card">
+          <h3>📦 Retirada documental</h3>
+          <div class="hint">Documentos originais</div>
+          <div class="gd-mini">
+            <button data-gdrd="AGUARDANDO_RETIRADA"><b>${rdAguard}</b><span>Aguardando retirada</span></button>
+            <button data-gdrd="RETIRADO"><b>${rdTrans}</b><span>Em trânsito</span></button>
+            <button data-gdrd="EM_ELABORACAO"><b>${rdElab}</b><span>Em elaboração</span></button>
+            <button data-gdrd="A_CAMINHO"><b>${rdCam}</b><span>A caminho do cliente</span></button>
+          </div>
+          <div class="hint" style="margin:10px 0 0;">${rdEntSemana} entregue${rdEntSemana===1?'':'s'} nos últimos 7 dias${rdParados?` · <b style="color:var(--red-text)">${rdParados} parado${rdParados===1?'':'s'} há 5+ dias</b>`:''}</div>
+        </div>
+
+        <div class="gd-card">
+          <h3>🧩 Extras</h3>
+          <div class="gd-list">
+            <div class="gd-li" data-gdgo="ex-vcp"><span>Consultas de carga respondidas</span><span class="gd-chip ${vcpC?'today':'none'}">${vcpC}</span></div>
+            <div class="gd-li" data-gdgo="ex-madeira"><span>Verifica madeira respondidos</span><span class="gd-chip ${vcpM?'today':'none'}">${vcpM}</span></div>
+            <div class="gd-li" onclick="document.getElementById('notesFab').click()"><span>Notas em aberto</span><span class="gd-chip ${notasAbertas?'amber':'none'}">${notasAbertas}</span></div>
+          </div>
+        </div>
+
+        <div class="gd-card">
+          <h3>🏢 Clientes com mais processos</h3>
+          <div class="gd-list">${topCli.length?topCli.map(([n,q])=>`<div class="gd-li" data-gdgo="board"><span>${esc(n)}</span><b>${q}</b></div>`).join(''):'<div class="gd-empty">—</div>'}</div>
+        </div>
+
+        <div class="gd-card">
+          <h3>⏳ Mais antigos em aberto</h3>
+          <div class="gd-list">${antigos.length?antigos.map(p=>`<div class="gd-li" data-gdopen="${p.id}"><span>${esc(p.codigo)} · ${esc(nome(p))}</span><span class="gd-chip ${gdIdade(p)>=10?'amber':'none'}">${gdIdade(p)} d</span></div>`).join(''):'<div class="gd-empty">—</div>'}</div>
+        </div>
+      </div>
+    </div>`;
+
+  box.querySelectorAll('[data-gdopen]').forEach(el=>el.addEventListener('click', ()=>{ if(el.dataset.gdopen) openProcessModal(el.dataset.gdopen); }));
+  box.querySelectorAll('[data-gdgo]').forEach(el=>el.addEventListener('click', ()=>gdGo(el.dataset.gdgo)));
+  box.querySelectorAll('[data-gdrd]').forEach(el=>el.addEventListener('click', ()=>gdRdAbrir(el.dataset.gdrd)));
+  box.querySelectorAll('[data-gdscroll]').forEach(el=>el.addEventListener('click', ()=>{ const t=document.getElementById(el.dataset.gdscroll); if(t) t.scrollIntoView({behavior:'smooth',block:'start'}); }));
+}
+document.getElementById('gdNovo').addEventListener('click', ()=>openProcessModal(null));
+document.getElementById('gdRefresh').addEventListener('click', ()=>{ renderGeral(); try{ rdAtualizarRastreios(false); }catch(e){} toast('Atualizado.'); });
+setInterval(()=>{ const v=document.getElementById('view-geral'); if(v && v.style.display!=='none') renderGeral(); }, 60000);
 
 (function(){
   const dr=document.getElementById('notesDrawer');
