@@ -3289,7 +3289,7 @@ function openRDTrackModal(id){
       <div style="border-left:3px solid var(--gold);padding:2px 0 2px 10px;">
         <div style="font-weight:600;font-size:13px;">${esc(e.desc)}</div>
         <div class="muted small">${e.data?new Date(e.data).toLocaleString('pt-BR'):''}${e.local?' · '+esc(e.local):''}</div>
-      </div>`).join('')}</div>` : `<div class="muted small">${esc(p.rastreioStatus||'Ainda sem eventos dos Correios. Clique em "Atualizar rastreios".')}</div>`}`;
+      </div>`).join('')}</div>` : `<div class="muted small">${esc((/^HTTP \d+|^Resposta sem|^Error|^Exception/i.test(p.rastreioStatus||'') ? '' : p.rastreioStatus) || (rdTrackLastError ? 'Consulta automática indisponível: ' + rdTrackLastError : 'Ainda sem eventos dos Correios. Clique em "Atualizar rastreios".'))}</div>`}`;
   rdTrackOverlay.classList.add('show');
 }
 document.getElementById('btnRDTrackFechar').addEventListener('click', ()=>rdTrackOverlay.classList.remove('show'));
