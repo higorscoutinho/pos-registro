@@ -3264,7 +3264,7 @@ async function rdAtualizarRastreios(force){
       });
     }
     rdTrackLastRun = new Date().toISOString();
-    if(falhas) rdTrackLastError = (/HTTP 40[13]/.test(primeiraFalha) ? 'Os Correios bloquearam a consulta gratuita automática (HTTP 403). ' : '') + `${falhas} falha(s) — ${primeiraFalha}`;
+    if(falhas) rdTrackLastError = `${falhas} falha(s) — ${primeiraFalha}`;
     persist();
     if(entregues) toast(`${entregues} envio(s) entregue(s) — foram para Finalizados.`);
   }catch(err){
