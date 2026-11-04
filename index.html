@@ -1105,6 +1105,7 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
 /* ============ CONFIG ============ */
 const STORAGE_KEY = 'posRegistroSVSLOG_v1';
@@ -4183,13 +4184,13 @@ async function fatPegarPasta(forcarNova){
     if(!fatRootHandle) fatRootHandle = await fatIdbGet();
     if(fatRootHandle){
       try{
-        let perm = await fatRootHandle.queryPermission({mode:'read'});
-        if(perm!=='granted') perm = await fatRootHandle.requestPermission({mode:'read'});
+        let perm = await fatRootHandle.queryPermission({mode:'readwrite'});
+        if(perm!=='granted') perm = await fatRootHandle.requestPermission({mode:'readwrite'});
         if(perm==='granted') return fatRootHandle;
       }catch(e){}
     }
   }
-  fatRootHandle = await window.showDirectoryPicker({id:'pr-processos', mode:'read'});
+  fatRootHandle = await window.showDirectoryPicker({id:'pr-processos', mode:'readwrite'});
   fatIdbSet(fatRootHandle);
   return fatRootHandle;
 }
@@ -4235,15 +4236,101 @@ async function fatBuscarDocs(forcarNova){
       docs.push({nome:n, handle:h, cat:i.cat, ord:i.ord, role:i.role, inc:!i.excl, excl:i.excl});
     }
     docs.sort((a,b)=>a.ord-b.ord || a.role-b.role || a.nome.localeCompare(b.nome,'pt'));
-    fat.docs = docs; fat.docsMsg = docs.length ? ('Pasta: '+pasta.name+' › FATURAMENTO') : 'A pasta FATURAMENTO está vazia.';
+    fat.docsDir = fd;
+    fat.docsMsg = 'Lendo o conteúdo dos documentos para conferir os valores…'; fat.docs = docs; fatRender();
+    for(const d of docs){ await fatLerDoc(d); }
+    fat.docsMsg = docs.length ? ('Pasta: '+pasta.name+' › FATURAMENTO') : 'A pasta FATURAMENTO está vazia.';
   }catch(err){ fat.docsMsg = (err && err.name==='AbortError') ? 'Seleção de pasta cancelada.' : ('Erro: '+(err.message||err)); }
   fatRender();
 }
-async function fatGerarPdf(){
-  if(typeof PDFLib==='undefined'){ toast('Biblioteca de PDF não carregou. Verifique a internet e recarregue.'); return; }
+let __pdfjsOk = null;
+async function fatPdfjsInit(){
+  if(__pdfjsOk!==null) return __pdfjsOk;
+  try{
+    if(typeof pdfjsLib==='undefined') return (__pdfjsOk=false);
+    const url = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    try{ const t = await (await fetch(url)).text(); pdfjsLib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob([t],{type:'application/javascript'})); }
+    catch(e){ pdfjsLib.GlobalWorkerOptions.workerSrc = url; }
+    __pdfjsOk = true;
+  }catch(e){ __pdfjsOk = false; }
+  return __pdfjsOk;
+}
+async function fatLerDoc(d){
+  d.texto = ''; d.valores = new Set(); d.datas = new Set(); d.legivel = false;
+  try{
+    if(!/\.pdf$/i.test(d.nome) || !(await fatPdfjsInit())) return;
+    const bytes = await (await d.handle.getFile()).arrayBuffer();
+    const doc = await pdfjsLib.getDocument({data:new Uint8Array(bytes)}).promise;
+    let t = '';
+    for(let i=1;i<=Math.min(doc.numPages,15);i++){ const pg = await doc.getPage(i); const c = await pg.getTextContent(); t += c.items.map(x=>x.str).join(' ')+'\n'; }
+    d.texto = t;
+    (t.match(/(?:\d{1,3}(?:\.\d{3})+|\d+),\d{2}(?!\d)/g)||[]).forEach(v=>d.valores.add(Math.round(fatNum(v)*100)));
+    (t.match(/\d{2}\/\d{2}\/\d{4}/g)||[]).forEach(x=>d.datas.add(x));
+    d.legivel = t.replace(/\s/g,'').length > 30 && d.valores.size > 0;
+  }catch(e){ d.legivel = false; }
+}
+function fatFamilia(cat){
+  const c = fatNorm(cat);
+  if(/^armazenagem/.test(c) && !/remo/.test(c)) return 'ARMAZENAGEM';
+  if(/^icms/.test(c)) return 'ICMS';
+  if(c==='ii'||c==='ipi'||c==='impostos federais'||c==='tela de debito') return 'FEDERAIS';
+  if(/^transporte/.test(c)) return /remo/.test(c)?'TRANSPORTE REMOÇÃO':'TRANSPORTE NACIONAL';
+  return cat;
+}
+function fatParecido(alvo, docs){ // dígitos trocados (mesmos dígitos, valor diferente)
+  const dig = n => String(n).split('').sort().join('');
+  for(const d of docs) for(const v of d.valores){ if(v!==alvo && dig(v)===dig(alvo)) return v/100; }
+  return null;
+}
+function fatConferir(){
+  const out = [];
+  if(!fat.docs) return out;
+  const docs = fat.docs.filter(d=>d.inc);
+  const grupos = {};
+  fat.linhas.filter(l=>l.inc && !['HONORÁRIO','Cadastro de produto no catálogo'].includes(l.cat)).forEach(l=>{
+    if(l.cat==='OUTROS') return;
+    const f = fatFamilia(l.cat); (grupos[f] = grupos[f] || []).push(l);
+  });
+  Object.keys(grupos).forEach(f=>{
+    const ls = grupos[f], T = Math.round(ls.reduce((s,l)=>s+fatNum(l.valor),0)*100);
+    const dd = docs.filter(d=>fatFamilia(d.cat)===f);
+    const msgs = []; let st = 'ok';
+    const pior = s => { if(s==='warn') st='warn'; else if(s==='info' && st==='ok') st='info'; };
+    if(!dd.length){ out.push({cat:f, total:T/100, st:'warn', msgs:['sem documento deste item na pasta (boleto/comprovante)']}); return; }
+    const ilegiveis = dd.filter(d=>!d.legivel);
+    if(ilegiveis.length){ msgs.push('não consegui ler: '+ilegiveis.map(d=>d.nome).join(', ')+' (PDF escaneado/imagem) — conferir manualmente'); pior('info'); }
+    const leg = dd.filter(d=>d.legivel);
+    const totalOk = d => d.valores.has(T) || ls.every(l=>d.valores.has(Math.round(fatNum(l.valor)*100)));
+    const comps = leg.filter(d=>d.role===2 || d.cat==='Tela de Débito'), bol = leg.filter(d=>d.role===0);
+    const rotulo = f==='FEDERAIS' ? 'na Tela de Débito' : 'no comprovante';
+    if(comps.length){
+      if(comps.some(totalOk)) msgs.push('valor R$ '+fatBR(T/100)+' confere '+rotulo);
+      else {
+        const faltam = ls.filter(l=>!comps.some(d=>d.valores.has(Math.round(fatNum(l.valor)*100))));
+        const par = fatParecido(T, comps) ?? (faltam.length===1 ? fatParecido(Math.round(fatNum(faltam[0].valor)*100), comps) : null);
+        msgs.push('valor R$ '+fatBR(T/100)+' do Sicoex NÃO aparece '+rotulo+(par?' — há R$ '+fatBR(par)+' (dígitos trocados?)':''));
+        pior('warn');
+      }
+    } else if(f!=='FEDERAIS'){ msgs.push('sem comprovante legível na pasta'); pior('info'); }
+    if(bol.length && !bol.some(totalOk)){
+      msgs.push('boleto não tem R$ '+fatBR(T/100)+' (pode ter juros/multa — confira)'); pior(comps.length && comps.some(totalOk) ? 'info' : 'warn');
+    }
+    const datasPag = ls.map(l=>l.pag).filter(Boolean);
+    comps.filter(d=>d.datas.size).forEach(d=>{ datasPag.forEach(p=>{ if(!d.datas.has(p) && !msgs.some(m=>m.includes('data '+p))){ msgs.push('data '+p+' do Sicoex não aparece em '+d.nome); pior('info'); } }); });
+    out.push({cat:f, total:T/100, st, msgs});
+  });
+  return out;
+}
+function fatConferHtml(){
+  const c = fatConferir(); if(!c.length) return '';
+  const ic = {ok:'✅', warn:'⚠️', info:'ℹ️'};
+  return `<div class="fat-sec" style="margin-top:12px;">Conferência de valores <span>cruza o Sicoex com o texto dos PDFs</span></div>
+  <table class="fat-t">${c.map(r=>`<tr><td style="width:28px">${ic[r.st]}</td><td><b>${esc(r.cat)}</b> · R$ ${fatBR(r.total)}</td><td><small>${r.msgs.map(esc).join('<br>')}</small></td></tr>`).join('')}</table>`;
+}
+async function fatMontarPdf(){
+  if(typeof PDFLib==='undefined') throw new Error('Biblioteca de PDF não carregou. Verifique a internet e recarregue.');
   const sel = (fat.docs||[]).filter(d=>d.inc);
-  if(!sel.length){ toast('Marque ao menos um documento.'); return; }
-  fat.docsMsg = 'Juntando '+sel.length+' arquivo(s)…'; fatRender();
+  if(!sel.length) throw new Error('Marque ao menos um documento.');
   const {PDFDocument} = PDFLib, out = await PDFDocument.create(), falhas = [];
   for(const d of sel){
     try{
@@ -4258,12 +4345,63 @@ async function fatGerarPdf(){
       }
     }catch(e){ falhas.push(d.nome+' ('+(e.message||e)+')'); }
   }
-  const pdf = await out.save();
-  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([pdf],{type:'application/pdf'}));
-  a.download = 'TODOS OS DOCUMENTOS - '+fat.p.codigo+'.pdf'; document.body.appendChild(a); a.click();
-  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1500);
-  fat.docsMsg = 'PDF gerado com '+out.getPageCount()+' página(s).'+(falhas.length?' ⚠ Não consegui ler: '+falhas.join('; '):'');
+  return {bytes: await out.save(), paginas: out.getPageCount(), falhas};
+}
+async function fatSalvarPdfNaPasta(bytes){
+  const nome = 'TODOS OS DOCUMENTOS - '+fat.p.codigo+'.pdf';
+  try{
+    if(!fat.docsDir) throw new Error('sem pasta');
+    const fh = await fat.docsDir.getFileHandle(nome, {create:true});
+    const w = await fh.createWritable(); await w.write(bytes); await w.close();
+    return {ok:true, nome};
+  }catch(e){
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([bytes],{type:'application/pdf'})); a.download = nome; document.body.appendChild(a); a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1500);
+    return {ok:false, nome, erro:(e&&e.message)||String(e)};
+  }
+}
+async function fatGerarPdf(){
+  fat.docsMsg = 'Juntando os arquivos…'; fatRender();
+  try{
+    const r = await fatMontarPdf();
+    const s = await fatSalvarPdfNaPasta(r.bytes);
+    fat.docsMsg = 'PDF com '+r.paginas+' página(s) '+(s.ok?'salvo na pasta FATURAMENTO ('+s.nome+').':'baixado (não consegui gravar na pasta: '+s.erro+').')+(r.falhas.length?' ⚠ Não consegui ler: '+r.falhas.join('; '):'');
+  }catch(e){ fat.docsMsg = 'Erro: '+(e.message||e); }
   fatRender();
+}
+const FAT_EMAIL_PARA = 'Vidotti', FAT_EMAIL_CC = 'Aline, Adria, Andrei, Pedro e você (higor@svslog.com.br)';
+async function fatEnviar(){
+  if(fat.enviando || fat.enviado) return;
+  const fin = fatFinal(fat);
+  if(!fin.linhas.length){ toast('A planilha está vazia.'); return; }
+  const conf = fatConferir().filter(r=>r.st==='warn');
+  const pend = fin.avisos.length + conf.length;
+  const txt = 'Enviar o faturamento '+fat.p.codigo+' ('+(fat.client?fat.client.nome:'')+') para '+FAT_EMAIL_PARA+', com cópia para '+FAT_EMAIL_CC+'?\n\nVai com a planilha no corpo do e-mail e o PDF TODOS OS DOCUMENTOS anexo. Se o envio der certo, o processo vai para "Aguardando Vidotti conferir".'+(pend?'\n\n⚠ Ainda há '+pend+' ponto(s) de atenção na tela. Enviar mesmo assim?':'');
+  if(!confirm(txt)) return;
+  fat.enviando = true; fat.docsMsg = 'Montando o PDF e enviando…'; fatRender();
+  try{
+    const r = await fatMontarPdf();
+    const s = await fatSalvarPdfNaPasta(r.bytes);
+    const b64 = await new Promise(res=>{ const fr=new FileReader(); fr.onload=()=>res(String(fr.result).split(',')[1]); fr.readAsDataURL(new Blob([r.bytes])); });
+    const total = fin.linhas.reduce((a,l)=>a+l.valor,0);
+    const resp = await fetch(API_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({
+      action:'enviarFaturamento', ref:String(fat.p.codigo), cliente:(fat.client?fat.client.nome:''),
+      linhas: fin.linhas.map(l=>({nome:l.nome, valor:'R$ '+fatBR(l.valor), data: l.data? fatDataTxt(l.data) : 'N/A'})),
+      total:'R$ '+fatBR(total), pdfNome:'TODOS OS DOCUMENTOS.PDF', pdfBase64:b64 })});
+    const j = await resp.json();
+    if(!j || !j.ok) throw new Error((j && j.error) || 'o servidor não confirmou o envio');
+    const p = fat.p;
+    p.status = 'vidotti'; p.statusDesde = new Date().toISOString();
+    const irm = state.processes.filter(x=>x.status==='vidotti' && x.id!==p.id);
+    p.order = irm.length ? Math.max(...irm.map(x=>x.order||0))+1 : 0;
+    save();
+    fat.enviado = true;
+    fat.docsMsg = '✅ E-mail enviado para o Vidotti (cópia: Aline, Adria, Andrei, Pedro e você). Status alterado para "Aguardando Vidotti conferir".'+(s.ok?' PDF salvo na pasta FATURAMENTO.':' (PDF baixado — não consegui gravar na pasta.)');
+    toast('E-mail enviado ao Vidotti ✔ — status alterado');
+  }catch(e){
+    fat.docsMsg = '❌ Não consegui confirmar o envio: '+(e.message||e)+'. O status NÃO foi alterado. Se tiver dúvida, olhe em "Enviados" antes de tentar de novo.';
+  }
+  fat.enviando = false; fatRender();
 }
 document.getElementById('fatBody').addEventListener('click', e=>{
   const t = e.target.closest('[data-docact]'); if(!t || !fat) return;
@@ -4271,6 +4409,7 @@ document.getElementById('fatBody').addEventListener('click', e=>{
   if(a==='buscar') fatBuscarDocs(false);
   else if(a==='trocar') fatBuscarDocs(true);
   else if(a==='pdf') fatGerarPdf();
+  else if(a==='enviar') fatEnviar();
   else if((a==='up'&&i>0) || (a==='down'&&i<fat.docs.length-1)){ const j = a==='up'?i-1:i+1; [fat.docs[i],fat.docs[j]]=[fat.docs[j],fat.docs[i]]; fatRender(); }
 });
 document.getElementById('fatBody').addEventListener('change', e=>{
@@ -4290,7 +4429,9 @@ function fatDocsHtml(){
     <button class="btn" data-docact="buscar">📂 ${docs?'Buscar de novo':'Buscar documentos no PC'}</button>
     <button class="btn btn-ghost" data-docact="trocar">Trocar pasta</button>
     ${docs?'<button class="btn btn-gold" data-docact="pdf">Gerar PDF TODOS OS DOCUMENTOS</button>':''}
-  </div>`;
+    ${docs?`<button class="btn btn-gold" data-docact="enviar" ${(fat.enviando||fat.enviado)?'disabled':''} title="Envia ao Vidotti e muda o status">${fat.enviado?'✓ Enviado ao Vidotti':'✉ Enviar ao Vidotti'}</button>`:''}
+  </div>
+  ${fatConferHtml()}`;
 }
 
 init();
