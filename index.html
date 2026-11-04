@@ -1104,6 +1104,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script>
 /* ============ CONFIG ============ */
 const STORAGE_KEY = 'posRegistroSVSLOG_v1';
@@ -4002,7 +4003,7 @@ function fatCalcHon(f){
 async function openFaturar(id){
   const p = state.processes.find(x=>x.id===id); if(!p) return;
   const client = clientById(p.clienteId);
-  fat = {p, client, linhas:[], solic:{}, honValor:'', va:'', tipo:'', receitasHon:[], carregando:true, erro:''};
+  fat = {p, client, linhas:[], solic:{}, honValor:'', va:'', tipo:'', receitasHon:[], carregando:true, erro:'', docs:null, docsMsg:''};
   fatOverlay.classList.add('show');
   fatRender();
   try{
@@ -4058,7 +4059,7 @@ function fatRender(){
       <tr class="tot"><td>TOTAL DO PROCESSO</td><td style="text-align:right">R$ ${fatBR(total)}</td><td></td>${cms?'<td></td>':''}</tr>
     </table>
     ${fin.avisos.length?'<div class="fat-av">⚠ '+fin.avisos.map(esc).join('<br>⚠ ')+'</div>':'<div class="fat-ok">✓ Nenhum ponto de atenção.</div>'}
-    <div class="fat-hint" style="margin-top:8px;">Os documentos (boletos/comprovantes) e o PDF "TODOS OS DOCUMENTOS" entram na próxima etapa.</div>`;
+    ${fatDocsHtml()}`;
 }
 
 document.getElementById('fatBody').addEventListener('input', e=>{
@@ -4169,6 +4170,128 @@ document.getElementById('btnFatLimpar').addEventListener('click', ()=>{ fatBatch
 document.getElementById('btnFatFechar').addEventListener('click', ()=>fatOverlay.classList.remove('show'));
 fatOverlay.addEventListener('click', e=>{ if(e.target===fatOverlay && __mdTarget===fatOverlay) fatOverlay.classList.remove('show'); });
 document.getElementById('btnFaturarProcess').addEventListener('click', ()=>{ const id = document.getElementById('p_id').value; if(!id) return; processOverlay.classList.remove('show'); openFaturar(id); });
+
+/* ---- documentos do processo (pasta FATURAMENTO no PC) -> PDF "TODOS OS DOCUMENTOS" ---- */
+let fatRootHandle = null;
+function fatIdb(){ return new Promise((res,rej)=>{ const r=indexedDB.open('pr_fat',1); r.onupgradeneeded=()=>r.result.createObjectStore('h'); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+async function fatIdbGet(){ try{ const db=await fatIdb(); return await new Promise(res=>{ const q=db.transaction('h').objectStore('h').get('root'); q.onsuccess=()=>res(q.result||null); q.onerror=()=>res(null); }); }catch(e){ return null; } }
+async function fatIdbSet(h){ try{ const db=await fatIdb(); db.transaction('h','readwrite').objectStore('h').put(h,'root'); }catch(e){} }
+
+async function fatPegarPasta(forcarNova){
+  if(typeof window.showDirectoryPicker!=='function') throw new Error('Este navegador não deixa ler pastas. Use o Chrome ou o Edge no computador.');
+  if(!forcarNova){
+    if(!fatRootHandle) fatRootHandle = await fatIdbGet();
+    if(fatRootHandle){
+      try{
+        let perm = await fatRootHandle.queryPermission({mode:'read'});
+        if(perm!=='granted') perm = await fatRootHandle.requestPermission({mode:'read'});
+        if(perm==='granted') return fatRootHandle;
+      }catch(e){}
+    }
+  }
+  fatRootHandle = await window.showDirectoryPicker({id:'pr-processos', mode:'read'});
+  fatIdbSet(fatRootHandle);
+  return fatRootHandle;
+}
+async function fatAchaPastaProcesso(dir, ref, nivel){
+  const re = new RegExp('^'+String(ref).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'(?!\\d)');
+  const subs = [];
+  for await (const [nome,h] of dir.entries()){ if(h.kind==='directory') subs.push([nome,h]); }
+  const hit = subs.find(([n])=>re.test(n.trim()));
+  if(hit) return hit[1];
+  if(nivel>=3) return null;
+  // pastas de mês "10 - OUTUBRO - de 14119 até": entra só na do intervalo certo
+  const meses = subs.map(([n,h])=>({n,h,ini:(n.match(/de\s+(\d+)\s+at[eé]/i)||[])[1]})).filter(x=>x.ini);
+  let cand = subs.map(([n,h])=>h);
+  if(meses.length){
+    const ok = meses.filter(x=>+x.ini<=+ref).sort((a,b)=>b.ini-a.ini);
+    cand = ok.length ? [ok[0].h] : meses.map(x=>x.h);
+  } else if(nivel>=1) { cand = subs.map(([n,h])=>h); }
+  for(const h of cand){ const r = await fatAchaPastaProcesso(h, ref, nivel+1); if(r) return r; }
+  return null;
+}
+function fatDocInfo(nome){
+  const n = fatNorm(nome);
+  const role = /pagto|pagamento|comprovante|pago\b/.test(n) ? 2 : (/boleto|dare|darf|guia|fatura/.test(n) ? 0 : 1);
+  let ord, cat;
+  if(/tela de debito/.test(n)){ cat='Tela de Débito'; ord=1000; }
+  else { cat = fatClassificar(n.replace(/\.[a-z0-9]+$/,''), '', false); if(cat==='__CREDITO') cat='Devolução'; ord = (cat==='OUTROS'||cat==='Devolução') ? 500 : (cat==='AFRMM' ? 999 : FAT_CATS.indexOf(cat)); }
+  const excl = /todos os documentos|demonstrativo|nota fiscal|(^|[^a-z])nf([^a-z]|$)|print|captura|screenshot|devolu/.test(n);
+  return {cat, ord, role, excl};
+}
+async function fatBuscarDocs(forcarNova){
+  fat.docsMsg = 'Procurando a pasta do processo…'; fat.docs = null; fatRender();
+  try{
+    const root = await fatPegarPasta(forcarNova);
+    const pasta = await fatAchaPastaProcesso(root, String(fat.p.codigo).trim(), 0);
+    if(!pasta){ fat.docsMsg = 'Não achei a pasta do processo '+fat.p.codigo+' dentro de "'+root.name+'". Escolha a pasta "Processos" (ou a do ano) em "Trocar pasta".'; fatRender(); return; }
+    let fd = null;
+    for await (const [n,h] of pasta.entries()){ if(h.kind==='directory' && /^faturamento$/i.test(n.trim())) fd = h; }
+    if(!fd){ fat.docsMsg = 'A pasta '+pasta.name+' não tem a subpasta FATURAMENTO.'; fatRender(); return; }
+    const docs = [];
+    for await (const [n,h] of fd.entries()){
+      if(h.kind!=='file' || !/\.(pdf|jpe?g|png)$/i.test(n)) continue;
+      const i = fatDocInfo(n);
+      docs.push({nome:n, handle:h, cat:i.cat, ord:i.ord, role:i.role, inc:!i.excl, excl:i.excl});
+    }
+    docs.sort((a,b)=>a.ord-b.ord || a.role-b.role || a.nome.localeCompare(b.nome,'pt'));
+    fat.docs = docs; fat.docsMsg = docs.length ? ('Pasta: '+pasta.name+' › FATURAMENTO') : 'A pasta FATURAMENTO está vazia.';
+  }catch(err){ fat.docsMsg = (err && err.name==='AbortError') ? 'Seleção de pasta cancelada.' : ('Erro: '+(err.message||err)); }
+  fatRender();
+}
+async function fatGerarPdf(){
+  if(typeof PDFLib==='undefined'){ toast('Biblioteca de PDF não carregou. Verifique a internet e recarregue.'); return; }
+  const sel = (fat.docs||[]).filter(d=>d.inc);
+  if(!sel.length){ toast('Marque ao menos um documento.'); return; }
+  fat.docsMsg = 'Juntando '+sel.length+' arquivo(s)…'; fatRender();
+  const {PDFDocument} = PDFLib, out = await PDFDocument.create(), falhas = [];
+  for(const d of sel){
+    try{
+      const bytes = await (await d.handle.getFile()).arrayBuffer();
+      if(/\.pdf$/i.test(d.nome)){
+        const src = await PDFDocument.load(bytes, {ignoreEncryption:true});
+        (await out.copyPages(src, src.getPageIndices())).forEach(pg=>out.addPage(pg));
+      } else {
+        const img = /\.png$/i.test(d.nome) ? await out.embedPng(bytes) : await out.embedJpg(bytes);
+        const W=595.28, H=841.89, k=Math.min((W-40)/img.width,(H-40)/img.height,1), w=img.width*k, h=img.height*k;
+        out.addPage([W,H]).drawImage(img,{x:(W-w)/2,y:(H-h)/2,width:w,height:h});
+      }
+    }catch(e){ falhas.push(d.nome+' ('+(e.message||e)+')'); }
+  }
+  const pdf = await out.save();
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([pdf],{type:'application/pdf'}));
+  a.download = 'TODOS OS DOCUMENTOS - '+fat.p.codigo+'.pdf'; document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1500);
+  fat.docsMsg = 'PDF gerado com '+out.getPageCount()+' página(s).'+(falhas.length?' ⚠ Não consegui ler: '+falhas.join('; '):'');
+  fatRender();
+}
+document.getElementById('fatBody').addEventListener('click', e=>{
+  const t = e.target.closest('[data-docact]'); if(!t || !fat) return;
+  const a = t.dataset.docact, i = +t.dataset.i;
+  if(a==='buscar') fatBuscarDocs(false);
+  else if(a==='trocar') fatBuscarDocs(true);
+  else if(a==='pdf') fatGerarPdf();
+  else if((a==='up'&&i>0) || (a==='down'&&i<fat.docs.length-1)){ const j = a==='up'?i-1:i+1; [fat.docs[i],fat.docs[j]]=[fat.docs[j],fat.docs[i]]; fatRender(); }
+});
+document.getElementById('fatBody').addEventListener('change', e=>{
+  const t = e.target; if(!fat || t.dataset.doci===undefined) return;
+  fat.docs[+t.dataset.doci].inc = t.checked; fatRender();
+});
+function fatDocsHtml(){
+  const docs = fat.docs;
+  return `<div class="fat-sec">4. Documentos <span>boleto → comprovante, AFRMM e Tela de Débito por último</span></div>
+  <div class="fat-hint" style="margin-bottom:6px;">${esc(fat.docsMsg||'')}</div>
+  ${docs ? `<div class="fat-scroll" style="max-height:240px;"><table class="fat-t">
+    ${docs.map((d,i)=>`<tr class="${d.inc?'':'off'}"><td><input type="checkbox" data-doci="${i}" ${d.inc?'checked':''}></td>
+      <td>${esc(d.nome)}${d.excl?' <small>(fora por padrão)</small>':''}</td><td><small>${esc(d.cat)}</small></td>
+      <td style="white-space:nowrap"><button class="btn btn-sm btn-ghost" data-docact="up" data-i="${i}">↑</button><button class="btn btn-sm btn-ghost" data-docact="down" data-i="${i}">↓</button></td></tr>`).join('')}
+  </table></div>` : ''}
+  <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+    <button class="btn" data-docact="buscar">📂 ${docs?'Buscar de novo':'Buscar documentos no PC'}</button>
+    <button class="btn btn-ghost" data-docact="trocar">Trocar pasta</button>
+    ${docs?'<button class="btn btn-gold" data-docact="pdf">Gerar PDF TODOS OS DOCUMENTOS</button>':''}
+  </div>`;
+}
 
 init();
 initAutoBackup();
