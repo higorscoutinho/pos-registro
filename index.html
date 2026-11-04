@@ -865,6 +865,10 @@
       <select id="c_modalidade"></select>
     </div>
     <div class="field">
+      <label>Responsável pelo cliente (quem fica em cópia no e-mail de faturamento)</label>
+      <select id="c_responsavel"><option value="">— não definido —</option><option value="aline">Cliente da Aline</option><option value="andrei">Cliente do Andrei</option></select>
+    </div>
+    <div class="field">
       <label>Honorário (regra)</label>
       <input id="c_honorario" placeholder="Ex: 1 salário mínimo = R$ 1.621,00">
     </div>
@@ -1213,7 +1217,7 @@ function normalizeState(s){
      etc. Força string nesses campos sempre que o estado é carregado, de
      onde quer que venha (Sheets, localStorage ou backup restaurado). */
   const str = v => (v==null ? '' : String(v));
-  s.clients.forEach(c=>{ c.id = str(c.id); c.nome = str(c.nome); c.modalidade = str(c.modalidade); c.honorario = str(c.honorario||''); c.info = str(c.info||''); });
+  s.clients.forEach(c=>{ c.id = str(c.id); c.nome = str(c.nome); c.modalidade = str(c.modalidade); c.honorario = str(c.honorario||''); c.info = str(c.info||''); c.responsavel = (c.responsavel==='aline'||c.responsavel==='andrei') ? c.responsavel : ''; });
   s.processes.forEach(p=>{
     p.id = str(p.id);
     p.codigo = str(p.codigo);
@@ -1660,7 +1664,7 @@ function renderClients(){
   const q = (document.getElementById('clientSearch')||{value:''}).value.trim().toLowerCase();
   state.clients.slice().filter(c=>!q || c.nome.toLowerCase().includes(q) || (c.info||'').toLowerCase().includes(q)).sort((a,b)=>a.nome.localeCompare(b.nome)).forEach(c=>{
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${esc(c.nome)}${c.info?` <span title="${escAttr(c.info)}" style="cursor:help;color:var(--accent);">ⓘ</span>`:''}</td><td><span class="badge ${sdaBadgeClass(c.modalidade,false)}">${esc(c.modalidade)}</span></td>
+    tr.innerHTML = `<td>${esc(c.nome)}${c.info?` <span title="${escAttr(c.info)}" style="cursor:help;color:var(--accent);">ⓘ</span>`:''}${c.responsavel?` <small style="color:var(--muted);">· ${c.responsavel==='aline'?'Aline':'Andrei'}</small>`:''}</td><td><span class="badge ${sdaBadgeClass(c.modalidade,false)}">${esc(c.modalidade)}</span></td>
       <td style="font-size:12.5px;max-width:420px;">${esc(c.honorario||'')}</td>
       <td>${c.retiraOriginais===false?'Não':'Sim'}</td>
       <td><button class="btn btn-sm btn-ghost" data-edit="${c.id}">Editar</button></td>`;
@@ -1967,6 +1971,7 @@ function openClientModal(id){
   populateSdaSelect(document.getElementById('c_modalidade'), false, c ? c.modalidade : undefined);
   document.getElementById('c_retiraOriginais').value = (c && c.retiraOriginais===false) ? '0' : '1';
   document.getElementById('c_honorario').value = c ? (c.honorario||'') : '';
+  document.getElementById('c_responsavel').value = c ? (c.responsavel||'') : '';
   document.getElementById('c_info').value = c ? (c.info||'') : '';
   document.getElementById('btnDeleteClient').style.display = c ? '' : 'none';
   clientOverlay.classList.add('show');
@@ -1999,7 +2004,7 @@ document.getElementById('btnSaveClient').addEventListener('click', ()=>{
   if(!nome){ toast('Informe o nome do cliente'); return; }
   const id = document.getElementById('c_id').value || uid();
   const existing = state.clients.find(x=>x.id===id);
-  const data = { id, nome, modalidade: document.getElementById('c_modalidade').value, retiraOriginais: document.getElementById('c_retiraOriginais').value==='1', honorario: document.getElementById('c_honorario').value.trim(), info: document.getElementById('c_info').value.trim() };
+  const data = { id, nome, modalidade: document.getElementById('c_modalidade').value, retiraOriginais: document.getElementById('c_retiraOriginais').value==='1', honorario: document.getElementById('c_honorario').value.trim(), responsavel: document.getElementById('c_responsavel').value, info: document.getElementById('c_info').value.trim() };
   if(existing) Object.assign(existing, data);
   else state.clients.push(data);
   clientOverlay.classList.remove('show');
@@ -4010,7 +4015,7 @@ function fatCalcHon(f){
 async function openFaturar(id){
   const p = state.processes.find(x=>x.id===id); if(!p) return;
   const client = clientById(p.clienteId);
-  fat = {p, client, linhas:[], solic:{}, honValor:'', va:'', tipo:'', receitasHon:[], carregando:true, erro:'', docs:null, docsMsg:'', resp: fatRespLer(p.clienteId)};
+  fat = {p, client, linhas:[], solic:{}, honValor:'', va:'', tipo:'', receitasHon:[], carregando:true, erro:'', docs:null, docsMsg:'', resp: (client && client.responsavel) || ''};
   fatOverlay.classList.add('show');
   fatRender();
   try{
@@ -4425,8 +4430,6 @@ async function fatGerarPdf(){
 }
 const FAT_EMAIL_PARA = 'Vidotti';
 const fatCcTxt = r => (r==='aline' ? 'Aline' : 'Andrei')+', Adria, Pedro e você (higor@svslog.com.br)';
-function fatRespLer(cid){ try{ return (JSON.parse(localStorage.getItem('pr_respCli')||'{}'))[cid]||''; }catch(e){ return ''; } }
-function fatRespSalvar(cid,v){ try{ const o=JSON.parse(localStorage.getItem('pr_respCli')||'{}'); o[cid]=v; localStorage.setItem('pr_respCli',JSON.stringify(o)); }catch(e){} }
 async function fatEnviar(){
   if(fat.enviando || fat.enviado) return;
   if(fat.resp!=='aline' && fat.resp!=='andrei'){ toast('Marque antes: Cliente Aline ou Cliente Andrei.'); return; }
@@ -4471,7 +4474,7 @@ document.getElementById('fatBody').addEventListener('click', e=>{
   else if((a==='up'&&i>0) || (a==='down'&&i<fat.docs.length-1)){ const j = a==='up'?i-1:i+1; [fat.docs[i],fat.docs[j]]=[fat.docs[j],fat.docs[i]]; fatRender(); }
 });
 document.getElementById('fatBody').addEventListener('change', e=>{
-  const t = e.target; if(fat && t.name==='fatResp'){ fat.resp = t.value; fatRespSalvar(fat.p.clienteId, t.value); fatRender(); return; }
+  const t = e.target; if(fat && t.name==='fatResp'){ fat.resp = t.value; if(fat.client){ fat.client.responsavel = t.value; persist(); toast('Responsável salvo no cadastro do cliente.'); } fatRender(); return; }
   if(!fat || t.dataset.doci===undefined) return;
   fat.docs[+t.dataset.doci].inc = t.checked; fatRender();
 });
