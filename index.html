@@ -4020,6 +4020,12 @@ async function openFaturar(id){
   }catch(err){ fat.erro = err.message || String(err); }
   fat.carregando = false;
   fatRender();
+  if(!fat.erro){ // se o Chrome já lembra a permissão da pasta, busca os documentos sozinho
+    try{
+      const hd = fatRootHandle || await fatIdbGet();
+      if(hd && (await hd.queryPermission({mode:'readwrite'}))==='granted'){ fatRootHandle = hd; fatBuscarDocs(false); }
+    }catch(e){}
+  }
 }
 
 function fatRender(){
@@ -4239,11 +4245,53 @@ async function fatBuscarDocs(forcarNova){
     fat.docsDir = fd;
     fat.docsMsg = 'Lendo o conteúdo dos documentos para conferir os valores…'; fat.docs = docs; fatRender();
     for(const d of docs){ await fatLerDoc(d); }
+    fatReclassificar(docs);
+    docs.forEach(d=>{ if(d.ord<500){ const k=FAT_CATS.findIndex(c=>fatFamilia(c)===fatFamilia(d.cat)); if(k>=0) d.ord=k; } });
+    docs.sort((a,b)=>a.ord-b.ord || a.role-b.role || a.nome.localeCompare(b.nome,'pt'));
     fat.docsMsg = docs.length ? ('Pasta: '+pasta.name+' › FATURAMENTO') : 'A pasta FATURAMENTO está vazia.';
   }catch(err){ fat.docsMsg = (err && err.name==='AbortError') ? 'Seleção de pasta cancelada.' : ('Erro: '+(err.message||err)); }
   fatRender();
 }
 let __pdfjsOk = null;
+/* quando o nome do arquivo não diz o que é, descobre pelo conteúdo (valores e palavras-chave) */
+function fatReclassificar(docs){
+  const grupos = {};
+  fat.linhas.filter(l=>l.inc && !['HONORÁRIO','Cadastro de produto no catálogo'].includes(l.cat) && l.cat!=='OUTROS').forEach(l=>{ (grupos[fatFamilia(l.cat)] = grupos[fatFamilia(l.cat)] || []).push(l); });
+  const kw = {
+    'ICMS': /icms|\bdare\b|sefaz|fazenda estadual|\bgnre\b/,
+    'ARMAZENAGEM': /armazen|viracopos|\babv\b|libra|terminal|\bdai\b/,
+    'FEDERAIS': /darf|receita federal|siscomex|duimp|declara[cç][aã]o de importa/,
+    'AFRMM': /afrmm|marinha mercante/,
+    'TRANSPORTE NACIONAL': /transport|frete|\bcte\b/
+  };
+  docs.forEach(d=>{
+    if(d.excl || !d.legivel) return;
+    const t = fatNorm(d.texto);
+    // papel: boleto x comprovante
+    if(d.role===1){
+      if(/comprovante|pagamento (efetuado|realizado)|autentica[cç]|efetivad|debito em conta/.test(t)) { d.role = 2; d.porConteudo = true; }
+      else if(/linha digitavel|beneficiario|codigo de barras|ficha de compensa|vencimento/.test(t)) { d.role = 0; d.porConteudo = true; }
+    }
+    if(d.cat!=='OUTROS' && d.cat!=='Devolução') return;
+    if(/tela de debito/.test(t)){ d.cat='Tela de Débito'; d.ord=1000; d.porConteudo=true; return; }
+    // 1) pelos valores: família cujos valores do Sicoex mais aparecem no documento
+    let melhor = null, pts = 0, empate = false;
+    Object.keys(grupos).forEach(f=>{
+      const ls = grupos[f], T = Math.round(ls.reduce((s,l)=>s+fatNum(l.valor),0)*100);
+      let p = d.valores.has(T) ? ls.length + 1 : ls.filter(l=>d.valores.has(Math.round(fatNum(l.valor)*100))).length;
+      if(p>pts){ pts = p; melhor = f; empate = false; } else if(p===pts && p>0) empate = true;
+    });
+    let fam = (melhor && !empate) ? melhor : null;
+    // 2) pelas palavras-chave
+    if(!fam){ const achou = Object.keys(kw).filter(f=>kw[f].test(t)); if(achou.length===1) fam = achou[0]; }
+    if(fam){
+      const l = (grupos[fam]||[])[0];
+      d.cat = l ? l.cat : (fam==='FEDERAIS' ? 'Impostos Federais' : fam);
+      const ix = FAT_CATS.indexOf(d.cat); d.ord = d.cat==='AFRMM' ? 999 : (ix>=0 ? ix : 500);
+      d.porConteudo = true;
+    }
+  });
+}
 async function fatPdfjsInit(){
   if(__pdfjsOk!==null) return __pdfjsOk;
   try{
@@ -4422,7 +4470,7 @@ function fatDocsHtml(){
   <div class="fat-hint" style="margin-bottom:6px;">${esc(fat.docsMsg||'')}</div>
   ${docs ? `<div class="fat-scroll" style="max-height:240px;"><table class="fat-t">
     ${docs.map((d,i)=>`<tr class="${d.inc?'':'off'}"><td><input type="checkbox" data-doci="${i}" ${d.inc?'checked':''}></td>
-      <td>${esc(d.nome)}${d.excl?' <small>(fora por padrão)</small>':''}</td><td><small>${esc(d.cat)}</small></td>
+      <td>${esc(d.nome)}${d.excl?' <small>(fora por padrão)</small>':''}${d.porConteudo?' <small title="O nome do arquivo não dizia o que era; identifiquei pelo conteúdo (valores e palavras do PDF).">🔎 pelo conteúdo</small>':''}</td><td><small>${esc(d.cat)}</small></td>
       <td style="white-space:nowrap"><button class="btn btn-sm btn-ghost" data-docact="up" data-i="${i}">↑</button><button class="btn btn-sm btn-ghost" data-docact="down" data-i="${i}">↓</button></td></tr>`).join('')}
   </table></div>` : ''}
   <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
