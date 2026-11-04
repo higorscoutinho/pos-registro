@@ -557,6 +557,7 @@
           <div class="sub" id="gdSub">Visão dos processos em aberto</div>
         </div>
         <div class="actions">
+          <button class="btn" id="btnLoteAbrir" type="button" title="Planilhas de faturamento já adicionadas ao lote">📑 Lote (<span id="loteN">0</span>)</button>
           <button class="btn" id="gdRefresh" type="button">↻ Atualizar</button>
           <button class="btn btn-gold" id="gdNovo" type="button">+ Novo processo</button>
         </div>
@@ -1065,6 +1066,20 @@
       <button class="btn btn-ghost" id="btnFatFechar">Fechar</button>
       <button class="btn" id="btnFatLote">Adicionar ao lote</button>
       <button class="btn btn-gold" id="btnFatBaixar">Baixar planilha (.xlsx)</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: lote de faturamento -->
+<div class="overlay" id="loteOverlay">
+  <div class="modal" style="max-width:600px;max-height:90vh;display:flex;flex-direction:column;">
+    <h3>📑 Lote de faturamento</h3>
+    <div style="color:var(--muted);font-size:12.5px;margin:-10px 0 10px;">Processos adicionados. Ao baixar, sai <b>uma planilha com uma aba por processo</b>.</div>
+    <div id="loteBody" style="overflow-y:auto;flex:1;"></div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="btnLoteLimpar" style="margin-right:auto;">Limpar lote</button>
+      <button class="btn btn-ghost" id="btnLoteFechar">Fechar</button>
+      <button class="btn btn-gold" id="btnLoteBaixar">Baixar planilha (.xlsx)</button>
     </div>
   </div>
 </div>
@@ -3912,6 +3927,8 @@ const FAT_CATS = ['HONORÁRIO','ICMS','ICMS COMPLEMENTAR','II','IPI','Impostos F
 const FAT_SEM_DATA = ['HONORÁRIO','Cadastro de produto no catálogo'];
 let fat = null;          // processo sendo faturado
 let fatBatch = [];       // planilhas já adicionadas ao lote
+try{ fatBatch = JSON.parse(localStorage.getItem('pr_fatBatch')||'[]').map(s=>{ s.linhas.forEach(l=>{ l.data = l.data? new Date(l.data):null; }); return s; }); }catch(e){ fatBatch = []; }
+function fatSalvaLote(){ try{ localStorage.setItem('pr_fatBatch', JSON.stringify(fatBatch)); }catch(e){} const n=document.getElementById('loteN'); if(n) n.textContent = fatBatch.length; }
 const fatNorm = s => String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
 const fatBR = n => (Number(n)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 function fatNum(s){ if(typeof s==='number') return s; const t=String(s||'').replace(/[^\d,.\-]/g,'').replace(/\./g,'').replace(',','.'); const n=parseFloat(t); return isNaN(n)?0:n; }
@@ -4115,9 +4132,8 @@ function fatAddSheet(wb, s){
   for(let c=1;c<=ncol;c++){ const cell = ws.getCell(tr,c); cell.font = F({bold:true, color:{argb: cms?'FFFFFFFF':'FF000000'}}); cell.border = borda; cell.fill = {type:'pattern',pattern:'solid',fgColor:{argb: cms?'FF404040':'FFDDEBF7'}}; }
   return ws;
 }
-async function fatBaixar(){
+async function fatGerar(lote){
   if(typeof ExcelJS==='undefined'){ toast('Biblioteca de planilha não carregou. Verifique a internet e recarregue.'); return; }
-  const lote = fatBatch.filter(b=>b.ref!==String(fat.p.codigo)).concat(fat.erro||fat.carregando?[]:[fatSnapshot()]);
   if(!lote.length){ toast('Nada para gerar.'); return; }
   const wb = new ExcelJS.Workbook();
   lote.forEach(s=>fatAddSheet(wb,s));
@@ -4128,13 +4144,28 @@ async function fatBaixar(){
   setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1500);
   toast('Planilha gerada: '+nomeArq);
 }
+function fatBaixar(){
+  const lote = fatBatch.filter(b=>b.ref!==String(fat.p.codigo)).concat(fat.erro||fat.carregando?[]:[fatSnapshot()]);
+  return fatGerar(lote);
+}
+function loteRender(){
+  const box = document.getElementById('loteBody');
+  box.innerHTML = fatBatch.length ? fatBatch.map((s,i)=>{ const t=s.linhas.reduce((a,l)=>a+l.valor,0); return `<div class="gd-row" style="grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;"><div><div class="gd-code">${esc(s.ref)}</div><div class="gd-cli">${esc(s.cliente)}</div></div><div style="font-weight:600;">R$ ${fatBR(t)}</div><button class="btn btn-sm btn-ghost" data-loterm="${i}">Remover</button></div>`; }).join('') : '<div class="gd-empty">Lote vazio. Clique em 💲 Faturar num processo e depois em "Adicionar ao lote".</div>';
+}
+document.getElementById('btnLoteAbrir').addEventListener('click', ()=>{ loteRender(); loteOverlay.classList.add('show'); });
+document.getElementById('loteBody').addEventListener('click', e=>{ const b=e.target.closest('[data-loterm]'); if(!b) return; fatBatch.splice(+b.dataset.loterm,1); fatSalvaLote(); loteRender(); });
+document.getElementById('btnLoteLimpar').addEventListener('click', ()=>{ fatBatch=[]; fatSalvaLote(); loteRender(); });
+document.getElementById('btnLoteFechar').addEventListener('click', ()=>loteOverlay.classList.remove('show'));
+document.getElementById('btnLoteBaixar').addEventListener('click', ()=>fatGerar(fatBatch));
+loteOverlay.addEventListener('click', e=>{ if(e.target===loteOverlay && __mdTarget===loteOverlay) loteOverlay.classList.remove('show'); });
+fatSalvaLote();
 document.getElementById('btnFatBaixar').addEventListener('click', fatBaixar);
 document.getElementById('btnFatLote').addEventListener('click', ()=>{
   if(!fat || fat.carregando || fat.erro) return;
-  const s = fatSnapshot(); fatBatch = fatBatch.filter(b=>b.ref!==s.ref); fatBatch.push(s);
-  fatOverlay.classList.remove('show'); toast('Adicionado ao lote ('+fatBatch.length+'). Abra o próximo processo e clique em Faturar.');
+  const s = fatSnapshot(); fatBatch = fatBatch.filter(b=>b.ref!==s.ref); fatBatch.push(s); fatSalvaLote();
+  fatOverlay.classList.remove('show'); toast('Adicionado ao lote ('+fatBatch.length+'). Veja em 📑 Lote, no topo da tela Geral.');
 });
-document.getElementById('btnFatLimpar').addEventListener('click', ()=>{ fatBatch = []; fatRender(); toast('Lote limpo.'); });
+document.getElementById('btnFatLimpar').addEventListener('click', ()=>{ fatBatch = []; fatSalvaLote(); fatRender(); toast('Lote limpo.'); });
 document.getElementById('btnFatFechar').addEventListener('click', ()=>fatOverlay.classList.remove('show'));
 fatOverlay.addEventListener('click', e=>{ if(e.target===fatOverlay && __mdTarget===fatOverlay) fatOverlay.classList.remove('show'); });
 document.getElementById('btnFaturarProcess').addEventListener('click', ()=>{ const id = document.getElementById('p_id').value; if(!id) return; processOverlay.classList.remove('show'); openFaturar(id); });
