@@ -1013,6 +1013,19 @@
   </div>
 </div>
 
+<!-- MODAL: SDA a pagar (Geral) -->
+<div class="overlay" id="sdaOverlay">
+  <div class="modal" style="max-width:760px;max-height:90vh;display:flex;flex-direction:column;">
+    <h3>💳 SDA a pagar</h3>
+    <div class="sub" style="color:var(--muted);font-size:12.5px;margin:-10px 0 10px;">Processos em aberto com SDA pendente. Marque <strong>Pago</strong> para tirar da lista, ou abra o processo.</div>
+    <div id="sdaSummary" style="font-size:13px;font-weight:600;margin-bottom:8px;"></div>
+    <div id="sdaBody" style="overflow-y:auto;flex:1;"></div>
+    <div class="modal-foot">
+      <button class="btn btn-gold" id="btnSdaFechar">Fechar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL: retirada documental — trajeto do rastreio -->
 <div class="overlay" id="rdTrackOverlay">
   <div class="modal" style="max-width:560px;max-height:90vh;display:flex;flex-direction:column;">
@@ -1728,9 +1741,13 @@ function updateSdaAutoLock(){
   const effective = overrideVal || cliMod;
   const sel = document.getElementById('p_sdapago');
   if(effective === 'X'){
+    if(!sel.disabled) sel.dataset.manual = sel.value;   // guarda o que estava marcado antes do bloqueio
     sel.value = '1';
     sel.disabled = true;
+    sel.dataset.auto = '1';
   } else {
+    // saiu de um cliente/modalidade X (pago automático): volta para NÃO pago, nunca herda "pago"
+    if(sel.dataset.auto === '1'){ sel.value = '0'; sel.dataset.auto = ''; }
     sel.disabled = false;
   }
 }
@@ -1740,6 +1757,9 @@ function updateOriginaisLock(){
 }
 
 /* ============ PROCESS MODAL ============ */
+let __mdTarget=null;
+document.addEventListener('mousedown',e=>{ __mdTarget=e.target; },true);
+document.addEventListener('touchstart',e=>{ __mdTarget=e.target; },true);
 const processOverlay = document.getElementById('processOverlay');
 function fillClienteSelect(includeBlank){
   const sel = document.getElementById('p_cliente');
@@ -1781,7 +1801,9 @@ function openProcessModal(id){
   document.getElementById('p_observacao').value = p ? (p.observacao||'') : '';
   document.getElementById('p_lembrete').value = toDatetimeLocal(p ? p.lembreteEm : null);
   document.getElementById('p_originais').value = p && p.originais ? '1':'0';
-  document.getElementById('p_sdapago').value = (p && isSdaPago(p)) ? '1':'0';
+  document.getElementById('p_sdapago').dataset.auto = '';
+  document.getElementById('p_sdapago').disabled = false;
+  document.getElementById('p_sdapago').value = (p && p.sdaPago) ? '1':'0';
   document.getElementById('p_alerta').checked = !!(p && p.alerta);
   buildStagePicker(p ? p.status : (state.stages[0] ? state.stages[0].id : ''));
   updateConditionalFields();
@@ -1793,7 +1815,7 @@ function openProcessModal(id){
 document.getElementById('btnNewProcess').addEventListener('click', ()=>openProcessModal(null));
 document.getElementById('btnCancelProcess').addEventListener('click', ()=>processOverlay.classList.remove('show'));
 document.getElementById('btnClearLembrete').addEventListener('click', ()=>{ document.getElementById('p_lembrete').value = ''; });
-processOverlay.addEventListener('click', e=>{ if(e.target===processOverlay) processOverlay.classList.remove('show'); });
+processOverlay.addEventListener('click', e=>{ if(e.target===processOverlay && __mdTarget===processOverlay) processOverlay.classList.remove('show'); });
 
 document.getElementById('btnSaveProcess').addEventListener('click', ()=>{
   const codigo = document.getElementById('p_codigo').value.trim();
@@ -1828,7 +1850,7 @@ document.getElementById('btnSaveProcess').addEventListener('click', ()=>{
     observacao: document.getElementById('p_observacao').value.trim(),
     lembreteEm: document.getElementById('p_lembrete').value ? new Date(document.getElementById('p_lembrete').value).toISOString() : null,
     originais,
-    sdaPago,
+    sdaPago: effectiveMod==='X' ? false : sdaPago,   // X é pago automático; não grava "pago" fixo
     alerta: document.getElementById('p_alerta').checked,
     archived: false,
     archivedAt: null,
@@ -1884,7 +1906,7 @@ function openClientModal(id){
 }
 document.getElementById('btnNewClient').addEventListener('click', ()=>openClientModal(null));
 document.getElementById('btnCancelClient').addEventListener('click', ()=>clientOverlay.classList.remove('show'));
-clientOverlay.addEventListener('click', e=>{ if(e.target===clientOverlay) clientOverlay.classList.remove('show'); });
+clientOverlay.addEventListener('click', e=>{ if(e.target===clientOverlay && __mdTarget===clientOverlay) clientOverlay.classList.remove('show'); });
 
 document.getElementById('btnSaveClient').addEventListener('click', ()=>{
   const nome = document.getElementById('c_nome').value.trim();
@@ -1913,7 +1935,7 @@ document.getElementById('btnDeleteClient').addEventListener('click', ()=>{
 const stagesOverlay = document.getElementById('stagesOverlay');
 document.getElementById('btnManageStages').addEventListener('click', ()=>{ renderStagesModal(); stagesOverlay.classList.add('show'); });
 document.getElementById('btnCloseStages').addEventListener('click', ()=>{ stagesOverlay.classList.remove('show'); });
-stagesOverlay.addEventListener('click', e=>{ if(e.target===stagesOverlay) stagesOverlay.classList.remove('show'); });
+stagesOverlay.addEventListener('click', e=>{ if(e.target===stagesOverlay && __mdTarget===stagesOverlay) stagesOverlay.classList.remove('show'); });
 
 function renderStagesModal(){
   const wrap = document.getElementById('stagesList');
@@ -2375,7 +2397,7 @@ function openRDRespDetailModal(nome, cat){
 }
 const rdRespDetailOverlay = document.getElementById('rdRespDetailOverlay');
 document.getElementById('btnRDCloseRespDetail').addEventListener('click', ()=>rdRespDetailOverlay.classList.remove('show'));
-rdRespDetailOverlay.addEventListener('click', e=>{ if(e.target===rdRespDetailOverlay) rdRespDetailOverlay.classList.remove('show'); });
+rdRespDetailOverlay.addEventListener('click', e=>{ if(e.target===rdRespDetailOverlay && __mdTarget===rdRespDetailOverlay) rdRespDetailOverlay.classList.remove('show'); });
 document.getElementById('btnRDNewFromDashboard').addEventListener('click', ()=>openRDProcessModal(null));
 document.getElementById('btnRDViewFinalizados').addEventListener('click', ()=>document.querySelector('.nav-btn[data-view="rd-finalizados"]').click());
 
@@ -2557,7 +2579,7 @@ function openRDEnvioModal(ids){
   rdEnvioOverlay.classList.add('show');
 }
 document.getElementById('btnRDCancelEnvio').addEventListener('click', ()=>rdEnvioOverlay.classList.remove('show'));
-rdEnvioOverlay.addEventListener('click', e=>{ if(e.target===rdEnvioOverlay) rdEnvioOverlay.classList.remove('show'); });
+rdEnvioOverlay.addEventListener('click', e=>{ if(e.target===rdEnvioOverlay && __mdTarget===rdEnvioOverlay) rdEnvioOverlay.classList.remove('show'); });
 document.getElementById('btnRDConfirmEnvio').addEventListener('click', ()=>{
   const data = document.getElementById('rde_data').value || rdToday();
   const rastreio = document.getElementById('rde_rastreio').value.trim();
@@ -2649,7 +2671,7 @@ document.getElementById('btnRDDonizeteMarcarPagos').addEventListener('click', ()
   rdSaveAndRefresh(rdRenderDonizeteReport);
 });
 document.getElementById('btnRDDonizeteFechar').addEventListener('click', ()=>rdDonizeteOverlay.classList.remove('show'));
-rdDonizeteOverlay.addEventListener('click', e=>{ if(e.target===rdDonizeteOverlay) rdDonizeteOverlay.classList.remove('show'); });
+rdDonizeteOverlay.addEventListener('click', e=>{ if(e.target===rdDonizeteOverlay && __mdTarget===rdDonizeteOverlay) rdDonizeteOverlay.classList.remove('show'); });
 document.getElementById('btnRDDonizeteImprimir').addEventListener('click', ()=>window.print());
 
 /* ---------- Modal: processo ---------- */
@@ -2702,7 +2724,7 @@ function openRDProcessModal(id){
 }
 document.getElementById('btnRDNewProcess').addEventListener('click', ()=>openRDProcessModal(null));
 document.getElementById('btnRDCancelProcess').addEventListener('click', ()=>rdProcessOverlay.classList.remove('show'));
-rdProcessOverlay.addEventListener('click', e=>{ if(e.target===rdProcessOverlay) rdProcessOverlay.classList.remove('show'); });
+rdProcessOverlay.addEventListener('click', e=>{ if(e.target===rdProcessOverlay && __mdTarget===rdProcessOverlay) rdProcessOverlay.classList.remove('show'); });
 document.getElementById('rd_agente').addEventListener('input', rdUpdateInstrucaoHint);
 document.getElementById('rd_local').addEventListener('input', rdUpdateInstrucaoHint);
 document.getElementById('rd_recebidosvs').addEventListener('change', function(){
@@ -2829,7 +2851,7 @@ function openRDInstrucaoModal(idx){
 }
 document.getElementById('btnRDNewInstrucao').addEventListener('click', ()=>openRDInstrucaoModal(null));
 document.getElementById('btnRDCancelInstrucao').addEventListener('click', ()=>rdInstrucaoOverlay.classList.remove('show'));
-rdInstrucaoOverlay.addEventListener('click', e=>{ if(e.target===rdInstrucaoOverlay) rdInstrucaoOverlay.classList.remove('show'); });
+rdInstrucaoOverlay.addEventListener('click', e=>{ if(e.target===rdInstrucaoOverlay && __mdTarget===rdInstrucaoOverlay) rdInstrucaoOverlay.classList.remove('show'); });
 document.getElementById('btnRDSaveInstrucao').addEventListener('click', ()=>{
   const localVal = document.getElementById('rdi_local').value.trim();
   const agenteVal = document.getElementById('rdi_agente').value.trim();
@@ -3289,7 +3311,7 @@ function renderRDAEnviar(){
 }
 function openRDAEnviarModal(){ renderRDAEnviar(); rdAEnviarOverlay.classList.add('show'); }
 document.getElementById('btnRDAEnviarFechar').addEventListener('click', ()=>rdAEnviarOverlay.classList.remove('show'));
-rdAEnviarOverlay.addEventListener('click', e=>{ if(e.target===rdAEnviarOverlay) rdAEnviarOverlay.classList.remove('show'); });
+rdAEnviarOverlay.addEventListener('click', e=>{ if(e.target===rdAEnviarOverlay && __mdTarget===rdAEnviarOverlay) rdAEnviarOverlay.classList.remove('show'); });
 document.getElementById('btnRDAEnviarCopiar').addEventListener('click', async ()=>{
   const txt = rdAEnviarGroups().map(([k,l])=>`${k}: ${l.length} envio${l.length>1?'s':''}`).join('\n');
   try{ await navigator.clipboard.writeText(txt); toast('Lista copiada.'); }catch(e){ toast('Não consegui copiar.'); }
@@ -3370,7 +3392,7 @@ function openRDTrackModal(id){
   rdTrackOverlay.classList.add('show');
 }
 document.getElementById('btnRDTrackFechar').addEventListener('click', ()=>rdTrackOverlay.classList.remove('show'));
-rdTrackOverlay.addEventListener('click', e=>{ if(e.target===rdTrackOverlay) rdTrackOverlay.classList.remove('show'); });
+rdTrackOverlay.addEventListener('click', e=>{ if(e.target===rdTrackOverlay && __mdTarget===rdTrackOverlay) rdTrackOverlay.classList.remove('show'); });
 setTimeout(()=>rdAtualizarRastreios(false), 4000);
 setInterval(()=>rdAtualizarRastreios(false), 60*60*1000);
 
@@ -3666,6 +3688,33 @@ function gdLembrete(iso){
 }
 function gdDiasEtapa(p){ const t=new Date(p.statusDesde||p.createdAt).getTime(); return isNaN(t)?0:Math.max(0,Math.floor((Date.now()-t)/86400000)); }
 function gdIdade(p){ const t=new Date(p.createdAt).getTime(); return isNaN(t)?0:Math.max(0,Math.floor((Date.now()-t)/86400000)); }
+const sdaOverlay = document.getElementById('sdaOverlay');
+function renderSdaModal(){
+  const ps = state.processes.filter(p=>!p.archived && !isSdaPago(p))
+    .sort((a,b)=>((clientById(a.clienteId)||{}).nome||'').localeCompare((clientById(b.clienteId)||{}).nome||'') || String(a.codigo).localeCompare(String(b.codigo)));
+  document.getElementById('sdaSummary').textContent = ps.length ? `${ps.length} processo${ps.length===1?'':'s'} com SDA a pagar` : '';
+  document.getElementById('sdaBody').innerHTML = ps.length ? `<table>
+    <thead><tr><th style="width:70px;">Pago</th><th>Processo</th><th>Cliente</th><th>Etapa</th><th></th></tr></thead>
+    <tbody>${ps.map(p=>{ const st=stageById(p.status); const c=clientById(p.clienteId);
+      return `<tr><td><input type="checkbox" data-sdapago="${escAttr(p.id)}" style="width:18px;height:18px;cursor:pointer;" title="Marcar SDA como paga"></td>
+        <td><b>${esc(p.codigo)}</b></td><td>${esc(c?c.nome:'(cliente removido)')}</td><td>${esc(st?st.label:p.status)}</td>
+        <td><button class="btn" style="padding:6px 12px;" data-sdaopen="${escAttr(p.id)}">Abrir</button></td></tr>`; }).join('')}</tbody></table>`
+    : '<div class="gd-empty">Nenhuma SDA pendente. ✅</div>';
+}
+function openSdaModal(){ renderSdaModal(); sdaOverlay.classList.add('show'); }
+document.getElementById('sdaBody').addEventListener('change', e=>{
+  const id = e.target.dataset && e.target.dataset.sdapago; if(!id) return;
+  const p = state.processes.find(x=>x.id===id); if(!p) return;
+  p.sdaPago = !!e.target.checked;
+  persist(); renderAll(); renderSdaModal();
+  toast('SDA marcada como paga — '+p.codigo);
+});
+document.getElementById('sdaBody').addEventListener('click', e=>{
+  const b = e.target.closest('[data-sdaopen]'); if(!b) return;
+  sdaOverlay.classList.remove('show'); openProcessModal(b.dataset.sdaopen);
+});
+document.getElementById('btnSdaFechar').addEventListener('click', ()=>sdaOverlay.classList.remove('show'));
+sdaOverlay.addEventListener('click', e=>{ if(e.target===sdaOverlay && __mdTarget===sdaOverlay) sdaOverlay.classList.remove('show'); });
 function gdGo(view){ const b=document.querySelector('.nav-btn[data-view="'+view+'"]'); if(b) b.click(); }
 function gdRdAbrir(stage){ try{ rdProcessosState.stage = stage; }catch(e){} const b=document.querySelector('#navGroupRetirada .nav-children .nav-btn[data-view="rd-processos"]'); if(b) b.click(); }
 function renderGeral(){
@@ -3719,7 +3768,7 @@ function renderGeral(){
       <div class="gd-kpi hero" data-gdgo="board"><div class="l">Processos em aberto</div><div class="v">${ativos.length}</div><div class="s">em ${clientesAtivos} cliente${clientesAtivos===1?'':'s'}</div></div>
       <div class="gd-kpi" data-gdgo="board"><div class="l">Aguardando desembaraço</div><div class="v">${desemb.length}</div><div class="s">${proximo?`próximo: ${proximo.l.t} · ${esc(proximo.p.codigo)}`:'sem horário definido'}</div></div>
       <div class="gd-kpi ${faturUrg?'warn':''}" data-gdscroll="gdFatur"><div class="l">Aguardando faturar</div><div class="v">${fatur.length}</div><div class="s">${faturUrg?`<b style="color:var(--red-text)">${faturUrg} urgente${faturUrg===1?'':'s'} (+3 dias)</b>`:'nenhum urgente'}</div></div>
-      <div class="gd-kpi" data-gdgo="board"><div class="l">SDA a pagar</div><div class="v">${sdaPagar}</div><div class="s">processos com SDA pendente</div></div>
+      <div class="gd-kpi" data-gdsda="1" style="cursor:pointer;"><div class="l">SDA a pagar</div><div class="v">${sdaPagar}</div><div class="s">processos com SDA pendente</div></div>
     </div>
 
     <div class="gd-grid">
@@ -3771,6 +3820,7 @@ function renderGeral(){
     </div>`;
 
   box.querySelectorAll('[data-gdopen]').forEach(el=>el.addEventListener('click', ()=>{ if(el.dataset.gdopen) openProcessModal(el.dataset.gdopen); }));
+  box.querySelectorAll('[data-gdsda]').forEach(el=>el.addEventListener('click', openSdaModal));
   box.querySelectorAll('[data-gdgo]').forEach(el=>el.addEventListener('click', ()=>gdGo(el.dataset.gdgo)));
   box.querySelectorAll('[data-gdrd]').forEach(el=>el.addEventListener('click', ()=>gdRdAbrir(el.dataset.gdrd)));
   box.querySelectorAll('[data-gdscroll]').forEach(el=>el.addEventListener('click', ()=>{ const t=document.getElementById(el.dataset.gdscroll); if(t) t.scrollIntoView({behavior:'smooth',block:'start'}); }));
