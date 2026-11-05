@@ -276,7 +276,8 @@
   .overlay.show{display:flex;}
   .modal{background:var(--surface);border-radius:14px;width:100%;max-width:440px;padding:22px;box-shadow:0 20px 50px rgba(15,23,42,.25);}
   .modal h3{margin:0 0 16px;font-size:16px;color:var(--heading);}
-  .modal-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;}
+  .modal-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;flex-wrap:wrap;}
+  #processOverlay .modal{max-width:520px;} #processOverlay .modal-foot{gap:6px;} #processOverlay .modal-foot .btn{padding-left:11px;padding-right:11px;}
   .cond{display:none;}
   .cond.show{display:block;}
 
@@ -845,8 +846,8 @@
       <span style="font-size:13px;font-weight:500;color:var(--text);">🔺 Marcar este processo em alerta</span>
     </label>
     <div class="modal-foot">
-      <button class="btn" id="btnFaturarProcess" style="display:none;">💲 Faturar</button>
       <button class="btn btn-danger btn-ghost" id="btnDeleteProcess" style="display:none;margin-right:auto;">Excluir</button>
+      <button class="btn btn-sm" id="btnFaturarProcess" style="display:none;padding:4px 10px;min-width:0;" title="Faturar este processo" aria-label="Faturar">$</button>
       <button class="btn" id="btnArchiveProcess" style="display:none;">Concluir e arquivar</button>
       <button class="btn btn-ghost" id="btnCancelProcess">Cancelar</button>
       <button class="btn btn-gold" id="btnSaveProcess">Salvar</button>
@@ -3995,7 +3996,7 @@ function fatFinal(f){
     if(!semData && g.semData && g.datas.length) avisos.push(g.nome+': uma das linhas está sem data de pagamento — conferir.');
     linhas.push({nome:g.nome, valor:Math.round(g.valor*100)/100, data, solic: f.solic && f.solic[g.nome]!=null ? f.solic[g.nome] : ''});
   });
-  f.linhas.filter(l=>l.inc && l.cat==='OUTROS' && !fatConhecido(l.ev)).forEach(l=>avisos.push('Item não reconhecido: "'+l.ev+'" (R$ '+fatBR(fatNum(l.valor))+') — confira a categoria; vai na planilha com o nome original.'));
+  f.linhas.filter(l=>l.inc && !l.extra && l.cat==='OUTROS' && !fatConhecido(l.ev)).forEach(l=>avisos.push('Item não reconhecido: "'+l.ev+'" (R$ '+fatBR(fatNum(l.valor))+') — confira a categoria; vai na planilha com o nome original.'));
   const mod = modalidadeOf(f.p);
   const temSda = linhas.some(l=>l.nome==='SDA');
   if(mod==='X' && temSda) avisos.push('Cliente sem SDA, mas há linha de SDA marcada — conferir.');
@@ -4057,7 +4058,7 @@ function fatRender(){
     <div class="fat-sec">1. Despesas lidas do Sicoex <span>desmarque o que não entra (ex.: pago direto pelo cliente) e ajuste a categoria se precisar</span></div>
     <div class="fat-scroll"><table class="fat-t">
       <tr><th></th><th>Evento · fornecedor</th><th>Categoria</th><th>Valor</th><th>Pagamento</th></tr>
-      ${fat.linhas.map((l,i)=>`<tr class="${l.inc?'':'off'}">
+      ${fat.linhas.map((l,i)=>l.extra?'':`<tr class="${l.inc?'':'off'}">
         <td><input type="checkbox" data-fi="${i}" data-f="inc" ${l.inc?'checked':''}></td>
         <td><b>${esc(l.ev)}</b><br><small>${esc(l.forn)}</small></td>
         <td><select data-fi="${i}" data-f="cat">${catOpts(l.cat)}</select></td>
@@ -4069,7 +4070,16 @@ function fatRender(){
     <div class="fat-hon">
       <label>Valor <input class="fat-in" id="fatHon" value="${escAttr(fat.honValor===''?'':fatBR(fat.honValor))}" style="width:130px"></label>
       ${industrialOuCms?`<label>Valor aduaneiro (CIF) <input class="fat-in" id="fatVA" value="${escAttr(fat.va)}" placeholder="ex: 620.000,00" style="width:150px"></label><span class="fat-hint">acima de R$ 500 mil: +0,2% sobre o valor aduaneiro</span>`:''}
-      <div class="fat-hint">Regra do cadastro: ${esc((c&&c.honorario)||'— sem regra —')}${regra?'':''}${fat.receitasHon.length?'<br>No Sicoex: '+fat.receitasHon.map(r=>'R$ '+fatBR(r.valor)).join(' + '):''}</div>
+      <div class="fat-hint" style="flex-basis:100%;">Regra do cadastro: ${esc((c&&c.honorario)||'— sem regra —')}${regra?'':''}${fat.receitasHon.length?'<br>No Sicoex: '+fat.receitasHon.map(r=>'R$ '+fatBR(r.valor)).join(' + '):''}</div>
+    </div>
+    <div class="fat-sec" style="margin-top:6px;">Despesas extras <span>itens que não estão no Sicoex (ex.: puxe de cargas, cadastro de produto no catálogo)</span></div>
+    ${fat.linhas.some(l=>l.extra)?`<table class="fat-t">${fat.linhas.map((l,i)=>l.extra?`<tr><td><b>${esc(l.ev)}</b>${l.cat!==l.ev&&l.cat!=='OUTROS'?` <small>→ ${esc(l.cat)}</small>`:''}</td><td style="text-align:right">R$ ${fatBR(fatNum(l.valor))}</td><td>${esc(l.pag)||'N/A'}</td><td style="width:40px"><button class="btn btn-sm btn-ghost" data-extrarm="${i}" title="Remover">✕</button></td></tr>`:'').join('')}</table>`:''}
+    <div class="fat-hon" style="margin-top:6px;">
+      <input class="fat-in" id="fatXNome" list="fatXLista" placeholder="Nome da despesa" style="width:230px">
+      <datalist id="fatXLista"><option value="PUXE DE CARGAS"><option value="Cadastro de produto no catálogo"><option value="TAXA DE DESCONSOLIDAÇÃO"><option value="LAUDO TÉCNICO"><option value="FRETE INTERNACIONAL"></datalist>
+      <input class="fat-in" id="fatXValor" placeholder="Valor (ex: 350,00)" style="width:130px">
+      <input class="fat-in" id="fatXData" placeholder="Data pgto (vazio = N/A)" style="width:190px">
+      <button class="btn btn-sm" data-extraadd="1" type="button">+ Adicionar</button>
     </div>
     <div class="fat-sec">3. Como vai sair na planilha</div>
     <table class="fat-t fat-prev">
@@ -4268,7 +4278,7 @@ let __pdfjsOk = null;
 /* quando o nome do arquivo não diz o que é, descobre pelo conteúdo (valores e palavras-chave) */
 function fatReclassificar(docs){
   const grupos = {};
-  fat.linhas.filter(l=>l.inc && !['HONORÁRIO','Cadastro de produto no catálogo'].includes(l.cat) && l.cat!=='OUTROS').forEach(l=>{ (grupos[fatFamilia(l.cat)] = grupos[fatFamilia(l.cat)] || []).push(l); });
+  fat.linhas.filter(l=>l.inc && !l.extra && !['HONORÁRIO','Cadastro de produto no catálogo'].includes(l.cat) && l.cat!=='OUTROS').forEach(l=>{ (grupos[fatFamilia(l.cat)] = grupos[fatFamilia(l.cat)] || []).push(l); });
   const kw = {
     'ICMS': /icms|\bdare\b|sefaz|fazenda estadual|\bgnre\b/,
     'ARMAZENAGEM': /armazen|viracopos|\babv\b|libra|terminal|\bdai\b/,
@@ -4347,7 +4357,7 @@ function fatConferir(){
   if(!fat.docs) return out;
   const docs = fat.docs.filter(d=>d.inc);
   const grupos = {};
-  fat.linhas.filter(l=>l.inc && !['HONORÁRIO','Cadastro de produto no catálogo'].includes(l.cat)).forEach(l=>{
+  fat.linhas.filter(l=>l.inc && !l.extra && !['HONORÁRIO','Cadastro de produto no catálogo'].includes(l.cat)).forEach(l=>{
     if(l.cat==='OUTROS') return;
     const f = fatFamilia(l.cat); (grupos[f] = grupos[f] || []).push(l);
   });
@@ -4473,6 +4483,18 @@ document.getElementById('fatBody').addEventListener('click', e=>{
   else if(a==='pdf') fatGerarPdf();
   else if(a==='enviar') fatEnviar();
   else if((a==='up'&&i>0) || (a==='down'&&i<fat.docs.length-1)){ const j = a==='up'?i-1:i+1; [fat.docs[i],fat.docs[j]]=[fat.docs[j],fat.docs[i]]; fatRender(); }
+});
+document.getElementById('fatBody').addEventListener('click', e=>{
+  if(!fat) return;
+  const add = e.target.closest('[data-extraadd]'), rm = e.target.closest('[data-extrarm]');
+  if(rm){ fat.linhas.splice(+rm.dataset.extrarm,1); fatRender(); return; }
+  if(!add) return;
+  const nome = document.getElementById('fatXNome').value.trim(), val = fatNum(document.getElementById('fatXValor').value), data = document.getElementById('fatXData').value.trim();
+  if(!nome || !val){ toast('Informe o nome e o valor da despesa.'); return; }
+  if(data && !fatData(data)){ toast('Data inválida. Use dd/mm/aaaa ou deixe vazio.'); return; }
+  const cat = fatClassificar(nome,'',fatEhCMS(fat.client));
+  fat.linhas.push({ev:nome, forn:'', valor:val, pag:data, cat: (cat==='__CREDITO'?'OUTROS':cat), inc:true, extra:true});
+  fatRender();
 });
 document.getElementById('fatBody').addEventListener('change', e=>{
   const t = e.target; if(fat && t.name==='fatResp'){ fat.resp = t.value; if(fat.client){ fat.client.responsavel = t.value; persist(); toast('Responsável salvo no cadastro do cliente.'); } fatRender(); return; }
