@@ -816,6 +816,9 @@
         </div>
         <div class="field"><label>Transportadora</label><input id="p_transp" placeholder="Ex: IMPERIAL"></div>
       </div>
+      <div class="field"><label>Puxe de cargas (para lembrar de cobrar no faturamento)</label>
+        <select id="p_puxe"><option value="">Sem puxe de cargas</option><option value="100">Puxe de cargas — R$ 100,00</option><option value="150">Puxe de cargas — R$ 150,00</option><option value="300">Puxe de cargas — R$ 300,00</option><option value="350">Puxe de cargas — R$ 350,00</option></select>
+      </div>
     </div>
     <div class="cond" id="cond_despesas">
       <div class="field"><label>O que falta pagar</label><input id="p_despesa" placeholder="Ex: TRANSP NAC + PAGTO ARM LIBRA"></div>
@@ -1076,6 +1079,14 @@
 </div>
 
 <!-- MODAL: lote de faturamento -->
+<div class="overlay" id="docPrevOverlay">
+  <div class="modal" style="max-width:980px;width:96vw;height:92vh;display:flex;flex-direction:column;">
+    <h3 id="docPrevTitulo" style="overflow-wrap:anywhere;">Documento</h3>
+    <div id="docPrevCorpo" style="flex:1;min-height:0;border:1px solid var(--border);border-radius:8px;overflow:auto;background:var(--bg);"></div>
+    <div class="modal-foot"><button class="btn btn-gold" id="btnDocPrevFechar">Fechar</button></div>
+  </div>
+</div>
+
 <div class="overlay" id="loteOverlay">
   <div class="modal" style="max-width:600px;max-height:90vh;display:flex;flex-direction:column;">
     <h3>📑 Lote de faturamento</h3>
@@ -1229,6 +1240,7 @@ function normalizeState(s){
     p.statusDesde = p.statusDesde ? str(p.statusDesde) : null;
     p.local = str(p.local);
     p.transp = str(p.transp);
+    p.puxe = ['100','150','300','350'].includes(String(p.puxe||'')) ? String(p.puxe) : '';
     p.despesa = str(p.despesa);
     p.observacao = str(p.observacao);
     p.lembreteEm = p.lembreteEm ? str(p.lembreteEm) : null;
@@ -1398,7 +1410,7 @@ function statusDescription(p){
   if(st==='carregamento'){
     const local = p.local || '?';
     const transp = p.transp ? ` - ${p.transp}` : '';
-    return `Aguardando carregamento – ${local}${transp}`;
+    return `Aguardando carregamento – ${local}${transp}${p.puxe?' · Puxe R$ '+p.puxe:''}`;
   }
   if(st==='despesas'){
     const d = p.despesa ? p.despesa : 'outras despesas';
@@ -1853,6 +1865,14 @@ function updateConditionalFields(){
   document.getElementById('btnArchiveProcess').style.display = hasId ? '' : 'none';
 }
 
+document.addEventListener('keydown', e=>{
+  if(e.key!=='Enter' || e.shiftKey || e.isComposing) return;
+  const t = e.target; if(!t || !/^(INPUT|SELECT)$/.test(t.tagName)) return;
+  const ov = t.closest && t.closest('.overlay.show'); if(!ov) return;
+  const alvo = {processOverlay:'btnSaveProcess', clientOverlay:'btnSaveClient', rdProcessOverlay:'btnRDSaveProcess', rdInstrucaoOverlay:'btnRDSaveInstrucao'}[ov.id];
+  const b = alvo && document.getElementById(alvo); if(!b) return;
+  e.preventDefault(); b.click();
+});
 function openProcessModal(id){
   if(state.clients.length===0){
     toast('Cadastre um cliente antes de criar um processo');
@@ -1867,6 +1887,7 @@ function openProcessModal(id){
   populateSdaSelect(document.getElementById('p_modalidade'), true, p ? (p.modalidade||'') : '');
   document.getElementById('p_local').value = p && p.local ? p.local : 'VCP';
   document.getElementById('p_transp').value = p ? (p.transp||'') : '';
+  document.getElementById('p_puxe').value = p ? (p.puxe||'') : '';
   document.getElementById('p_despesa').value = p ? (p.despesa||'') : '';
   document.getElementById('p_observacao').value = p ? (p.observacao||'') : '';
   document.getElementById('p_lembrete').value = toDatetimeLocal(p ? p.lembreteEm : null);
@@ -1917,6 +1938,7 @@ document.getElementById('btnSaveProcess').addEventListener('click', ()=>{
     status: targetStage,
     local: document.getElementById('p_local').value,
     transp: document.getElementById('p_transp').value.trim(),
+    puxe: document.getElementById('p_puxe').value,
     despesa: document.getElementById('p_despesa').value.trim(),
     observacao: document.getElementById('p_observacao').value.trim(),
     lembreteEm: document.getElementById('p_lembrete').value ? new Date(document.getElementById('p_lembrete').value).toISOString() : null,
@@ -2390,6 +2412,7 @@ function rdSaveAndRefresh(refreshFn){
 }
 
 /* ---------- Dashboard ---------- */
+const RD_PRAZO_ELAB = 30;   // em elaboração: o prazo de envio ao cliente é de 1 mês (30 dias)
 function rdDaysSince(iso){
   if(!iso) return null;
   const d = new Date(iso+'T00:00:00');
@@ -2404,7 +2427,7 @@ function renderRDDashboard(){
   const finalizados = processos.filter(rdEntregue);
   const aCaminho = processos.filter(rdACaminho);
   const atrasados = elaboracao.map(p=>({p, dias: rdDaysSince(p.dataRecebimentoSVS)}))
-    .filter(x=>x.dias!==null && x.dias>=5).sort((a,b)=>b.dias-a.dias);
+    .filter(x=>x.dias!==null && x.dias>=RD_PRAZO_ELAB).sort((a,b)=>b.dias-a.dias);
 
   const byResp = {};
   processos.filter(p=>p.statusEnvio!=='ENVIADO').forEach(p=>{
@@ -2430,7 +2453,7 @@ function renderRDDashboard(){
     <p class="muted small" style="margin:-10px 0 20px;">Assim que um processo é marcado como <strong>Enviado</strong>, ele some daqui e passa a viver em <strong>Finalizados</strong> — dá pra buscar por referência, cliente ou rastreio a qualquer momento.</p>
     ${atrasados.length ? `
     <div class="rd-card">
-      <h3>⚠ Parados há 5+ dias em "em elaboração"</h3>
+      <h3>⚠ Passaram de 1 mês em "em elaboração" (prazo de envio: 30 dias)</h3>
       <div class="table-wrap"><table>
         <thead><tr><th>Ref</th><th>Cliente</th><th>Recebido na SVS</th><th>Dias parado</th><th></th></tr></thead>
         <tbody>${atrasados.slice(0,12).map(({p,dias})=>`
@@ -3844,7 +3867,7 @@ function renderGeral(){
   const rdCam = rd.filter(rdACaminho).length;
   const sete = Date.now()-7*86400000;
   const rdEntSemana = rd.filter(p=>rdEntregue(p) && p.dataEntrega && new Date(p.dataEntrega).getTime()>=sete).length;
-  const rdParados = rd.filter(p=>rdStageOf(p)==='EM_ELABORACAO').filter(p=>{ const d=rdDaysSince(p.dataRecebimentoSVS); return d!==null && d>=5; }).length;
+  const rdParados = rd.filter(p=>rdStageOf(p)==='EM_ELABORACAO').filter(p=>{ const d=rdDaysSince(p.dataRecebimentoSVS); return d!==null && d>=RD_PRAZO_ELAB; }).length;
 
   let vcpC=0, vcpM=0; try{ vcpC=vcpPendentes('carga').length; vcpM=vcpPendentes('madeira').length; }catch(e){}
   const notasAbertas = state.notas.filter(n=>!n.feito).length;
@@ -3892,7 +3915,7 @@ function renderGeral(){
             <button data-gdrd="EM_ELABORACAO"><b>${rdElab}</b><span>Em elaboração</span></button>
             <button data-gdrd="A_CAMINHO"><b>${rdCam}</b><span>A caminho do cliente</span></button>
           </div>
-          <div class="hint" style="margin:10px 0 0;">${rdEntSemana} entregue${rdEntSemana===1?'':'s'} nos últimos 7 dias${rdParados?` · <b style="color:var(--red-text)">${rdParados} parado${rdParados===1?'':'s'} há 5+ dias</b>`:''}</div>
+          <div class="hint" style="margin:10px 0 0;">${rdEntSemana} entregue${rdEntSemana===1?'':'s'} nos últimos 7 dias${rdParados?` · <b style="color:var(--red-text)">${rdParados} passou${rdParados===1?'':'ram'} de 1 mês em elaboração</b>`:''}</div>
         </div>
 
         <div class="gd-card">
@@ -3932,7 +3955,7 @@ setInterval(()=>{ const v=document.getElementById('view-geral'); if(v && v.style
 })();
 
 /* ============ FATURAR (fechamento de faturamento) ============ */
-const FAT_CATS = ['HONORÁRIO','ICMS','ICMS COMPLEMENTAR','II','IPI','Impostos Federais','AFRMM','SDA','DAI','ARMAZENAGEM','ARMAZENAGEM COMPLEMENTAR','Armazenagem Libra','Armazenagem Remoção','Transporte Nacional','Transporte Remoção','TUS','Cadastro de produto no catálogo','FRETE INTERNACIONAL','FRETE INTERNACIONAL COMPLEMENTAR','TAXA DE DESCONSOLIDAÇÃO','LAUDO TÉCNICO','PUXE DE CARGAS','AVARIA CONTAINER','OUTROS'];
+const FAT_CATS = ['HONORÁRIO','ICMS','ICMS COMPLEMENTAR','II','IPI','Impostos Federais','AFRMM','SDA','DAI','ARMAZENAGEM','ARMAZENAGEM COMPLEMENTAR','Armazenagem Libra','Armazenagem Remoção','Transporte Nacional','Transporte Remoção','TUS','Cadastro de produto no catálogo','SEGURO','FRETE INTERNACIONAL','FRETE INTERNACIONAL COMPLEMENTAR','TAXA DE DESCONSOLIDAÇÃO','LAUDO TÉCNICO','PUXE DE CARGAS','AVARIA CONTAINER','OUTROS'];
 const FAT_SEM_DATA = ['HONORÁRIO','Cadastro de produto no catálogo'];
 let fat = null;          // processo sendo faturado
 let fatBatch = [];       // planilhas já adicionadas ao lote
@@ -3957,6 +3980,7 @@ function fatClassificar(ev, forn, cms){
   if(/armazen/.test(n)){ if(/compl/.test(n)) return 'ARMAZENAGEM COMPLEMENTAR'; if(/libra/.test(n)) return 'Armazenagem Libra'; if(/remo[cç]/.test(n)) return 'Armazenagem Remoção'; return 'ARMAZENAGEM'; }
   if(/\bdai\b/.test(n)) return 'DAI';
   if(/internacional|exterior|ocean|maritim|aereo|air ?freight|sea ?freight|\bhawb\b|\bmawb\b|\bbl\b/.test(e) && /frete|freight|transport/.test(e)) return /compl/.test(e) ? 'FRETE INTERNACIONAL COMPLEMENTAR' : 'FRETE INTERNACIONAL';
+  if(/seguro/.test(e)) return 'SEGURO';
   if(/desconsolid/.test(e)) return 'TAXA DE DESCONSOLIDAÇÃO';
   if(/laudo/.test(e)) return 'LAUDO TÉCNICO';
   if(/puxe/.test(e)) return 'PUXE DE CARGAS';
@@ -3997,6 +4021,7 @@ function fatFinal(f){
     linhas.push({nome:g.nome, valor:Math.round(g.valor*100)/100, data, solic: f.solic && f.solic[g.nome]!=null ? f.solic[g.nome] : ''});
   });
   f.linhas.filter(l=>l.inc && !l.extra && l.cat==='OUTROS' && !fatConhecido(l.ev)).forEach(l=>avisos.push('Item não reconhecido: "'+l.ev+'" (R$ '+fatBR(fatNum(l.valor))+') — confira a categoria; vai na planilha com o nome original.'));
+  if(f.seguroMsg && f.seguroTipo==='warn') avisos.push(f.seguroMsg);
   const mod = modalidadeOf(f.p);
   const temSda = linhas.some(l=>l.nome==='SDA');
   if(mod==='X' && temSda) avisos.push('Cliente sem SDA, mas há linha de SDA marcada — conferir.');
@@ -4004,6 +4029,28 @@ function fatFinal(f){
   return {linhas, avisos};
 }
 
+/* Seguro: valor vem da DI/DUIMP; só cobra se o Sicoex tiver a cobrança ou houver arquivo "averbação de seguro" na pasta */
+function fatSeguroAplicar(){
+  fat.linhas = fat.linhas.filter(l=>!l.autoSeguro);
+  fat.seguroMsg = ''; fat.seguroTipo = 'info';
+  const v = fat.seguroDI;
+  const doSicoex = fat.linhas.filter(l=>l.cat==='SEGURO' && !l.extra && l.inc);
+  if(v===null || v===undefined){
+    fat.seguroMsg = doSicoex.length ? 'Seguro: há cobrança no Sicoex (R$ '+fatBR(doSicoex.reduce((s,l)=>s+fatNum(l.valor),0))+'), mas não consegui ler o valor na DI/DUIMP — confira.' : '';
+    fat.seguroTipo = doSicoex.length ? 'warn' : 'info'; return;
+  }
+  if(!v){ fat.seguroMsg = doSicoex.length ? 'Seguro: há cobrança no Sicoex, mas o seguro da DI/DUIMP está zerado — confira.' : ''; fat.seguroTipo = doSicoex.length ? 'warn' : 'info'; return; }
+  if(doSicoex.length){
+    const s = doSicoex.reduce((a,l)=>a+fatNum(l.valor),0);
+    if(Math.abs(s-v)>0.009){ fat.seguroMsg = 'Seguro: Sicoex cobra R$ '+fatBR(s)+' e a DI/DUIMP tem R$ '+fatBR(v)+' — confira qual vale.'; fat.seguroTipo='warn'; }
+    else { fat.seguroMsg = 'Seguro R$ '+fatBR(v)+': confere com a DI/DUIMP e está cobrado no Sicoex.'; fat.seguroTipo='ok'; }
+  } else if(fat.averb){
+    fat.linhas.push({ev:'SEGURO', forn:'', valor:v, pag:'', cat:'SEGURO', inc:true, extra:true, autoSeguro:true});
+    fat.seguroMsg = 'Seguro R$ '+fatBR(v)+' (da DI/DUIMP) incluído, porque achei "'+fat.averb+'" na pasta. Informe a data de pagamento se houver.'; fat.seguroTipo='ok';
+  } else {
+    fat.seguroMsg = 'A DI/DUIMP tem seguro de R$ '+fatBR(v)+', mas não há cobrança no Sicoex nem arquivo "averbação de seguro" na pasta — NÃO foi cobrado.'; fat.seguroTipo='info';
+  }
+}
 function fatCalcHon(f){
   const c = f.client;
   let base = fatHonRegra(c);
@@ -4023,12 +4070,14 @@ async function openFaturar(id){
   try{
     const d = await vcpApi('sicoexFinanceiro', {ref: p.codigo});
     const cms = fatEhCMS(client);
-    fat.tipo = d.tipo;
+    fat.tipo = d.tipo; fat.seguroDI = (d.seguro===undefined) ? null : d.seguro; fat.seguroDebug = d.seguroDebug||[];
     fat.linhas = (d.despesas||[]).map(x=>{
       const cat = fatClassificar(x.evento, x.fornecedor, cms);
       return {ev:x.evento, forn:x.fornecedor, valor:x.valor, pag:x.pagamento||'', cat: cat==='__CREDITO'?'OUTROS':cat, inc: cat!=='__CREDITO', orig:x};
     });
     fat.receitasHon = (d.despesas||[]).concat(d.receitas||[]).filter(r=>/honor/i.test(r.evento));
+    if(p.puxe && !fat.linhas.some(l=>l.inc && l.cat==='PUXE DE CARGAS')) fat.linhas.push({ev:'PUXE DE CARGAS', forn:'', valor:Number(p.puxe), pag:'', cat:'PUXE DE CARGAS', inc:true, extra:true, doProcesso:true});
+    fatSeguroAplicar();
     fat.honValor = fatCalcHon(fat) || (fat.receitasHon[0] ? fat.receitasHon[0].valor : '');
   }catch(err){ fat.erro = err.message || String(err); }
   fat.carregando = false;
@@ -4074,9 +4123,10 @@ function fatRender(){
     </div>
     <div class="fat-sec" style="margin-top:6px;">Despesas extras <span>itens que não estão no Sicoex (ex.: puxe de cargas, cadastro de produto no catálogo)</span></div>
     ${fat.linhas.some(l=>l.extra)?`<table class="fat-t">${fat.linhas.map((l,i)=>l.extra?`<tr><td><b>${esc(l.ev)}</b>${l.cat!==l.ev&&l.cat!=='OUTROS'?` <small>→ ${esc(l.cat)}</small>`:''}</td><td style="text-align:right">R$ ${fatBR(fatNum(l.valor))}</td><td>${esc(l.pag)||'N/A'}</td><td style="width:40px"><button class="btn btn-sm btn-ghost" data-extrarm="${i}" title="Remover">✕</button></td></tr>`:'').join('')}</table>`:''}
+    ${fat.seguroMsg?`<div class="${fat.seguroTipo==='warn'?'fat-av':(fat.seguroTipo==='ok'?'fat-ok':'fat-hint')}" style="margin-top:6px;">${esc(fat.seguroMsg)}</div>`:''}
     <div class="fat-hon" style="margin-top:6px;">
       <input class="fat-in" id="fatXNome" list="fatXLista" placeholder="Nome da despesa" style="width:230px">
-      <datalist id="fatXLista"><option value="PUXE DE CARGAS"><option value="Cadastro de produto no catálogo"><option value="TAXA DE DESCONSOLIDAÇÃO"><option value="LAUDO TÉCNICO"><option value="FRETE INTERNACIONAL"></datalist>
+      <datalist id="fatXLista"><option value="SEGURO"><option value="PUXE DE CARGAS"><option value="Cadastro de produto no catálogo"><option value="TAXA DE DESCONSOLIDAÇÃO"><option value="LAUDO TÉCNICO"><option value="FRETE INTERNACIONAL"></datalist>
       <input class="fat-in" id="fatXValor" placeholder="Valor (ex: 350,00)" style="width:130px">
       <input class="fat-in" id="fatXData" placeholder="Data pgto (vazio = N/A)" style="width:190px">
       <button class="btn btn-sm" data-extraadd="1" type="button">+ Adicionar</button>
@@ -4258,14 +4308,24 @@ async function fatBuscarDocs(forcarNova){
     for await (const [n,h] of pasta.entries()){ if(h.kind==='directory' && /^faturamento$/i.test(n.trim())) fd = h; }
     if(!fd){ fat.docsMsg = 'A pasta '+pasta.name+' não tem a subpasta FATURAMENTO.'; fatRender(); return; }
     const docs = [];
+    fat.cobrar = []; fat.averb = null;
+    const ehAverb = n => /averba/.test(fatNorm(n)) && /seguro/.test(fatNorm(n));
+    for await (const [n,h] of pasta.entries()){ if(h.kind==='file' && ehAverb(n)) fat.averb = n; }
     for await (const [n,h] of fd.entries()){
+      if(h.kind==='directory' && /cobrar/i.test(n)){
+        const m = n.match(/R\$\s*([\d.]+,\d{2})/i) || n.match(/(\d[\d.]*,\d{2})/) || n.match(/(\d+)/);
+        const resto = n.replace(/cobrar/ig,'').replace(/R\$\s*[\d.,]+/ig,'');
+        let cat = fatClassificar(resto,'',false); if(cat==='__CREDITO') cat='OUTROS';
+        fat.cobrar.push({nome:n, valor: m ? fatNum(m[1]) : 0, cat, rotulo: cat==='OUTROS' ? resto.trim().replace(/\s+/g,' ').toUpperCase() : cat});
+      }
+      if(h.kind==='file' && ehAverb(n)) fat.averb = n;
       if(h.kind!=='file' || !/\.(pdf|jpe?g|png)$/i.test(n)) continue;
       const i = fatDocInfo(n);
       docs.push({nome:n, handle:h, cat:i.cat, ord:i.ord, role:i.role, inc:!i.excl, excl:i.excl});
     }
     docs.sort((a,b)=>a.ord-b.ord || a.role-b.role || a.nome.localeCompare(b.nome,'pt'));
     fat.docsDir = fd;
-    fat.docsMsg = 'Lendo o conteúdo dos documentos para conferir os valores…'; fat.docs = docs; fatRender();
+    fat.docsMsg = 'Lendo o conteúdo dos documentos para conferir os valores…'; fat.docs = docs; fatSeguroAplicar(); fatRender();
     for(const d of docs){ await fatLerDoc(d); }
     fatReclassificar(docs);
     docs.forEach(d=>{ if(d.ord<500){ const k=FAT_CATS.findIndex(c=>fatFamilia(c)===fatFamilia(d.cat)); if(k>=0) d.ord=k; } });
@@ -4274,6 +4334,23 @@ async function fatBuscarDocs(forcarNova){
   }catch(err){ fat.docsMsg = (err && err.name==='AbortError') ? 'Seleção de pasta cancelada.' : ('Erro: '+(err.message||err)); }
   fatRender();
 }
+let __docUrl = null;
+async function fatVerDoc(i){
+  const d = fat.docs && fat.docs[+i]; if(!d) return;
+  try{
+    const f = await d.handle.getFile();
+    if(__docUrl) URL.revokeObjectURL(__docUrl);
+    __docUrl = URL.createObjectURL(f);
+    document.getElementById('docPrevTitulo').textContent = d.nome;
+    document.getElementById('docPrevCorpo').innerHTML = /\.pdf$/i.test(d.nome)
+      ? '<iframe src="'+__docUrl+'" style="width:100%;height:100%;border:0;" title="'+escAttr(d.nome)+'"></iframe>'
+      : '<img src="'+__docUrl+'" style="max-width:100%;display:block;margin:0 auto;" alt="'+escAttr(d.nome)+'">';
+    docPrevOverlay.classList.add('show');
+  }catch(e){ toast('Não consegui abrir o arquivo: '+(e.message||e)); }
+}
+function fatFechaDoc(){ docPrevOverlay.classList.remove('show'); document.getElementById('docPrevCorpo').innerHTML=''; if(__docUrl){ URL.revokeObjectURL(__docUrl); __docUrl=null; } }
+document.getElementById('btnDocPrevFechar').addEventListener('click', fatFechaDoc);
+docPrevOverlay.addEventListener('click', e=>{ if(e.target===docPrevOverlay && __mdTarget===docPrevOverlay) fatFechaDoc(); });
 let __pdfjsOk = null;
 /* quando o nome do arquivo não diz o que é, descobre pelo conteúdo (valores e palavras-chave) */
 function fatReclassificar(docs){
@@ -4352,9 +4429,26 @@ function fatParecido(alvo, docs){ // dígitos trocados (mesmos dígitos, valor d
   for(const d of docs) for(const v of d.valores){ if(v!==alvo && dig(v)===dig(alvo)) return v/100; }
   return null;
 }
+function fatCobrarLinhas(c){ return fat.linhas.filter(l=>l.inc && (c.cat==='OUTROS' ? fatNorm(l.ev)===fatNorm(c.rotulo) : l.cat===c.cat)); }
+function fatCobrarAdd(i){
+  const c = (fat.cobrar||[])[+i]; if(!c) return;
+  if(!c.valor){ toast('A pasta não traz o valor no nome. Adicione manualmente em Despesas extras.'); return; }
+  fat.linhas.push({ev: c.cat==='OUTROS' ? c.rotulo : c.cat, forn:'', valor:c.valor, pag:'', cat:c.cat, inc:true, extra:true, daPasta:true});
+  fatRender();
+}
 function fatConferir(){
   const out = [];
   if(!fat.docs) return out;
+  (fat.cobrar||[]).forEach(c=>{
+    const ls = fatCobrarLinhas(c), soma = ls.reduce((s,l)=>s+fatNum(l.valor),0);
+    if(!c.valor) out.push({cat:'Pasta "'+c.nome+'"', total:0, st:'warn', msgs:['não consegui ler o valor no nome da pasta — confira à mão']});
+    else if(!ls.length) out.push({cat:'Pasta "'+c.nome+'"', total:c.valor, st:'warn', msgs:['a pasta pede para cobrar R$ '+fatBR(c.valor)+' ('+c.rotulo+'), mas essa despesa não está na planilha. Use o botão "Adicionar" da pasta.']});
+    else if(Math.abs(soma-c.valor)>0.009) out.push({cat:'Pasta "'+c.nome+'"', total:c.valor, st:'warn', msgs:['a pasta pede R$ '+fatBR(c.valor)+', mas a planilha tem R$ '+fatBR(soma)+' em '+c.rotulo]});
+    else out.push({cat:c.rotulo, total:c.valor, st:'ok', msgs:['confere com a pasta "'+c.nome+'"']});
+  });
+  const temCad = fat.linhas.some(l=>l.inc && l.cat==='Cadastro de produto no catálogo');
+  if(temCad && !(fat.cobrar||[]).some(c=>c.cat==='Cadastro de produto no catálogo'))
+    out.push({cat:'Cadastro de produto no catálogo', total:fat.linhas.filter(l=>l.inc && l.cat==='Cadastro de produto no catálogo').reduce((s,l)=>s+fatNum(l.valor),0), st:'info', msgs:['há cobrança de cadastro de produto na planilha, mas não achei a pasta "COBRAR R$ ... CADASTRO PRODUTO CATALOGO" em FATURAMENTO — confira']});
   const docs = fat.docs.filter(d=>d.inc);
   const grupos = {};
   fat.linhas.filter(l=>l.inc && !l.extra && !['HONORÁRIO','Cadastro de produto no catálogo'].includes(l.cat)).forEach(l=>{
@@ -4480,6 +4574,8 @@ document.getElementById('fatBody').addEventListener('click', e=>{
   const a = t.dataset.docact, i = +t.dataset.i;
   if(a==='buscar') fatBuscarDocs(false);
   else if(a==='trocar') fatBuscarDocs(true);
+  else if(a==='ver') fatVerDoc(i);
+  else if(a==='cobraradd') fatCobrarAdd(i);
   else if(a==='pdf') fatGerarPdf();
   else if(a==='enviar') fatEnviar();
   else if((a==='up'&&i>0) || (a==='down'&&i<fat.docs.length-1)){ const j = a==='up'?i-1:i+1; [fat.docs[i],fat.docs[j]]=[fat.docs[j],fat.docs[i]]; fatRender(); }
@@ -4508,8 +4604,9 @@ function fatDocsHtml(){
   ${docs ? `<div class="fat-scroll" style="max-height:240px;"><table class="fat-t">
     ${docs.map((d,i)=>`<tr class="${d.inc?'':'off'}"><td><input type="checkbox" data-doci="${i}" ${d.inc?'checked':''}></td>
       <td>${esc(d.nome)}${d.excl?' <small>(fora por padrão)</small>':''}${d.porConteudo?' <small title="O nome do arquivo não dizia o que era; identifiquei pelo conteúdo (valores e palavras do PDF).">🔎 pelo conteúdo</small>':''}</td><td><small>${esc(d.cat)}</small></td>
-      <td style="white-space:nowrap"><button class="btn btn-sm btn-ghost" data-docact="up" data-i="${i}">↑</button><button class="btn btn-sm btn-ghost" data-docact="down" data-i="${i}">↓</button></td></tr>`).join('')}
+      <td style="white-space:nowrap"><button class="btn btn-sm btn-ghost" data-docact="ver" data-i="${i}" title="Abrir este documento para conferir">👁 Abrir</button><button class="btn btn-sm btn-ghost" data-docact="up" data-i="${i}">↑</button><button class="btn btn-sm btn-ghost" data-docact="down" data-i="${i}">↓</button></td></tr>`).join('')}
   </table></div>` : ''}
+  ${(fat.cobrar||[]).length?`<div class="fat-av" style="background:#E0F2FE;color:#075985;">📁 ${(fat.cobrar||[]).map((c,i)=>{ const ok = fatCobrarLinhas(c).length; return '<b>'+esc(c.nome)+'</b> → R$ '+fatBR(c.valor)+' ('+esc(c.rotulo)+') '+(ok?'✓ já está na planilha':'<button class="btn btn-sm" data-docact="cobraradd" data-i="'+i+'">Adicionar à planilha</button>'); }).join('<br>')}</div>`:''}
   ${docs?`<div class="fat-hon" style="margin-top:8px;"><b>Responsável pelo cliente:</b>
     <label><input type="radio" name="fatResp" value="aline" ${fat.resp==='aline'?'checked':''}> Cliente Aline</label>
     <label><input type="radio" name="fatResp" value="andrei" ${fat.resp==='andrei'?'checked':''}> Cliente Andrei</label>
