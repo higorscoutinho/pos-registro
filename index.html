@@ -197,6 +197,108 @@
   .fat-hint{color:var(--muted);font-size:12px;}
   .fat-av{background:#FEF3C7;color:#92400E;padding:8px 10px;border-radius:8px;font-size:12.5px;margin-top:10px;}
   .fat-ok{background:#DCFCE7;color:#166534;padding:8px 10px;border-radius:8px;font-size:12.5px;margin-top:10px;}
+  /* ---- tela Faturar (novo layout) ---- */
+  #fatOverlay{padding:3vh 12px;}
+  #fatOverlay .fx-modal{max-width:1220px;max-height:94vh;display:flex;flex-direction:column;padding:0;overflow:hidden;border-radius:18px;}
+  .fx-head{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:18px 24px;color:#fff;background:linear-gradient(110deg,#0B1240 0%,#101a6b 55%,#1B2290 100%);}
+  .fx-logo{width:46px;height:46px;border-radius:12px;background:rgba(255,255,255,.12);color:#FACC15;font-weight:800;display:grid;place-items:center;font-size:17px;}
+  .fx-ttl small{display:block;font-size:11px;letter-spacing:.14em;opacity:.7;}
+  .fx-ttl b{font-size:26px;line-height:1.1;}
+  .fx-pills{display:flex;gap:8px;flex-wrap:wrap;}
+  .fx-pills span{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);padding:5px 12px;border-radius:99px;font-size:12px;}
+  .fx-pills b{color:#FACC15;}
+  .fx-chips{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;}
+  .fx-st{display:inline-flex;align-items:center;gap:7px;padding:6px 12px 6px 7px;border-radius:99px;font-size:12.5px;font-weight:600;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);}
+  .fx-st i{font-style:normal;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:12px;color:#fff;background:#64748B;}
+  .fx-st.gn i{background:#16A34A;} .fx-st.am i{background:#F59E0B;} .fx-st.rd i{background:#EF4444;} .fx-st.gy i{background:#64748B;}
+  #fatOverlay #fatBody{flex:1;overflow-y:auto;padding:18px 22px;background:var(--bg);}
+  .fx-grid{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:18px;align-items:start;}
+  .fx-right{position:sticky;top:0;display:flex;flex-direction:column;gap:14px;}
+  .fx-left{display:flex;flex-direction:column;gap:16px;}
+  .fx-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow);}
+  .fx-ch{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;}
+  .fx-ch h4{margin:0;font-size:17px;color:var(--heading);}
+  .fx-hint{font-size:12px;color:var(--muted);}
+  .fx-sp{flex:1;}
+  .fx-badge{margin-left:auto;background:var(--hover);color:var(--muted);font-size:12px;font-weight:600;padding:4px 11px;border-radius:99px;}
+  .fx-cols,.fx-row{display:grid;grid-template-columns:44px minmax(0,1fr) 190px 118px 118px 24px;gap:10px;align-items:center;}
+  .fx-cols{font-size:10.5px;letter-spacing:.08em;color:var(--muted);font-weight:700;padding:0 14px;margin-bottom:6px;}
+  .fx-row{background:var(--surface-2);border:1px solid var(--border);border-left:4px solid var(--c,#999);border-radius:12px;padding:10px 14px;margin-bottom:8px;}
+  .fx-row.off{opacity:.55;} .fx-row.off .fx-nm b{text-decoration:line-through;}
+  .fx-nm b{font-size:14px;} .fx-sub{font-size:12px;color:var(--muted);}
+  .fx-tag{font-size:10.5px;font-weight:700;background:#E0E7FF;color:#3730A3;padding:2px 7px;border-radius:6px;margin-left:4px;vertical-align:middle;}
+  .fx-tag.ex{background:#FEF3C7;color:#92400E;}
+  :root[data-theme="dark"] .fx-tag{background:#1E2A66;color:#C7D2FE;} :root[data-theme="dark"] .fx-tag.ex{background:#3A2D0B;color:#F5C060;}
+  .fx-sel,.fx-in{width:100%;padding:8px 10px;border:1px solid var(--border-2);border-radius:9px;font:inherit;font-size:13px;background:var(--surface);color:inherit;}
+  .fx-in{text-align:right;font-weight:600;} .fx-in.vazio{background:var(--hover);}
+  .fx-in.na{background:var(--hover);color:var(--muted);text-align:center;}
+  .fx-sel:disabled{opacity:.7;}
+  .fx-in:focus,.fx-sel:focus{outline:2px solid var(--navy-2);outline-offset:-1px;}
+  .fx-x{border:0;background:transparent;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;} .fx-x:hover{color:var(--red);}
+  .fx-notes{grid-column:2 / -1;display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:-2px;}
+  .fx-pill{font-size:12px;font-weight:600;padding:3px 10px;border-radius:99px;}
+  .fx-pill.gn{background:var(--green-bg);color:#166534;} .fx-pill.am{background:var(--amber-bg);color:#92400E;} .fx-pill.rd{background:var(--red-bg);color:var(--red-text);} .fx-pill.gy{background:var(--hover);color:var(--muted);}
+  :root[data-theme="dark"] .fx-pill.gn{color:#86EFAC;} :root[data-theme="dark"] .fx-pill.am{color:#F5C060;}
+  .fx-va{font-size:12.5px;display:flex;align-items:center;gap:6px;} .fx-va .fx-in{width:150px;}
+  .fx-link{border:0;background:none;color:var(--navy-2);font-weight:700;font-size:12.5px;cursor:pointer;padding:0;} .fx-link:hover{text-decoration:underline;}
+  :root[data-theme="dark"] .fx-link{color:var(--gold);}
+  .fx-sw{position:relative;width:38px;height:22px;display:inline-block;flex:none;}
+  .fx-sw input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer;z-index:2;}
+  .fx-sw i{position:absolute;inset:0;background:var(--border-2);border-radius:99px;transition:.15s;}
+  .fx-sw i::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.15s;box-shadow:0 1px 2px rgba(0,0,0,.3);}
+  .fx-sw input:checked+i{background:var(--navy-2);} .fx-sw input:checked+i::after{left:19px;}
+  .fx-sw input:disabled{cursor:not-allowed;} .fx-sw input:disabled+i{opacity:.6;}
+  .fx-vazio{padding:18px;text-align:center;color:var(--muted);font-size:13px;border:1px dashed var(--border-2);border-radius:12px;}
+  .fx-xbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px;padding-top:12px;border-top:1px dashed var(--border-2);}
+  .fx-xl{font-size:11px;letter-spacing:.08em;font-weight:700;color:var(--muted);}
+  .fx-chipx{border:1px dashed var(--border-2);background:var(--surface);color:var(--text);padding:6px 12px;border-radius:10px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;display:inline-flex;gap:6px;align-items:center;}
+  button.fx-chipx:hover{background:var(--hover);}
+  .fx-chipx.hl{border:1px solid #F59E0B;background:var(--amber-bg);}
+  .fx-chipx button{border:0;background:var(--hover);color:var(--text);padding:3px 8px;border-radius:7px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;}
+  .fx-chipx button:hover,.fx-chipx button.on{background:var(--navy-2);color:#fff;}
+  .fx-xform{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;} .fx-xform .fx-in{text-align:left;width:auto;}
+  .fx-total{background:linear-gradient(120deg,#0B1240,#1B2290);color:#fff;border-radius:16px;padding:18px 20px;box-shadow:var(--shadow);}
+  .fx-total small{font-size:11px;letter-spacing:.14em;opacity:.7;display:block;}
+  .fx-total > b{font-size:34px;display:block;margin:4px 0 12px;}
+  .fx-leg b{font-size:12.5px;font-weight:600;}
+  .fx-bar{display:flex;height:10px;border-radius:99px;overflow:hidden;gap:2px;background:rgba(255,255,255,.12);margin-bottom:12px;} .fx-bar span{display:block;min-width:4px;}
+  .fx-leg{display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;font-size:12.5px;}
+  .fx-leg div{display:flex;align-items:center;gap:7px;} .fx-leg i{width:9px;height:9px;border-radius:3px;flex:none;} .fx-leg span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;} .fx-leg .mais{opacity:.7;grid-column:1/-1;}
+  .fx-prev{width:100%;border-collapse:collapse;font-size:12.5px;border:1px solid var(--border-2);}
+  .fx-prev th,.fx-prev td{padding:6px 9px;border:1px solid var(--border-2);position:static;}
+  .fx-prev th{background:var(--hover);text-align:center;font-size:11.5px;} .fx-prev .fx-pt{background:var(--surface);font-size:12.5px;}
+  .fx-prev tr.tot td{background:#DDEBF7;color:#000;font-weight:700;}
+  .fx-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;} .fx-tab{font-size:12px;padding:5px 12px;border-radius:8px 8px 0 0;background:var(--hover);color:var(--muted);} .fx-tab.on{background:var(--surface);border:1px solid var(--border-2);border-bottom:2px solid var(--navy-2);color:var(--text);font-weight:700;}
+  .fx-av{display:flex;gap:10px;align-items:center;padding:9px 12px;border-radius:10px;font-size:12.5px;margin-bottom:8px;border:1px solid transparent;}
+  .fx-av i{font-style:normal;flex:none;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;color:#fff;}
+  .fx-av span{flex:1;} .fx-av .fx-link{white-space:nowrap;}
+  .fx-av.rd{background:var(--red-bg);border-color:var(--red-border);} .fx-av.rd i{background:#EF4444;}
+  .fx-av.am{background:var(--amber-bg);border-color:#FCD34D;} .fx-av.am i{background:#F59E0B;}
+  .fx-av.gn{background:var(--green-bg);border-color:#86EFAC;} .fx-av.gn i{background:#16A34A;}
+  .fx-av.bl{background:var(--info-bg);border-color:#BAD7F5;} .fx-av.bl i{background:#2563EB;}
+  :root[data-theme="dark"] .fx-av{border-color:transparent;}
+  .fx-path{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;background:var(--hover);padding:4px 10px;border-radius:8px;color:var(--muted);}
+  .fx-dcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;}
+  .fx-dc{border:1px solid var(--border);border-top:4px solid var(--c);border-radius:12px;padding:10px 12px;background:var(--surface-2);} .fx-dc b{font-size:13.5px;display:block;margin-bottom:6px;}
+  .fx-dl{display:flex;gap:7px;align-items:center;font-size:12.5px;margin:3px 0;} .fx-dl i{font-style:normal;width:17px;height:17px;border-radius:50%;display:grid;place-items:center;font-size:10.5px;font-weight:700;color:#fff;background:#16A34A;flex:none;}
+  .fx-dl.no{color:var(--red-text);font-weight:600;} .fx-dl.no i{background:#EF4444;} .fx-dl.na{color:var(--muted);} .fx-dl.na i{background:#94A3B8;}
+  .fx-ordem{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin:12px 0 4px;font-size:12.5px;} .fx-ordem em{font-style:normal;color:var(--muted);}
+  .fx-o{width:20px;height:20px;border-radius:6px;background:#334155;color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;}
+  .fx-oc{background:var(--hover);padding:4px 10px;border-radius:8px;font-weight:600;}
+  .fx-sec2{font-weight:700;font-size:13px;margin:14px 0 6px;} .fx-sec2 small{font-weight:400;color:var(--muted);margin-left:6px;}
+  .fx-cobrar{background:#E0F2FE;color:#075985;padding:9px 12px;border-radius:10px;font-size:12.5px;margin-top:10px;}
+  :root[data-theme="dark"] .fx-cobrar{background:#0E2A4A;color:#9AD1F5;}
+  .fx-acoes{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);}
+  .fx-resp{display:flex;flex-wrap:wrap;gap:12px;align-items:center;font-size:13px;} .fx-btns{display:flex;gap:8px;flex-wrap:wrap;}
+  .fx-det{margin-top:10px;font-size:12.5px;} .fx-det summary{cursor:pointer;color:var(--muted);font-weight:600;}
+  .fx-foot{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 22px;border-top:1px solid var(--border);background:var(--surface);}
+  .fx-lote{font-size:13px;font-weight:600;display:flex;gap:8px;align-items:center;}
+  .fx-chip{background:var(--info-bg);color:var(--info);padding:3px 10px;border-radius:8px;font-size:12px;font-weight:700;}
+  .fx-link.rd{color:var(--red);}
+  .fx-mv{margin-left:auto;font-size:12.5px;display:flex;gap:7px;align-items:center;white-space:nowrap;margin-bottom:0;} .fx-mv input,.fx-resp input,.fx-resp label{width:auto;margin:0;} .fx-resp label{display:inline-flex;align-items:center;gap:6px;margin-bottom:0;}
+  .fx-prev .fx-pt{text-transform:none;letter-spacing:0;}
+  .fx-foot kbd{font:inherit;font-size:10.5px;background:rgba(255,255,255,.2);padding:2px 6px;border-radius:5px;margin-left:6px;}
+  @media (max-width:1000px){ .fx-grid{grid-template-columns:1fr;} .fx-right{position:static;} .fx-cols{display:none;} .fx-row{grid-template-columns:44px 1fr 1fr;} .fx-row .fx-nm{grid-column:2 / -1;} .fx-chips{margin-left:0;} }
   .btn-gold{background:var(--navy);border-color:var(--navy);color:#fff;}
   .btn-gold:hover{background:var(--navy-2);border-color:var(--navy-2);}
   .btn-gold{box-shadow:0 2px 8px rgba(0,21,148,.25);}
@@ -1065,15 +1167,15 @@
 
 <!-- MODAL: faturar -->
 <div class="overlay" id="fatOverlay">
-  <div class="modal" style="max-width:880px;max-height:92vh;display:flex;flex-direction:column;">
-    <h3 id="fatTitle">💲 Faturar</h3>
-    <div id="fatLote" style="font-size:12px;color:var(--muted);margin:-8px 0 8px;"></div>
-    <div id="fatBody" style="overflow-y:auto;flex:1;"></div>
-    <div class="modal-foot">
-      <button class="btn btn-ghost" id="btnFatLimpar" style="margin-right:auto;">Limpar lote</button>
+  <div class="modal fx-modal">
+    <div class="fx-head" id="fatHead"></div>
+    <div id="fatBody"></div>
+    <div class="fx-foot">
+      <div class="fx-lote">Lote: <span class="fx-chip" id="fatLote">nenhum</span> <button class="fx-link" id="btnFatVer" type="button">ver</button> · <button class="fx-link rd" id="btnFatLimpar" type="button">limpar</button></div>
+      <label class="fx-mv"><input type="checkbox" id="fatMover"> Ao baixar, mover para "Aguardando Vidotti conferir"</label>
       <button class="btn btn-ghost" id="btnFatFechar">Fechar</button>
       <button class="btn" id="btnFatLote">Adicionar ao lote</button>
-      <button class="btn btn-gold" id="btnFatBaixar">Baixar planilha (.xlsx)</button>
+      <button class="btn btn-gold" id="btnFatBaixar">Baixar planilha (.xlsx) <kbd>Ctrl+Enter</kbd></button>
     </div>
   </div>
 </div>
@@ -4064,6 +4166,7 @@ function fatCalcHon(f){
 async function openFaturar(id){
   const p = state.processes.find(x=>x.id===id); if(!p) return;
   const client = clientById(p.clienteId);
+  { const mv=document.getElementById('fatMover'); if(mv) mv.checked=false; }
   fat = {p, client, linhas:[], solic:{}, honValor:'', va:'', tipo:'', receitasHon:[], carregando:true, erro:'', docs:null, docsMsg:'', resp: (client && client.responsavel) || ''};
   fatOverlay.classList.add('show');
   fatRender();
@@ -4090,55 +4193,158 @@ async function openFaturar(id){
   }
 }
 
+const FX_COR = ['#6366F1','#0EA5E9','#14B8A6','#F97316','#A855F7','#EC4899','#84CC16','#EAB308','#06B6D4','#F43F5E'];
+function fxCor(cat){ const i = FAT_CATS.indexOf(cat); return (cat==='OUTROS' || i<0) ? '#64748B' : FX_COR[i % FX_COR.length]; }
+const fxChip = (cls, ico, txt) => `<span class="fx-st ${cls}"><i>${ico}</i>${txt}</span>`;
+
+function fxCards(){ // um cartão por despesa que precisa de documento
+  const g = {};
+  fat.linhas.filter(l=>l.inc && !l.extra && !['HONORÁRIO','Cadastro de produto no catálogo','OUTROS'].includes(l.cat)).forEach(l=>{
+    const f = fatFamilia(l.cat); (g[f] = g[f] || {f, cat:l.cat, ls:[]}).ls.push(l);
+  });
+  const docs = (fat.docs||[]).filter(d=>d.inc);
+  return Object.values(g).sort((a,b)=>FAT_CATS.indexOf(a.cat)-FAT_CATS.indexOf(b.cat)).map(k=>{
+    const dd = docs.filter(d=>fatFamilia(d.cat)===k.f);
+    const itens = [];
+    if(k.f==='FEDERAIS') itens.push({n:'Tela de Débito', ok: dd.some(d=>d.cat==='Tela de Débito')});
+    else {
+      const bol = dd.filter(d=>d.role===0), comp = dd.filter(d=>d.role===2), outros = dd.filter(d=>d.role===1);
+      itens.push({n:'Boleto', ok: bol.length>0 || outros.length>0});
+      itens.push({n:'Comprovante', ok: comp.length>0});
+    }
+    return {titulo: k.f==='FEDERAIS' ? 'Impostos Federais' : k.cat, cat:k.cat, itens, ok: itens.every(i=>i.ok)};
+  });
+}
+function fxHonInfo(){
+  const hv = fatNum(fat.honValor), regra = fatCalcHon(fat);
+  let st = 'ok';
+  if(!hv) st = 'vazio'; else if(!regra) st = 'semregra'; else if(Math.abs(regra-hv)>=0.01) st = 'difere';
+  return {hv, regra, st};
+}
+function fxAvisos(fin){
+  const A = [], h = fxHonInfo();
+  fin.avisos.forEach(a=>{
+    if(a===fat.seguroMsg) return;
+    const m = a.match(/^(.+?): (sem data|uma das linhas)/);
+    A.push({t: /^Honorário sem valor/.test(a) ? 'rd' : 'am', h: esc(a), act: m ? `<button class="fx-link" data-fx="focuspag" data-cat="${escAttr(m[1])}">Informar data</button>` : ''});
+  });
+  if(h.st==='difere') A.push({t:'am', h:'<b>Honorário</b> (R$ '+fatBR(h.hv)+') difere da regra do cadastro (R$ '+fatBR(h.regra)+').', act:'<button class="fx-link" data-fx="usarregra">Usar valor da regra</button>'});
+  if(fat.seguroMsg) A.push({t: fat.seguroTipo==='warn'?'am':(fat.seguroTipo==='ok'?'gn':'bl'), h: esc(fat.seguroMsg), act:''});
+  if(fat.docs){
+    const oks = [];
+    fatConferir().forEach(r=>{
+      if(r.st==='ok') oks.push(r.cat);
+      else A.push({t: r.st==='warn'?'rd':'bl', h:'<b>'+esc(r.cat)+'</b> · '+r.msgs.map(esc).join(' · '), act: /sem documento|sem comprovante/.test(r.msgs.join(' ')) ? '<button class="fx-link" data-docact="buscar">Buscar de novo</button>' : ''});
+    });
+    if(oks.length) A.push({t:'gn', h:'<b>Valores conferidos</b> com os documentos: '+oks.map(esc).join(', ')+'.', act:''});
+  } else A.push({t:'bl', h:'Documentos ainda não conferidos — busque a pasta do processo.', act:'<button class="fx-link" data-docact="buscar">Buscar documentos</button>'});
+  if(h.st==='ok') A.push({t:'gn', h:'<b>Honorário confere</b> com a regra do cadastro.', act:''});
+  if(!A.some(a=>a.t==='rd'||a.t==='am') && fat.docs) A.unshift({t:'gn', h:'<b>Nenhum ponto de atenção.</b>', act:''});
+  return A;
+}
+function fxLinha(l, i){
+  const catOpts = FAT_CATS.map(k=>`<option ${k===l.cat?'selected':''}>${esc(k)}</option>`).join('');
+  const notas = [];
+  if(l.inc && !l.extra && l.cat==='OUTROS' && !fatConhecido(l.ev)) notas.push('<span class="fx-pill am">! Item não reconhecido</span><span class="fx-sub">confira a categoria; vai na planilha com o nome original</span>');
+  if(l.inc && !FAT_SEM_DATA.includes(l.cat) && !fatData(l.pag)) notas.push('<span class="fx-pill am">! Sem data de pagamento</span><span class="fx-sub">vai como N/A na planilha</span>');
+  if(!l.inc) notas.push('<span class="fx-sub">Desligada: fica fora da planilha e do total (ex.: pago direto pelo cliente).</span>');
+  return `<div class="fx-row ${l.inc?'':'off'}" style="--c:${fxCor(l.cat)}">
+    <label class="fx-sw"><input type="checkbox" data-fi="${i}" data-f="inc" ${l.inc?'checked':''}><i></i></label>
+    <div class="fx-nm"><b>${esc(l.ev)}</b> ${l.extra?'<span class="fx-tag ex">Extra</span>':'<span class="fx-tag">Sicoex</span>'}${l.forn?`<div class="fx-sub">${esc(l.forn)}</div>`:''}</div>
+    <select class="fx-sel" data-fi="${i}" data-f="cat">${catOpts}</select>
+    <input class="fx-in fx-nav" data-fi="${i}" data-f="valor" value="${escAttr(fatBR(l.valor))}">
+    <input class="fx-in fx-nav ${fatData(l.pag)?'':'vazio'}" data-fi="${i}" data-f="pag" value="${escAttr(l.pag)}" placeholder="N/A">
+    ${l.extra?`<button class="fx-x" data-extrarm="${i}" title="Remover esta despesa">×</button>`:'<span></span>'}
+    ${notas.length?`<div class="fx-notes">${notas.join('')}</div>`:''}
+  </div>`;
+}
+function fxHonRow(industrialOuCms){
+  const c = fat.client, h = fxHonInfo();
+  const pill = h.st==='ok' ? '<span class="fx-pill gn">✓ Confere com a regra</span>'
+    : h.st==='vazio' ? '<span class="fx-pill rd">! Sem valor — preencha</span>'
+    : h.st==='semregra' ? '<span class="fx-pill gy">Sem regra de valor no cadastro</span>'
+    : `<span class="fx-pill rd">! Difere da regra (R$ ${fatBR(h.regra)})</span><button class="fx-link" data-fx="usarregra">Usar valor da regra</button>`;
+  return `<div class="fx-row" style="--c:${fxCor('HONORÁRIO')}">
+    <label class="fx-sw"><input type="checkbox" checked disabled title="O honorário sempre entra na planilha"><i></i></label>
+    <div class="fx-nm"><b>HONORÁRIO</b> ${fat.receitasHon.length?'<span class="fx-tag">Sicoex</span>':'<span class="fx-tag">Cadastro</span>'}</div>
+    <select class="fx-sel" disabled><option>HONORÁRIO</option></select>
+    <input class="fx-in fx-nav" id="fatHon" value="${escAttr(fat.honValor===''?'':fatBR(fat.honValor))}">
+    <div class="fx-in na">N/A</div><span></span>
+    <div class="fx-notes">${pill}<span class="fx-sub">Cadastro: ${esc((c&&c.honorario)||'— sem regra —')}${fat.receitasHon.length?' · Sicoex: '+fat.receitasHon.map(r=>'R$ '+fatBR(r.valor)).join(' + '):''}</span>
+      ${industrialOuCms?`<label class="fx-va">Valor aduaneiro (CIF) <input class="fx-in" id="fatVA" value="${escAttr(fat.va)}" placeholder="ex: 620.000,00"></label><span class="fx-sub">acima de R$ 500 mil: +0,2% sobre o valor aduaneiro</span>`:''}</div>
+  </div>`;
+}
+
 function fatRender(){
   const box = document.getElementById('fatBody'); if(!box || !fat) return;
   const c = fat.client, cms = fatEhCMS(c);
-  document.getElementById('fatTitle').textContent = '💲 Faturar — '+fat.p.codigo+' · '+(c?c.nome:'');
-  document.getElementById('fatLote').textContent = fatBatch.length ? ('Lote: '+fatBatch.length+' processo'+(fatBatch.length>1?'s':'')+' ('+fatBatch.map(b=>b.ref).join(', ')+')') : '';
-  if(fat.carregando){ box.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);">Lendo o financeiro no Sicoex… (pode levar alguns segundos)</div>'; return; }
-  if(fat.erro){ box.innerHTML = '<div style="padding:16px;color:var(--red-text);font-weight:600;">Não consegui ler o Sicoex: '+esc(fat.erro)+'</div><div style="color:var(--muted);font-size:12.5px;padding:0 16px;">Confira o login nas Propriedades do script (SICOEX_USUARIO / SICOEX_SENHA) e se a implantação foi atualizada.</div>'; return; }
-  const fin = fatFinal(fat);
-  const regra = fatHonRegra(c);
-  const industrialOuCms = fatEhCMS(c)||fatEhIndustrial(c);
-  const catOpts = sel => FAT_CATS.map(k=>`<option ${k===sel?'selected':''}>${esc(k)}</option>`).join('');
+  const head = document.getElementById('fatHead'), lote = document.getElementById('fatLote');
+  if(lote){ lote.textContent = fatBatch.length ? fatBatch.length+' processo'+(fatBatch.length>1?'s':'') : 'nenhum'; lote.title = fatBatch.map(b=>b.ref).join(', '); }
+  const cab = chips => `<div class="fx-logo">R$</div><div class="fx-ttl"><small>FATURAR PROCESSO</small><b>${esc(fat.p.codigo)}</b></div>
+    <div class="fx-pills">${c?`<span>${esc(c.nome)}</span>`:''}${fat.tipo?`<span>${esc(fat.tipo)}</span>`:''}<span>SDA do cliente: <b>${esc(modalidadeOf(fat.p))}</b></span>${cms?'<span>modelo CMS (5 colunas)</span>':''}</div>
+    <div class="fx-chips">${chips||''}</div>`;
+  if(fat.carregando){ head.innerHTML = cab(''); box.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);">Lendo o financeiro no Sicoex… (pode levar alguns segundos)</div>'; return; }
+  if(fat.erro){ head.innerHTML = cab(''); box.innerHTML = '<div style="padding:16px;color:var(--red-text);font-weight:600;">Não consegui ler o Sicoex: '+esc(fat.erro)+'</div><div style="color:var(--muted);font-size:12.5px;padding:0 16px;">Confira o login nas Propriedades do script (SICOEX_USUARIO / SICOEX_SENHA) e se a implantação foi atualizada.</div>'; return; }
+  const fin = fatFinal(fat), industrialOuCms = fatEhCMS(c)||fatEhIndustrial(c);
   const total = fin.linhas.reduce((s,l)=>s+l.valor,0);
-  box.innerHTML = `
-    <div class="fat-meta">Processo <b>${esc(fat.p.codigo)}</b> (${esc(fat.tipo)}) · SDA do cliente: <b>${esc(modalidadeOf(fat.p))}</b>${cms?' · <b>modelo CMS (5 colunas)</b>':''}</div>
-    <div class="fat-sec">1. Despesas lidas do Sicoex <span>desmarque o que não entra (ex.: pago direto pelo cliente) e ajuste a categoria se precisar</span></div>
-    <div class="fat-scroll"><table class="fat-t">
-      <tr><th></th><th>Evento · fornecedor</th><th>Categoria</th><th>Valor</th><th>Pagamento</th></tr>
-      ${fat.linhas.map((l,i)=>l.extra?'':`<tr class="${l.inc?'':'off'}">
-        <td><input type="checkbox" data-fi="${i}" data-f="inc" ${l.inc?'checked':''}></td>
-        <td><b>${esc(l.ev)}</b><br><small>${esc(l.forn)}</small></td>
-        <td><select data-fi="${i}" data-f="cat">${catOpts(l.cat)}</select></td>
-        <td><input class="fat-in" data-fi="${i}" data-f="valor" value="${escAttr(fatBR(l.valor))}"></td>
-        <td><input class="fat-in" data-fi="${i}" data-f="pag" value="${escAttr(l.pag)}" placeholder="N/A"></td>
-      </tr>`).join('') || '<tr><td colspan="5" style="color:var(--muted);padding:12px;">Nenhuma despesa encontrada.</td></tr>'}
-    </table></div>
-    <div class="fat-sec">2. Honorário</div>
-    <div class="fat-hon">
-      <label>Valor <input class="fat-in" id="fatHon" value="${escAttr(fat.honValor===''?'':fatBR(fat.honValor))}" style="width:130px"></label>
-      ${industrialOuCms?`<label>Valor aduaneiro (CIF) <input class="fat-in" id="fatVA" value="${escAttr(fat.va)}" placeholder="ex: 620.000,00" style="width:150px"></label><span class="fat-hint">acima de R$ 500 mil: +0,2% sobre o valor aduaneiro</span>`:''}
-      <div class="fat-hint" style="flex-basis:100%;">Regra do cadastro: ${esc((c&&c.honorario)||'— sem regra —')}${regra?'':''}${fat.receitasHon.length?'<br>No Sicoex: '+fat.receitasHon.map(r=>'R$ '+fatBR(r.valor)).join(' + '):''}</div>
-    </div>
-    <div class="fat-sec" style="margin-top:6px;">Despesas extras <span>itens que não estão no Sicoex (ex.: puxe de cargas, cadastro de produto no catálogo)</span></div>
-    ${fat.linhas.some(l=>l.extra)?`<table class="fat-t">${fat.linhas.map((l,i)=>l.extra?`<tr><td><b>${esc(l.ev)}</b>${l.cat!==l.ev&&l.cat!=='OUTROS'?` <small>→ ${esc(l.cat)}</small>`:''}</td><td style="text-align:right">R$ ${fatBR(fatNum(l.valor))}</td><td>${esc(l.pag)||'N/A'}</td><td style="width:40px"><button class="btn btn-sm btn-ghost" data-extrarm="${i}" title="Remover">✕</button></td></tr>`:'').join('')}</table>`:''}
-    ${fat.seguroMsg?`<div class="${fat.seguroTipo==='warn'?'fat-av':(fat.seguroTipo==='ok'?'fat-ok':'fat-hint')}" style="margin-top:6px;">${esc(fat.seguroMsg)}</div>`:''}
-    <div class="fat-hon" style="margin-top:6px;">
-      <input class="fat-in" id="fatXNome" list="fatXLista" placeholder="Nome da despesa" style="width:230px">
-      <datalist id="fatXLista"><option value="SEGURO"><option value="PUXE DE CARGAS"><option value="Cadastro de produto no catálogo"><option value="TAXA DE DESCONSOLIDAÇÃO"><option value="LAUDO TÉCNICO"><option value="FRETE INTERNACIONAL"></datalist>
-      <input class="fat-in" id="fatXValor" placeholder="Valor (ex: 350,00)" style="width:130px">
-      <input class="fat-in" id="fatXData" placeholder="Data pgto (vazio = N/A)" style="width:190px">
-      <button class="btn btn-sm" data-extraadd="1" type="button">+ Adicionar</button>
-    </div>
-    <div class="fat-sec">3. Como vai sair na planilha</div>
-    <table class="fat-t fat-prev">
-      <tr><th>Despesa</th><th>Valor</th><th>Data</th>${cms?'<th>Valor solicitado</th>':''}</tr>
-      ${fin.linhas.map(l=>`<tr><td>${esc(l.nome)}</td><td style="text-align:right">R$ ${fatBR(l.valor)}</td><td>${l.data?fatDataTxt(l.data):'N/A'}</td>${cms?`<td><input class="fat-in" data-solic="${escAttr(l.nome)}" value="${escAttr(l.solic===''?'':fatBR(l.solic))}" style="width:110px"></td>`:''}</tr>`).join('')}
-      <tr class="tot"><td>TOTAL DO PROCESSO</td><td style="text-align:right">R$ ${fatBR(total)}</td><td></td>${cms?'<td></td>':''}</tr>
-    </table>
-    ${fin.avisos.length?'<div class="fat-av">⚠ '+fin.avisos.map(esc).join('<br>⚠ ')+'</div>':'<div class="fat-ok">✓ Nenhum ponto de atenção.</div>'}
-    ${fatDocsHtml()}`;
+  const h = fxHonInfo(), cards = fxCards(), avisos = fxAvisos(fin), nAv = avisos.filter(a=>a.t==='rd'||a.t==='am').length;
+  const okCards = cards.filter(k=>k.ok).length;
+  const entram = fat.linhas.filter(l=>l.inc).length;
+
+  head.innerHTML = cab(
+    fxChip(fin.linhas.length?'gn':'rd', fin.linhas.length?'✓':'!', 'Despesas') +
+    fxChip(h.st==='ok'?'gn':(h.st==='semregra'?'gy':(h.st==='vazio'?'rd':'am')), h.st==='ok'?'✓':'!', h.st==='ok'?'Honorário confere':(h.st==='semregra'?'Honorário sem regra':(h.st==='vazio'?'Honorário sem valor':'Honorário difere'))) +
+    fxChip(nAv?'am':'gn', nAv?'!':'✓', nAv ? nAv+' aviso'+(nAv>1?'s':'') : 'Sem avisos') +
+    (fat.docs ? fxChip(okCards===cards.length?'gn':'rd', okCards===cards.length?'✓':'!', 'Documentos '+okCards+'/'+cards.length) : fxChip('gy','…','Documentos não buscados'))
+  );
+
+  const barra = fin.linhas.filter(l=>l.valor>0).map(l=>`<span style="flex:${l.valor};background:${fxCor(l.nome)}" title="${escAttr(l.nome)}: R$ ${fatBR(l.valor)}"></span>`).join('');
+  const leg = fin.linhas.filter(l=>l.valor>0).slice(0,8).map(l=>`<div><i style="background:${fxCor(l.nome)}"></i><span>${esc(l.nome)}</span><b>${fatBR(l.valor)}</b></div>`).join('');
+  const mais = Math.max(0, fin.linhas.filter(l=>l.valor>0).length-8);
+  const abas = fatBatch.filter(b=>b.ref!==String(fat.p.codigo)).map(b=>`<span class="fx-tab">${esc(b.ref)} · lote</span>`).join('');
+  const x = fat.xVals || {n:'',v:'',d:''};
+  const puxeP = String(fat.p.puxe||'');
+
+  box.innerHTML = `<div class="fx-grid">
+   <div class="fx-left">
+    <section class="fx-card">
+      <div class="fx-ch"><h4>Despesas</h4><span class="fx-hint">lidas do Sicoex · já na ordem da planilha · desligue o que não entra</span><span class="fx-badge">${entram} de ${fat.linhas.length} entram</span></div>
+      <div class="fx-cols"><span></span><span>EVENTO · FORNECEDOR</span><span>CATEGORIA</span><span>VALOR (R$)</span><span>PAGAMENTO</span><span></span></div>
+      ${fxHonRow(industrialOuCms)}
+      ${fat.linhas.map((l,i)=>fxLinha(l,i)).join('') || '<div class="fx-vazio">Nenhuma despesa encontrada no Sicoex.</div>'}
+      <div class="fx-xbar"><span class="fx-xl">+ Despesa extra</span>
+        <span class="fx-chipx ${puxeP?'hl':''}">Puxe de cargas ${[100,150,300,350].map(v=>`<button type="button" class="${puxeP===String(v)?'on':''}" data-fx="puxe" data-v="${v}">${v}</button>`).join('')}</span>
+        <button type="button" class="fx-chipx" data-fx="xchip" data-nome="Cadastro de produto no catálogo">Cadastro de produto no catálogo</button>
+        <button type="button" class="fx-chipx" data-fx="xchip" data-nome="SEGURO">Seguro</button>
+        <button type="button" class="fx-chipx" data-fx="xchip" data-nome="">Outra despesa…</button>
+      </div>
+      ${fat.xOpen ? `<div class="fx-xform">
+        <input class="fx-in" id="fatXNome" list="fatXLista" placeholder="Nome da despesa" value="${escAttr(x.n)}" style="width:230px">
+        <datalist id="fatXLista"><option value="SEGURO"><option value="PUXE DE CARGAS"><option value="Cadastro de produto no catálogo"><option value="TAXA DE DESCONSOLIDAÇÃO"><option value="LAUDO TÉCNICO"><option value="FRETE INTERNACIONAL"></datalist>
+        <input class="fx-in" id="fatXValor" placeholder="Valor (ex: 350,00)" value="${escAttr(x.v)}" style="width:140px">
+        <input class="fx-in" id="fatXData" placeholder="Data pgto (vazio = N/A)" value="${escAttr(x.d)}" style="width:180px">
+        <button class="btn btn-sm btn-gold" data-extraadd="1" type="button">+ Adicionar</button>
+        <button class="btn btn-sm btn-ghost" data-fx="xcancel" type="button">Cancelar</button>
+      </div>` : ''}
+    </section>
+    <section class="fx-card">${fatDocsHtml(cards)}</section>
+   </div>
+   <div class="fx-right">
+    <section class="fx-total"><small>TOTAL DO PROCESSO</small><b>R$ ${fatBR(total)}</b>
+      <div class="fx-bar">${barra}</div><div class="fx-leg">${leg}${mais?`<div class="mais">+ ${mais} categoria${mais>1?'s':''}</div>`:''}</div></section>
+    <section class="fx-card"><div class="fx-ch"><h4>Prévia da planilha</h4><span class="fx-hint">igual ao .xlsx que vai baixar</span></div>
+      <table class="fat-t fat-prev fx-prev">
+        <tr><th colspan="${cms?4:3}" class="fx-pt">Cliente: ${esc(c?c.nome:'')} &nbsp; REF: ${esc(fat.p.codigo)}</th></tr>
+        <tr><th>DESPESAS</th><th>VALORES</th><th>DATA</th>${cms?'<th>Valor solicitado</th>':''}</tr>
+        ${fin.linhas.map(l=>`<tr><td>${esc(l.nome)}</td><td style="text-align:right">R$ ${fatBR(l.valor)}</td><td style="text-align:center">${l.data?fatDataTxt(l.data):'N/A'}</td>${cms?`<td><input class="fat-in" data-solic="${escAttr(l.nome)}" value="${escAttr(l.solic===''?'':fatBR(l.solic))}" style="width:100px"></td>`:''}</tr>`).join('')}
+        <tr class="tot"><td>TOTAL DO PROCESSO</td><td style="text-align:right">R$ ${fatBR(total)}</td><td></td>${cms?'<td></td>':''}</tr>
+      </table>
+      <div class="fx-tabs"><span class="fx-tab on">${esc(fat.p.codigo)}</span>${abas}</div>
+    </section>
+    <section class="fx-card"><div class="fx-ch"><h4>Avisos</h4><span class="fx-hint">o que conferir antes de baixar</span></div>
+      ${avisos.map(a=>`<div class="fx-av ${a.t}"><i>${a.t==='gn'?'✓':(a.t==='bl'?'i':'!')}</i><span>${a.h}</span>${a.act}</div>`).join('')}
+    </section>
+   </div></div>`;
 }
 
 document.getElementById('fatBody').addEventListener('input', e=>{
@@ -4213,8 +4419,8 @@ function fatAddSheet(wb, s){
   return ws;
 }
 async function fatGerar(lote){
-  if(typeof ExcelJS==='undefined'){ toast('Biblioteca de planilha não carregou. Verifique a internet e recarregue.'); return; }
-  if(!lote.length){ toast('Nada para gerar.'); return; }
+  if(typeof ExcelJS==='undefined'){ toast('Biblioteca de planilha não carregou. Verifique a internet e recarregue.'); return false; }
+  if(!lote.length){ toast('Nada para gerar.'); return false; }
   const wb = new ExcelJS.Workbook();
   lote.forEach(s=>fatAddSheet(wb,s));
   const buf = await wb.xlsx.writeBuffer();
@@ -4223,10 +4429,19 @@ async function fatGerar(lote){
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nomeArq; document.body.appendChild(a); a.click();
   setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1500);
   toast('Planilha gerada: '+nomeArq);
+  return true;
 }
-function fatBaixar(){
+async function fatBaixar(){
   const lote = fatBatch.filter(b=>b.ref!==String(fat.p.codigo)).concat(fat.erro||fat.carregando?[]:[fatSnapshot()]);
-  return fatGerar(lote);
+  const ok = await fatGerar(lote);
+  const mv = document.getElementById('fatMover');
+  if(ok && mv && mv.checked && !fat.erro && !fat.carregando){
+    const p = fat.p; p.status = 'vidotti'; p.statusDesde = new Date().toISOString();
+    const irm = state.processes.filter(x=>x.status==='vidotti' && x.id!==p.id);
+    p.order = irm.length ? Math.max(...irm.map(x=>x.order||0))+1 : 0;
+    save(); mv.checked = false;
+    toast('Processo movido para "Aguardando Vidotti conferir".');
+  }
 }
 function loteRender(){
   const box = document.getElementById('loteBody');
@@ -4304,6 +4519,7 @@ async function fatBuscarDocs(forcarNova){
     const root = await fatPegarPasta(forcarNova);
     const pasta = await fatAchaPastaProcesso(root, String(fat.p.codigo).trim(), 0);
     if(!pasta){ fat.docsMsg = 'Não achei a pasta do processo '+fat.p.codigo+' dentro de "'+root.name+'". Escolha a pasta "Processos" (ou a do ano) em "Trocar pasta".'; fatRender(); return; }
+    fat.pastaNome = pasta.name;
     let fd = null;
     for await (const [n,h] of pasta.entries()){ if(h.kind==='directory' && /^faturamento$/i.test(n.trim())) fd = h; }
     if(!fd){ fat.docsMsg = 'A pasta '+pasta.name+' não tem a subpasta FATURAMENTO.'; fatRender(); return; }
@@ -4597,28 +4813,69 @@ document.getElementById('fatBody').addEventListener('change', e=>{
   if(!fat || t.dataset.doci===undefined) return;
   fat.docs[+t.dataset.doci].inc = t.checked; fatRender();
 });
-function fatDocsHtml(){
+function fatDocsHtml(cards){
+  cards = cards || fxCards();
   const docs = fat.docs;
-  return `<div class="fat-sec">4. Documentos <span>boleto → comprovante, AFRMM e Tela de Débito por último</span></div>
-  <div class="fat-hint" style="margin-bottom:6px;">${esc(fat.docsMsg||'')}</div>
-  ${docs ? `<div class="fat-scroll" style="max-height:240px;"><table class="fat-t">
-    ${docs.map((d,i)=>`<tr class="${d.inc?'':'off'}"><td><input type="checkbox" data-doci="${i}" ${d.inc?'checked':''}></td>
+  const caminho = fat.pastaNome ? 'Processos \\ '+fat.pastaNome+' \\ FATURAMENTO' : 'pasta Processos';
+  const rotulo = d => d.cat==='Tela de Débito' ? 'Tela de Débito · sempre por último' : ((['OUTROS','Devolução'].includes(d.cat)?d.nome.replace(/\.[a-z0-9]+$/i,''):d.cat)+(d.role===0?' · boleto':(d.role===2?' · comprovante':'')));
+  const inc = docs ? docs.filter(d=>d.inc) : [];
+  return `<div class="fx-ch"><h4>Documentos</h4><span class="fx-path">${esc(caminho)}</span>
+      <span class="fx-sp"></span><button class="fx-link" data-docact="buscar">${docs?'Atualizar':'Buscar no PC'}</button> · <button class="fx-link" data-docact="trocar">Trocar pasta</button></div>
+  ${fat.docsMsg?`<div class="fx-hint" style="margin:0 0 10px;">${esc(fat.docsMsg)}</div>`:''}
+  ${docs ? `<div class="fx-dcards">
+      <div class="fx-dc" style="--c:${fxCor('HONORÁRIO')}"><b>Honorário</b><div class="fx-dl na"><i>–</i>Não precisa de documento</div></div>
+      ${cards.map(k=>`<div class="fx-dc" style="--c:${fxCor(k.cat)}"><b>${esc(k.titulo)}</b>${k.itens.map(i=>`<div class="fx-dl ${i.ok?'ok':'no'}"><i>${i.ok?'✓':'!'}</i>${i.ok?esc(i.n):esc(i.n)+' não encontrado'}</div>`).join('')}</div>`).join('')}
+    </div>
+    <div class="fx-ordem"><span class="fx-xl">ORDEM NO PDF</span>${inc.map((d,i)=>`<span class="fx-o">${i+1}</span><span class="fx-oc">${esc(rotulo(d))}</span>`).join('<em>→</em>') || '<span class="fx-hint">nenhum arquivo marcado</span>'}</div>
+    <div class="fx-sec2">Arquivos da pasta <small>marque o que entra no PDF · ↑↓ muda a ordem · 👁 abre para conferir</small></div>
+    <div class="fat-scroll" style="max-height:230px;"><table class="fat-t">
+    ${docs.map((d,i)=>`<tr class="${d.inc?'':'off'}"><td style="width:28px"><input type="checkbox" data-doci="${i}" ${d.inc?'checked':''}></td>
       <td>${esc(d.nome)}${d.excl?' <small>(fora por padrão)</small>':''}${d.porConteudo?' <small title="O nome do arquivo não dizia o que era; identifiquei pelo conteúdo (valores e palavras do PDF).">🔎 pelo conteúdo</small>':''}</td><td><small>${esc(d.cat)}</small></td>
-      <td style="white-space:nowrap"><button class="btn btn-sm btn-ghost" data-docact="ver" data-i="${i}" title="Abrir este documento para conferir">👁 Abrir</button><button class="btn btn-sm btn-ghost" data-docact="up" data-i="${i}">↑</button><button class="btn btn-sm btn-ghost" data-docact="down" data-i="${i}">↓</button></td></tr>`).join('')}
-  </table></div>` : ''}
-  ${(fat.cobrar||[]).length?`<div class="fat-av" style="background:#E0F2FE;color:#075985;">📁 ${(fat.cobrar||[]).map((c,i)=>{ const ok = fatCobrarLinhas(c).length; return '<b>'+esc(c.nome)+'</b> → R$ '+fatBR(c.valor)+' ('+esc(c.rotulo)+') '+(ok?'✓ já está na planilha':'<button class="btn btn-sm" data-docact="cobraradd" data-i="'+i+'">Adicionar à planilha</button>'); }).join('<br>')}</div>`:''}
-  ${docs?`<div class="fat-hon" style="margin-top:8px;"><b>Responsável pelo cliente:</b>
-    <label><input type="radio" name="fatResp" value="aline" ${fat.resp==='aline'?'checked':''}> Cliente Aline</label>
-    <label><input type="radio" name="fatResp" value="andrei" ${fat.resp==='andrei'?'checked':''}> Cliente Andrei</label>
-    <span class="fat-hint">${fat.resp?'Cópia: '+esc(fatCcTxt(fat.resp)):'escolha para poder enviar'}</span></div>`:''}
-  <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
-    <button class="btn" data-docact="buscar">📂 ${docs?'Buscar de novo':'Buscar documentos no PC'}</button>
-    <button class="btn btn-ghost" data-docact="trocar">Trocar pasta</button>
-    ${docs?'<button class="btn btn-gold" data-docact="pdf">Gerar PDF TODOS OS DOCUMENTOS</button>':''}
-    ${docs?`<button class="btn btn-gold" data-docact="enviar" ${(fat.enviando||fat.enviado)?'disabled':''} title="Envia ao Vidotti e muda o status">${fat.enviado?'✓ Enviado ao Vidotti':'✉ Enviar ao Vidotti'}</button>`:''}
-  </div>
-  ${fatConferHtml()}`;
+      <td style="white-space:nowrap;text-align:right"><button class="btn btn-sm btn-ghost" data-docact="ver" data-i="${i}" title="Abrir este documento para conferir">👁 Abrir</button><button class="btn btn-sm btn-ghost" data-docact="up" data-i="${i}">↑</button><button class="btn btn-sm btn-ghost" data-docact="down" data-i="${i}">↓</button></td></tr>`).join('')}
+    </table></div>` : `<div class="fx-vazio">Os documentos ficam na pasta FATURAMENTO do processo, no seu PC.<br><button class="btn btn-gold" data-docact="buscar" style="margin-top:10px;">📂 Buscar documentos no PC</button></div>`}
+  ${(fat.cobrar||[]).length?`<div class="fx-cobrar">📁 ${(fat.cobrar||[]).map((c,i)=>{ const ok = fatCobrarLinhas(c).length; return '<b>'+esc(c.nome)+'</b> → R$ '+fatBR(c.valor)+' ('+esc(c.rotulo)+') '+(ok?'✓ já está na planilha':'<button class="btn btn-sm" data-docact="cobraradd" data-i="'+i+'">Adicionar à planilha</button>'); }).join('<br>')}</div>`:''}
+  ${docs?`<div class="fx-acoes"><div class="fx-resp"><b>Responsável pelo cliente:</b>
+      <label><input type="radio" name="fatResp" value="aline" ${fat.resp==='aline'?'checked':''}> Cliente Aline</label>
+      <label><input type="radio" name="fatResp" value="andrei" ${fat.resp==='andrei'?'checked':''}> Cliente Andrei</label>
+      <span class="fx-hint">${fat.resp?'Cópia: '+esc(fatCcTxt(fat.resp)):'escolha para poder enviar'}</span></div>
+    <div class="fx-btns"><button class="btn btn-gold" data-docact="pdf">Gerar PDF TODOS OS DOCUMENTOS</button>
+    <button class="btn btn-gold" data-docact="enviar" ${(fat.enviando||fat.enviado)?'disabled':''} title="Envia ao Vidotti e muda o status">${fat.enviado?'✓ Enviado ao Vidotti':'✉ Enviar ao Vidotti'}</button></div></div>
+  <details class="fx-det"><summary>Ver detalhes da conferência de valores</summary>${fatConferHtml()||'<div class="fx-hint">Sem itens para conferir.</div>'}</details>`:''}`;
 }
+
+/* extras e atalhos da nova tela */
+document.getElementById('fatBody').addEventListener('input', e=>{
+  const t = e.target; if(!fat) return;
+  fat.xVals = fat.xVals || {n:'',v:'',d:''};
+  if(t.id==='fatXNome') fat.xVals.n = t.value; else if(t.id==='fatXValor') fat.xVals.v = t.value; else if(t.id==='fatXData') fat.xVals.d = t.value;
+});
+document.getElementById('fatBody').addEventListener('click', e=>{
+  const b = e.target.closest('[data-fx]'); if(!b || !fat) return;
+  const a = b.dataset.fx;
+  if(a==='usarregra'){ const r = fatCalcHon(fat); if(r){ fat.honValor = r; fatRender(); } }
+  else if(a==='puxe'){
+    const v = Number(b.dataset.v), ex = fat.linhas.find(l=>l.extra && l.cat==='PUXE DE CARGAS');
+    if(ex){ ex.valor = v; ex.inc = true; } else fat.linhas.push({ev:'PUXE DE CARGAS', forn:'', valor:v, pag:'', cat:'PUXE DE CARGAS', inc:true, extra:true});
+    fatRender();
+  }
+  else if(a==='xchip'){ fat.xOpen = true; fat.xVals = {n:b.dataset.nome||'', v:'', d:''}; fatRender(); const n = document.getElementById(b.dataset.nome?'fatXValor':'fatXNome'); if(n) n.focus(); }
+  else if(a==='xcancel'){ fat.xOpen = false; fatRender(); }
+  else if(a==='focuspag'){
+    const i = fat.linhas.findIndex(l=>l.inc && !fatData(l.pag) && (l.cat===b.dataset.cat || (l.cat==='OUTROS' && l.ev===b.dataset.cat)));
+    const n = i>=0 && document.querySelector('[data-fi="'+i+'"][data-f="pag"]'); if(n){ n.scrollIntoView({block:'center'}); n.focus(); }
+  }
+});
+document.getElementById('fatBody').addEventListener('keydown', e=>{
+  if(e.key!=='Enter' || e.ctrlKey || e.metaKey || e.isComposing) return;
+  const t = e.target; if(!t.classList || !t.classList.contains('fx-nav')) return;
+  const all = Array.from(document.querySelectorAll('#fatBody .fx-nav')), i = all.indexOf(t);
+  e.preventDefault();
+  const n = all[i+1]; if(n){ n.focus(); try{ n.select(); }catch(_){} } else t.blur();
+});
+document.addEventListener('keydown', e=>{
+  if(e.key==='Enter' && (e.ctrlKey||e.metaKey) && fatOverlay.classList.contains('show')){ e.preventDefault(); document.getElementById('btnFatBaixar').click(); }
+});
+document.getElementById('btnFatVer').addEventListener('click', ()=>{ loteRender(); loteOverlay.classList.add('show'); });
 
 init();
 initAutoBackup();
