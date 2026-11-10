@@ -4199,7 +4199,7 @@ async function openFaturar(id){
   try{
     const d = await vcpApi('sicoexFinanceiro', {ref: p.codigo});
     const cms = fatEhCMS(client);
-    fat.tipo = d.tipo; fat.seguroDI = (d.seguro===undefined) ? null : d.seguro; fat.seguroDebug = d.seguroDebug||[];
+    fat.tipo = d.tipo; fat.seguroDI = null; // o seguro vem do PDF da DUIMP/DI na pasta do processo, não do Sicoex
     fat.linhas = (d.despesas||[]).map(x=>{
       const cat = fatClassificar(x.evento, x.fornecedor, cms);
       // o que está no Sicoex sem data de pagamento ainda não foi pago: fica desligado (riscado). Só entram sempre: seguro e cadastro de produto.
@@ -4267,9 +4267,8 @@ function fxAvisos(fin){
     A.push({t: /^Honorário sem valor/.test(a) ? 'rd' : 'am', h: esc(a), act: m ? `<button class="fx-link" data-fx="focuspag" data-cat="${escAttr(m[1])}">Informar data</button>` : ''});
   });
   if(h.st==='difere') A.push({t:'am', h:'<b>Honorário</b> (R$ '+fatBR(h.hv)+') difere da regra do cadastro (R$ '+fatBR(h.regra)+').', act:'<button class="fx-link" data-fx="usarregra">Usar valor da regra</button>'});
-  const semDI = fat.seguroDI===null || fat.seguroDI===undefined, btnDI = '<button class="fx-link" data-fx="verdi">Ver DUIMP/DI</button>';
-  if(fat.seguroMsg) A.push({t: fat.seguroTipo==='warn'?'am':(fat.seguroTipo==='ok'?'gn':'bl'), h: esc(fat.seguroMsg), act: semDI?btnDI:''});
-  else if(semDI) A.push({t:'bl', h:'<b>Seguro</b>: não consegui ler o valor na '+esc(fat.tipo||'DI/DUIMP')+'.', act:btnDI});
+  if(fat.seguroMsg) A.push({t: fat.seguroTipo==='warn'?'am':(fat.seguroTipo==='ok'?'gn':'bl'), h: esc(fat.seguroMsg), act:''});
+  if(fat.diMsg) A.push({t:'bl', h:'<b>'+esc(fat.tipo||'DUIMP/DI')+' da pasta</b> · '+esc(fat.diMsg), act: fat.diDoc ? '<button class="fx-link" data-fx="verdi">Ver DUIMP/DI</button>' : ''});
   fat.linhas.filter(l=>l.inc && l.cat==='Cadastro de produto no catálogo').forEach(l=>A.push({t:'bl', h:'<b>Cadastro de produto no catálogo</b> R$ '+fatBR(fatNum(l.valor))+' incluído (não tem data) — confirme o valor.', act:''}));
   if(fat.docs){
     const oks = [];
@@ -4359,7 +4358,7 @@ function fatRender(){
         <button type="button" class="fx-chipx" data-fx="xchip" data-nome="Cadastro de produto no catálogo">Cadastro de produto no catálogo</button>
         <button type="button" class="fx-chipx" data-fx="xchip" data-nome="SEGURO">Seguro</button>
         <button type="button" class="fx-chipx" data-fx="xchip" data-nome="">Outra despesa…</button>
-        ${(fat.seguroDI===null||fat.seguroDI===undefined)?'<button type="button" class="fx-chipx" data-fx="verdi" title="Abrir o processo no Sicoex para ver o seguro">🔎 Ver DUIMP/DI</button>':''}
+        ${fat.diDoc?'<button type="button" class="fx-chipx" data-fx="verdi" title="Abrir o arquivo da DUIMP/DI da pasta do processo">🔎 Ver DUIMP/DI</button>':''}
       </div>
       ${fat.xOpen ? `<div class="fx-xform">
         <input class="fx-in" id="fatXNome" list="fatXLista" placeholder="Nome da despesa" value="${escAttr(x.n)}" style="width:230px">
@@ -4558,6 +4557,52 @@ function fatDocInfo(nome){
   const nf = /nota fiscal|(^|[^a-z])nf([^a-z]|$)|(^|[^a-z])nfs?e?([^a-z]|$)/.test(n);
   return {cat, ord, role, excl, nf};
 }
+/* DUIMP / DI na pasta do processo: lê o seguro e o valor aduaneiro direto do PDF (não usa o Sicoex) */
+const fatNumRe = '((?:\\d{1,3}(?:\\.\\d{3})+|\\d+),\\d{2})(?!\\d)';
+function fatPontuaDI(nome){
+  const n = fatNorm(nome); if(!/\.pdf$/.test(n)) return 0;
+  if(/todos os documentos|faturamento|boleto|comprovante|\bnf\b|nota fiscal|averba/.test(n)) return 0;
+  let p = 0;
+  if(/duimp/.test(n)) p = 2; else if(/declaracao de importacao/.test(n)) p = 2; else if(/(^|[^a-z0-9])di([^a-z0-9]|$)/.test(n)) p = 1;
+  if(p && /desembara/.test(n)) p += 3;
+  return p;
+}
+async function fatAchaDI(dir, nivel){
+  let melhor = null, ps = 0;
+  for await (const [n,h] of dir.entries()){
+    if(h.kind==='file'){ const p = fatPontuaDI(n); if(p>ps){ ps = p; melhor = {nome:n, handle:h, p}; } }
+    else if(h.kind==='directory' && nivel<2 && !/^faturamento$/i.test(n.trim())){ const r = await fatAchaDI(h, nivel+1); if(r && r.p>ps){ ps = r.p; melhor = r; } }
+  }
+  return melhor;
+}
+async function fatLerDI(pasta){
+  fat.diDoc = null; fat.diMsg = ''; fat.seguroDI = null;
+  try{
+    const doc = await fatAchaDI(pasta, 0);
+    if(!doc){ fat.diMsg = 'Não achei o arquivo da DUIMP/DI na pasta do processo (procurei "duimp", "DI" e "declaração de importação").'; return; }
+    fat.diDoc = doc;
+    if(!(await fatPdfjsInit())){ fat.diMsg = 'Achei "'+doc.nome+'", mas não consegui ler o PDF aqui — confira à mão.'; return; }
+    const bytes = await (await doc.handle.getFile()).arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({data:new Uint8Array(bytes)}).promise;
+    let t = '';
+    for(let i=1;i<=Math.min(pdf.numPages,60);i++){ const pg = await pdf.getPage(i); const c = await pg.getTextContent(); t += c.items.map(x=>x.str).join(' ')+'\n'; }
+    const n = fatNorm(t).replace(/\s+/g,' ');
+    if(n.length<50){ fat.diMsg = 'Achei "'+doc.nome+'", mas o PDF não tem texto legível (escaneado) — confira à mão.'; return; }
+    const parts = [];
+    // seguro
+    let m = n.match(new RegExp('total seguro[^0-9]{0,60}?'+fatNumRe)) || n.match(new RegExp('valor do seguro[^0-9]{0,60}?'+fatNumRe)) || n.match(new RegExp('seguro[^0-9]{0,25}?r\\$\\s*'+fatNumRe));
+    if(m){ fat.seguroDI = fatNum(m[1]); parts.push('seguro R$ '+fatBR(fat.seguroDI)); }
+    // valor aduaneiro em reais (o maior valor "valor aduaneiro ... R$" = total da declaração)
+    const re = new RegExp('valor aduaneiro([^0-9]{0,40}?)'+fatNumRe,'g'); let x, brl = [], todos = [];
+    while((x = re.exec(n))){ const v = fatNum(x[2]); todos.push(v); if(/r\$/.test(x[1])) brl.push(v); }
+    const lista = brl.length ? brl : todos;
+    if(lista.length){ fat.vaDI = Math.max.apply(null, lista); parts.push('valor aduaneiro R$ '+fatBR(fat.vaDI)); }
+    fat.diMsg = '"'+doc.nome+'": '+(parts.length ? parts.join(' · ') : 'não achei seguro nem valor aduaneiro no texto — confira à mão')+'.';
+    if(fat.seguroDI===null) fat.diMsg = '"'+doc.nome+'": não achei o seguro no texto'+(fat.vaDI?' (valor aduaneiro R$ '+fatBR(fat.vaDI)+')':'')+' — confira à mão.';
+    // valor aduaneiro entra no honorário (CMS/Industrial acima de R$ 500 mil), se você ainda não digitou
+    if(fat.vaDI && (fatEhCMS(fat.client)||fatEhIndustrial(fat.client)) && !fat.va){ fat.va = fatBR(fat.vaDI); const hh = fatCalcHon(fat); if(hh) fat.honValor = hh; }
+  }catch(e){ fat.diMsg = 'Não consegui ler a DUIMP/DI da pasta: '+(e.message||e); }
+}
 async function fatBuscarDocs(forcarNova){
   fat.docsMsg = 'Procurando a pasta do processo…'; fat.docs = null; fatRender();
   try{
@@ -4586,6 +4631,7 @@ async function fatBuscarDocs(forcarNova){
     }
     docs.sort((a,b)=>a.ord-b.ord || a.role-b.role || a.nome.localeCompare(b.nome,'pt'));
     fat.docsDir = fd;
+    await fatLerDI(pasta);
     fat.docsMsg = 'Lendo o conteúdo dos documentos para conferir os valores…'; fat.docs = docs; fatSeguroAplicar(); fatRender();
     for(const d of docs){ await fatLerDoc(d); }
     fatReclassificar(docs); fatNfFrete(docs);
@@ -4596,8 +4642,8 @@ async function fatBuscarDocs(forcarNova){
   fatRender();
 }
 let __docUrl = null;
-async function fatVerDoc(i){
-  const d = fat.docs && fat.docs[+i]; if(!d) return;
+async function fatVerDoc(i){ const d = fat.docs && fat.docs[+i]; if(d) return fatVerArquivo(d); }
+async function fatVerArquivo(d){
   try{
     const f = await d.handle.getFile();
     if(__docUrl) URL.revokeObjectURL(__docUrl);
@@ -4923,7 +4969,7 @@ document.getElementById('fatBody').addEventListener('click', e=>{
   else if(a==='xchip'){ fat.xOpen = true; fat.xVals = {n:b.dataset.nome||'', v:'', d:''}; fatRender(); const n = document.getElementById(b.dataset.nome?'fatXValor':'fatXNome'); if(n) n.focus(); }
   else if(a==='xcancel'){ fat.xOpen = false; fatRender(); }
   else if(a==='ack'){ fat.ack = fat.ack || {}; fat.ack[b.dataset.k] = b.checked; fatRender(); }
-  else if(a==='verdi'){ window.open('https://prod.sicoex.01x.com.br/processo/buscar?busca_referencia='+encodeURIComponent(String(fat.p.codigo))+'&busca_modulo='+(fat.tipo==='DI'?1:7), '_blank', 'noopener'); }
+  else if(a==='verdi'){ if(fat.diDoc) fatVerArquivo(fat.diDoc); else toast('Busque os documentos primeiro: a DUIMP/DI é lida da pasta do processo.'); }
   else if(a==='focuspag'){
     const i = fat.linhas.findIndex(l=>l.inc && !fatData(l.pag) && (l.cat===b.dataset.cat || (l.cat==='OUTROS' && l.ev===b.dataset.cat)));
     const n = i>=0 && document.querySelector('[data-fi="'+i+'"][data-f="pag"]'); if(n){ n.scrollIntoView({block:'center'}); n.focus(); }
