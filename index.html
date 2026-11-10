@@ -298,6 +298,32 @@
   .fx-mv{margin-left:auto;font-size:12.5px;display:flex;gap:7px;align-items:center;white-space:nowrap;margin-bottom:0;} .fx-mv input,.fx-resp input,.fx-resp label{width:auto;margin:0;} .fx-resp label{display:inline-flex;align-items:center;gap:6px;margin-bottom:0;}
   .fx-prev .fx-pt{text-transform:none;letter-spacing:0;}
   .fx-foot kbd{font:inherit;font-size:10.5px;background:rgba(255,255,255,.2);padding:2px 6px;border-radius:5px;margin-left:6px;}
+  /* compacto */
+  #fatOverlay .fx-modal{max-width:1120px;}
+  .fx-head{padding:11px 20px;gap:10px;} .fx-logo{width:36px;height:36px;font-size:14px;border-radius:10px;} .fx-ttl b{font-size:21px;} .fx-ttl small{font-size:10px;}
+  .fx-pills span{padding:3px 10px;font-size:11.5px;} .fx-st{padding:4px 10px 4px 5px;font-size:12px;} .fx-st i{width:17px;height:17px;font-size:11px;}
+  #fatOverlay #fatBody{padding:12px 16px;} .fx-grid{grid-template-columns:minmax(0,1fr) 340px;gap:14px;} .fx-left{gap:12px;} .fx-right{gap:10px;}
+  .fx-card{padding:11px 14px;border-radius:12px;} .fx-ch{margin-bottom:8px;gap:8px;} .fx-ch h4{font-size:15px;} .fx-hint{font-size:11.5px;}
+  .fx-cols,.fx-row{grid-template-columns:40px minmax(0,1fr) 165px 104px 104px 18px;gap:8px;} .fx-cols{margin-bottom:4px;font-size:10px;}
+  .fx-row{padding:6px 12px;margin-bottom:5px;border-radius:10px;} .fx-nm b{font-size:13px;} .fx-sub{font-size:11.5px;}
+  .fx-sel,.fx-in{padding:5px 8px;font-size:12.5px;border-radius:8px;} .fx-tag{font-size:10px;padding:1px 6px;}
+  .fx-notes{grid-column:auto;margin:3px 0 0;gap:6px;} .fx-pill{font-size:11.5px;padding:2px 8px;} .fx-va .fx-in{width:120px;}
+  .fx-sw{width:34px;height:20px;} .fx-sw i::after{width:14px;height:14px;} .fx-sw input:checked+i::after{left:17px;}
+  .fx-xbar{margin-top:4px;padding-top:9px;gap:6px;} .fx-chipx{padding:4px 10px;font-size:12px;}
+  .fx-total{padding:12px 16px;border-radius:14px;} .fx-total > b{font-size:27px;margin:2px 0 8px;} .fx-bar{height:8px;margin-bottom:9px;} .fx-leg{font-size:12px;gap:4px 14px;}
+  .fx-prev{font-size:12px;} .fx-prev th,.fx-prev td{padding:4px 8px;}
+  .fx-av{padding:6px 10px;font-size:12px;margin-bottom:6px;gap:8px;}
+  .fx-ck{appearance:none;-webkit-appearance:none;width:19px;height:19px;border-radius:50%;border:2px solid currentColor;opacity:.75;flex:none;margin:0;cursor:pointer;display:grid;place-items:center;background:transparent;}
+  .fx-ck:checked{background:#16A34A;border-color:#16A34A;opacity:1;} .fx-ck:checked::after{content:'✓';color:#fff;font-size:12px;font-weight:700;line-height:1;}
+  .fx-ck.sm{width:16px;height:16px;margin-left:auto;} .fx-ck.sm:checked::after{font-size:10px;}
+  .fx-av.rd .fx-ck{color:#EF4444;} .fx-av.am .fx-ck{color:#F59E0B;} .fx-av.bl .fx-ck{color:#2563EB;}
+  .fx-av.done{opacity:.55;background:var(--hover);border-color:transparent;} .fx-av.done span{text-decoration:line-through;}
+  .fx-dl.no .fx-ck{color:#EF4444;} .fx-dl.ack{color:var(--muted);} .fx-dl.ack i{background:#94A3B8;} .fx-dl span{flex:1;}
+  .fx-dcards{grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:8px;} .fx-dc{padding:8px 10px;border-radius:10px;} .fx-dc b{font-size:12.5px;margin-bottom:3px;} .fx-dl{font-size:12px;margin:2px 0;}
+  .fx-ordem{margin:8px 0 2px;font-size:12px;gap:5px;} .fx-oc{padding:3px 8px;} .fx-sec2{margin:10px 0 4px;font-size:12.5px;}
+  .fx-acoes{margin-top:8px;padding-top:8px;} .fx-foot{padding:10px 20px;}
+  .fx-grid{grid-template-columns:minmax(0,1fr) 360px;} .fx-leg{grid-template-columns:minmax(0,1fr) minmax(0,1fr);} .fx-leg div{min-width:0;} .fx-leg b{white-space:nowrap;}
+  .fx-prev td:nth-child(2),.fx-prev td:nth-child(3){white-space:nowrap;} .fx-prev tr.tot td{white-space:nowrap;}
   @media (max-width:1000px){ .fx-grid{grid-template-columns:1fr;} .fx-right{position:static;} .fx-cols{display:none;} .fx-row{grid-template-columns:44px 1fr 1fr;} .fx-row .fx-nm{grid-column:2 / -1;} .fx-chips{margin-left:0;} }
   .btn-gold{background:var(--navy);border-color:var(--navy);color:#fff;}
   .btn-gold:hover{background:var(--navy-2);border-color:var(--navy-2);}
@@ -4167,7 +4193,7 @@ async function openFaturar(id){
   const p = state.processes.find(x=>x.id===id); if(!p) return;
   const client = clientById(p.clienteId);
   { const mv=document.getElementById('fatMover'); if(mv) mv.checked=false; }
-  fat = {p, client, linhas:[], solic:{}, honValor:'', va:'', tipo:'', receitasHon:[], carregando:true, erro:'', docs:null, docsMsg:'', resp: (client && client.responsavel) || ''};
+  fat = {p, client, ack:{}, linhas:[], solic:{}, honValor:'', va:'', tipo:'', receitasHon:[], carregando:true, erro:'', docs:null, docsMsg:'', resp: (client && client.responsavel) || ''};
   fatOverlay.classList.add('show');
   fatRender();
   try{
@@ -4176,7 +4202,10 @@ async function openFaturar(id){
     fat.tipo = d.tipo; fat.seguroDI = (d.seguro===undefined) ? null : d.seguro; fat.seguroDebug = d.seguroDebug||[];
     fat.linhas = (d.despesas||[]).map(x=>{
       const cat = fatClassificar(x.evento, x.fornecedor, cms);
-      return {ev:x.evento, forn:x.fornecedor, valor:x.valor, pag:x.pagamento||'', cat: cat==='__CREDITO'?'OUTROS':cat, inc: cat!=='__CREDITO', orig:x};
+      // o que está no Sicoex sem data de pagamento ainda não foi pago: fica desligado (riscado). Só entram sempre: seguro e cadastro de produto.
+      const livre = ['SEGURO','Cadastro de produto no catálogo'].includes(cat), pago = !!x.pagamento;
+      const hon = cat==='HONORÁRIO';
+      return {ev:x.evento, forn:x.fornecedor, valor:x.valor, pag:x.pagamento||'', cat: cat==='__CREDITO'?'OUTROS':cat, inc: cat!=='__CREDITO' && !hon && (pago || livre), naoPago: cat!=='__CREDITO' && !hon && !pago && !livre, honSicoex: hon, orig:x};
     });
     fat.receitasHon = (d.despesas||[]).concat(d.receitas||[]).filter(r=>/honor/i.test(r.evento));
     if(p.puxe && !fat.linhas.some(l=>l.inc && l.cat==='PUXE DE CARGAS')) fat.linhas.push({ev:'PUXE DE CARGAS', forn:'', valor:Number(p.puxe), pag:'', cat:'PUXE DE CARGAS', inc:true, extra:true, doProcesso:true});
@@ -4198,22 +4227,31 @@ function fxCor(cat){ const i = FAT_CATS.indexOf(cat); return (cat==='OUTROS' || 
 const fxChip = (cls, ico, txt) => `<span class="fx-st ${cls}"><i>${ico}</i>${txt}</span>`;
 
 function fxCards(){ // um cartão por despesa que precisa de documento
-  const g = {};
-  fat.linhas.filter(l=>l.inc && !l.extra && !['HONORÁRIO','Cadastro de produto no catálogo','OUTROS'].includes(l.cat)).forEach(l=>{
+  const g = {}, ack = k => !!(fat.ack && fat.ack[k]);
+  fat.linhas.filter(l=>l.inc && !l.extra && !['HONORÁRIO','Cadastro de produto no catálogo','OUTROS','SEGURO'].includes(l.cat)).forEach(l=>{
     const f = fatFamilia(l.cat); (g[f] = g[f] || {f, cat:l.cat, ls:[]}).ls.push(l);
   });
   const docs = (fat.docs||[]).filter(d=>d.inc);
-  return Object.values(g).sort((a,b)=>FAT_CATS.indexOf(a.cat)-FAT_CATS.indexOf(b.cat)).map(k=>{
+  const out = Object.values(g).sort((a,b)=>FAT_CATS.indexOf(a.cat)-FAT_CATS.indexOf(b.cat)).map(k=>{
     const dd = docs.filter(d=>fatFamilia(d.cat)===k.f);
     const itens = [];
     if(k.f==='FEDERAIS') itens.push({n:'Tela de Débito', ok: dd.some(d=>d.cat==='Tela de Débito')});
     else {
-      const bol = dd.filter(d=>d.role===0), comp = dd.filter(d=>d.role===2), outros = dd.filter(d=>d.role===1);
-      itens.push({n:'Boleto', ok: bol.length>0 || outros.length>0});
-      itens.push({n:'Comprovante', ok: comp.length>0});
+      const bol = dd.filter(d=>d.role===0), nf = dd.filter(d=>d.role===1), comp = dd.filter(d=>d.role===2);
+      if(/^FRETE INTERNACIONAL/.test(k.f)){
+        itens.push({n:'Boleto', ok: bol.length>0}, {n:'Nota fiscal', ok: nf.length>0}, {n:'Comprovante', ok: comp.length>0});
+      } else {
+        itens.push({n:'Boleto', ok: bol.length>0 || nf.length>0}, {n:'Comprovante', ok: comp.length>0});
+      }
     }
-    return {titulo: k.f==='FEDERAIS' ? 'Impostos Federais' : k.cat, cat:k.cat, itens, ok: itens.every(i=>i.ok)};
+    itens.forEach(i=>{ i.k = 'doc|'+k.cat+'|'+i.n; i.ack = !i.ok && ack(i.k); });
+    return {titulo: k.f==='FEDERAIS' ? 'Impostos Federais' : k.cat, cat:k.cat, itens, ok: itens.every(i=>i.ok||i.ack)};
   });
+  if(fat.linhas.some(l=>l.inc && l.cat==='SEGURO')){
+    const av = docs.filter(d=>d.cat==='SEGURO');
+    out.push({titulo:'Seguro', cat:'SEGURO', itens:[{n: av.length ? 'Averbação' : 'Sem averbação (opcional)', ok:true, opc:!av.length}], ok:true});
+  }
+  return out.sort((a,b)=>FAT_CATS.indexOf(a.cat)-FAT_CATS.indexOf(b.cat));
 }
 function fxHonInfo(){
   const hv = fatNum(fat.honValor), regra = fatCalcHon(fat);
@@ -4229,7 +4267,10 @@ function fxAvisos(fin){
     A.push({t: /^Honorário sem valor/.test(a) ? 'rd' : 'am', h: esc(a), act: m ? `<button class="fx-link" data-fx="focuspag" data-cat="${escAttr(m[1])}">Informar data</button>` : ''});
   });
   if(h.st==='difere') A.push({t:'am', h:'<b>Honorário</b> (R$ '+fatBR(h.hv)+') difere da regra do cadastro (R$ '+fatBR(h.regra)+').', act:'<button class="fx-link" data-fx="usarregra">Usar valor da regra</button>'});
-  if(fat.seguroMsg) A.push({t: fat.seguroTipo==='warn'?'am':(fat.seguroTipo==='ok'?'gn':'bl'), h: esc(fat.seguroMsg), act:''});
+  const semDI = fat.seguroDI===null || fat.seguroDI===undefined, btnDI = '<button class="fx-link" data-fx="verdi">Ver DUIMP/DI</button>';
+  if(fat.seguroMsg) A.push({t: fat.seguroTipo==='warn'?'am':(fat.seguroTipo==='ok'?'gn':'bl'), h: esc(fat.seguroMsg), act: semDI?btnDI:''});
+  else if(semDI) A.push({t:'bl', h:'<b>Seguro</b>: não consegui ler o valor na '+esc(fat.tipo||'DI/DUIMP')+'.', act:btnDI});
+  fat.linhas.filter(l=>l.inc && l.cat==='Cadastro de produto no catálogo').forEach(l=>A.push({t:'bl', h:'<b>Cadastro de produto no catálogo</b> R$ '+fatBR(fatNum(l.valor))+' incluído (não tem data) — confirme o valor.', act:''}));
   if(fat.docs){
     const oks = [];
     fatConferir().forEach(r=>{
@@ -4238,24 +4279,24 @@ function fxAvisos(fin){
     });
     if(oks.length) A.push({t:'gn', h:'<b>Valores conferidos</b> com os documentos: '+oks.map(esc).join(', ')+'.', act:''});
   } else A.push({t:'bl', h:'Documentos ainda não conferidos — busque a pasta do processo.', act:'<button class="fx-link" data-docact="buscar">Buscar documentos</button>'});
-  if(h.st==='ok') A.push({t:'gn', h:'<b>Honorário confere</b> com a regra do cadastro.', act:''});
-  if(!A.some(a=>a.t==='rd'||a.t==='am') && fat.docs) A.unshift({t:'gn', h:'<b>Nenhum ponto de atenção.</b>', act:''});
-  return A;
+  A.forEach(a=>{ a.k = a.t+'|'+a.h.replace(/<[^>]+>/g,''); a.done = a.t!=='gn' && !!(fat.ack && fat.ack[a.k]); });
+  if(!A.some(a=>(a.t==='rd'||a.t==='am') && !a.done) && fat.docs) A.unshift({t:'gn', h:'<b>Nenhum ponto de atenção pendente.</b>', act:'', k:'', done:false});
+  return A.filter(a=>!a.done).concat(A.filter(a=>a.done));
 }
 function fxLinha(l, i){
+  if(l.honSicoex && l.cat==='HONORÁRIO') return '';
   const catOpts = FAT_CATS.map(k=>`<option ${k===l.cat?'selected':''}>${esc(k)}</option>`).join('');
   const notas = [];
-  if(l.inc && !l.extra && l.cat==='OUTROS' && !fatConhecido(l.ev)) notas.push('<span class="fx-pill am">! Item não reconhecido</span><span class="fx-sub">confira a categoria; vai na planilha com o nome original</span>');
-  if(l.inc && !FAT_SEM_DATA.includes(l.cat) && !fatData(l.pag)) notas.push('<span class="fx-pill am">! Sem data de pagamento</span><span class="fx-sub">vai como N/A na planilha</span>');
-  if(!l.inc) notas.push('<span class="fx-sub">Desligada: fica fora da planilha e do total (ex.: pago direto pelo cliente).</span>');
+  if(l.inc && !l.extra && l.cat==='OUTROS' && !fatConhecido(l.ev)) notas.push('<span class="fx-pill am">! Item não reconhecido</span>');
+  if(l.inc && !FAT_SEM_DATA.includes(l.cat) && !fatData(l.pag)) notas.push('<span class="fx-pill am">! Sem data de pagamento</span><span class="fx-sub">vai como N/A</span>');
+  if(!l.inc) notas.push('<span class="fx-sub">'+(l.naoPago ? 'Sem pagamento no Sicoex (não pago): fora da planilha. Ative se precisar.' : 'Fora da planilha e do total.')+'</span>');
   return `<div class="fx-row ${l.inc?'':'off'}" style="--c:${fxCor(l.cat)}">
     <label class="fx-sw"><input type="checkbox" data-fi="${i}" data-f="inc" ${l.inc?'checked':''}><i></i></label>
-    <div class="fx-nm"><b>${esc(l.ev)}</b> ${l.extra?'<span class="fx-tag ex">Extra</span>':'<span class="fx-tag">Sicoex</span>'}${l.forn?`<div class="fx-sub">${esc(l.forn)}</div>`:''}</div>
+    <div class="fx-nm"><b>${esc(l.ev)}</b> ${l.extra?'<span class="fx-tag ex">Extra</span>':'<span class="fx-tag">Sicoex</span>'}${l.forn?` <span class="fx-sub">${esc(l.forn)}</span>`:''}${notas.length?`<div class="fx-notes">${notas.join('')}</div>`:''}</div>
     <select class="fx-sel" data-fi="${i}" data-f="cat">${catOpts}</select>
     <input class="fx-in fx-nav" data-fi="${i}" data-f="valor" value="${escAttr(fatBR(l.valor))}">
     <input class="fx-in fx-nav ${fatData(l.pag)?'':'vazio'}" data-fi="${i}" data-f="pag" value="${escAttr(l.pag)}" placeholder="N/A">
     ${l.extra?`<button class="fx-x" data-extrarm="${i}" title="Remover esta despesa">×</button>`:'<span></span>'}
-    ${notas.length?`<div class="fx-notes">${notas.join('')}</div>`:''}
   </div>`;
 }
 function fxHonRow(industrialOuCms){
@@ -4263,15 +4304,15 @@ function fxHonRow(industrialOuCms){
   const pill = h.st==='ok' ? '<span class="fx-pill gn">✓ Confere com a regra</span>'
     : h.st==='vazio' ? '<span class="fx-pill rd">! Sem valor — preencha</span>'
     : h.st==='semregra' ? '<span class="fx-pill gy">Sem regra de valor no cadastro</span>'
-    : `<span class="fx-pill rd">! Difere da regra (R$ ${fatBR(h.regra)})</span><button class="fx-link" data-fx="usarregra">Usar valor da regra</button>`;
+    : `<span class="fx-pill rd">! Difere da regra (R$ ${fatBR(h.regra)})</span><button class="fx-link" data-fx="usarregra">Usar regra</button>`;
   return `<div class="fx-row" style="--c:${fxCor('HONORÁRIO')}">
     <label class="fx-sw"><input type="checkbox" checked disabled title="O honorário sempre entra na planilha"><i></i></label>
-    <div class="fx-nm"><b>HONORÁRIO</b> ${fat.receitasHon.length?'<span class="fx-tag">Sicoex</span>':'<span class="fx-tag">Cadastro</span>'}</div>
+    <div class="fx-nm"><b>HONORÁRIO</b> <span class="fx-tag">${fat.receitasHon.length?'Sicoex':'Cadastro'}</span>
+      <div class="fx-notes" title="${escAttr((c&&c.honorario)||'')}">${pill}${fat.receitasHon.length?'<span class="fx-sub">Sicoex: '+[...new Set(fat.receitasHon.map(r=>fatBR(r.valor)))].map(v=>'R$ '+v).join(' + ')+'</span>':''}
+      ${industrialOuCms?`<label class="fx-va">CIF <input class="fx-in" id="fatVA" value="${escAttr(fat.va)}" placeholder="ex: 620.000,00"></label><span class="fx-sub">&gt; R$ 500 mil: +0,2%</span>`:''}</div></div>
     <select class="fx-sel" disabled><option>HONORÁRIO</option></select>
     <input class="fx-in fx-nav" id="fatHon" value="${escAttr(fat.honValor===''?'':fatBR(fat.honValor))}">
     <div class="fx-in na">N/A</div><span></span>
-    <div class="fx-notes">${pill}<span class="fx-sub">Cadastro: ${esc((c&&c.honorario)||'— sem regra —')}${fat.receitasHon.length?' · Sicoex: '+fat.receitasHon.map(r=>'R$ '+fatBR(r.valor)).join(' + '):''}</span>
-      ${industrialOuCms?`<label class="fx-va">Valor aduaneiro (CIF) <input class="fx-in" id="fatVA" value="${escAttr(fat.va)}" placeholder="ex: 620.000,00"></label><span class="fx-sub">acima de R$ 500 mil: +0,2% sobre o valor aduaneiro</span>`:''}</div>
   </div>`;
 }
 
@@ -4287,14 +4328,15 @@ function fatRender(){
   if(fat.erro){ head.innerHTML = cab(''); box.innerHTML = '<div style="padding:16px;color:var(--red-text);font-weight:600;">Não consegui ler o Sicoex: '+esc(fat.erro)+'</div><div style="color:var(--muted);font-size:12.5px;padding:0 16px;">Confira o login nas Propriedades do script (SICOEX_USUARIO / SICOEX_SENHA) e se a implantação foi atualizada.</div>'; return; }
   const fin = fatFinal(fat), industrialOuCms = fatEhCMS(c)||fatEhIndustrial(c);
   const total = fin.linhas.reduce((s,l)=>s+l.valor,0);
-  const h = fxHonInfo(), cards = fxCards(), avisos = fxAvisos(fin), nAv = avisos.filter(a=>a.t==='rd'||a.t==='am').length;
+  const h = fxHonInfo(), cards = fxCards(), avisos = fxAvisos(fin), nAv = avisos.filter(a=>(a.t==='rd'||a.t==='am') && !a.done).length;
   const okCards = cards.filter(k=>k.ok).length;
-  const entram = fat.linhas.filter(l=>l.inc).length;
+  const vis = fat.linhas.filter(l=>!(l.honSicoex && l.cat==='HONORÁRIO'));
+  const entram = vis.filter(l=>l.inc).length;
 
   head.innerHTML = cab(
     fxChip(fin.linhas.length?'gn':'rd', fin.linhas.length?'✓':'!', 'Despesas') +
     fxChip(h.st==='ok'?'gn':(h.st==='semregra'?'gy':(h.st==='vazio'?'rd':'am')), h.st==='ok'?'✓':'!', h.st==='ok'?'Honorário confere':(h.st==='semregra'?'Honorário sem regra':(h.st==='vazio'?'Honorário sem valor':'Honorário difere'))) +
-    fxChip(nAv?'am':'gn', nAv?'!':'✓', nAv ? nAv+' aviso'+(nAv>1?'s':'') : 'Sem avisos') +
+    fxChip(nAv?'am':'gn', nAv?'!':'✓', nAv ? nAv+' aviso'+(nAv>1?'s':'') : 'Sem avisos pendentes') +
     (fat.docs ? fxChip(okCards===cards.length?'gn':'rd', okCards===cards.length?'✓':'!', 'Documentos '+okCards+'/'+cards.length) : fxChip('gy','…','Documentos não buscados'))
   );
 
@@ -4308,15 +4350,16 @@ function fatRender(){
   box.innerHTML = `<div class="fx-grid">
    <div class="fx-left">
     <section class="fx-card">
-      <div class="fx-ch"><h4>Despesas</h4><span class="fx-hint">lidas do Sicoex · já na ordem da planilha · desligue o que não entra</span><span class="fx-badge">${entram} de ${fat.linhas.length} entram</span></div>
+      <div class="fx-ch"><h4>Despesas</h4><span class="fx-hint">lidas do Sicoex · já na ordem da planilha · desligue o que não entra</span><span class="fx-badge">${entram} de ${vis.length} entram</span></div>
       <div class="fx-cols"><span></span><span>EVENTO · FORNECEDOR</span><span>CATEGORIA</span><span>VALOR (R$)</span><span>PAGAMENTO</span><span></span></div>
       ${fxHonRow(industrialOuCms)}
-      ${fat.linhas.map((l,i)=>fxLinha(l,i)).join('') || '<div class="fx-vazio">Nenhuma despesa encontrada no Sicoex.</div>'}
+      ${fat.linhas.map((l,i)=>fxLinha(l,i)).join('') || ''}${vis.length?'':'<div class="fx-vazio">Nenhuma despesa encontrada no Sicoex.</div>'}
       <div class="fx-xbar"><span class="fx-xl">+ Despesa extra</span>
         <span class="fx-chipx ${puxeP?'hl':''}">Puxe de cargas ${[100,150,300,350].map(v=>`<button type="button" class="${puxeP===String(v)?'on':''}" data-fx="puxe" data-v="${v}">${v}</button>`).join('')}</span>
         <button type="button" class="fx-chipx" data-fx="xchip" data-nome="Cadastro de produto no catálogo">Cadastro de produto no catálogo</button>
         <button type="button" class="fx-chipx" data-fx="xchip" data-nome="SEGURO">Seguro</button>
         <button type="button" class="fx-chipx" data-fx="xchip" data-nome="">Outra despesa…</button>
+        ${(fat.seguroDI===null||fat.seguroDI===undefined)?'<button type="button" class="fx-chipx" data-fx="verdi" title="Abrir o processo no Sicoex para ver o seguro">🔎 Ver DUIMP/DI</button>':''}
       </div>
       ${fat.xOpen ? `<div class="fx-xform">
         <input class="fx-in" id="fatXNome" list="fatXLista" placeholder="Nome da despesa" value="${escAttr(x.n)}" style="width:230px">
@@ -4341,8 +4384,8 @@ function fatRender(){
       </table>
       <div class="fx-tabs"><span class="fx-tab on">${esc(fat.p.codigo)}</span>${abas}</div>
     </section>
-    <section class="fx-card"><div class="fx-ch"><h4>Avisos</h4><span class="fx-hint">o que conferir antes de baixar</span></div>
-      ${avisos.map(a=>`<div class="fx-av ${a.t}"><i>${a.t==='gn'?'✓':(a.t==='bl'?'i':'!')}</i><span>${a.h}</span>${a.act}</div>`).join('')}
+    <section class="fx-card"><div class="fx-ch"><h4>Avisos</h4><span class="fx-hint">marque ☑ o que já conferiu ou resolveu</span></div>
+      ${avisos.map(a=>`<div class="fx-av ${a.t} ${a.done?'done':''}">${a.t==='gn'?'<i>✓</i>':`<input type="checkbox" class="fx-ck" data-fx="ack" data-k="${escAttr(a.k)}" ${a.done?'checked':''} title="Marcar como conferido / já resolvido">`}<span>${a.h}</span>${a.done?'':a.act}</div>`).join('')}
     </section>
    </div></div>`;
 }
@@ -4509,9 +4552,11 @@ function fatDocInfo(nome){
   const role = /pagto|pagamento|comprovante|pago\b/.test(n) ? 2 : (/boleto|dare|darf|guia|fatura/.test(n) ? 0 : 1);
   let ord, cat;
   if(/tela de debito/.test(n)){ cat='Tela de Débito'; ord=1000; }
+  else if(/averba/.test(n)){ cat='SEGURO'; ord=FAT_CATS.indexOf('SEGURO'); }
   else { cat = fatClassificar(n.replace(/\.[a-z0-9]+$/,''), '', false); if(cat==='__CREDITO') cat='Devolução'; ord = (cat==='OUTROS'||cat==='Devolução') ? 500 : (cat==='AFRMM' ? 999 : FAT_CATS.indexOf(cat)); }
   const excl = /todos os documentos|demonstrativo|nota fiscal|(^|[^a-z])nf([^a-z]|$)|print|captura|screenshot|devolu/.test(n);
-  return {cat, ord, role, excl};
+  const nf = /nota fiscal|(^|[^a-z])nf([^a-z]|$)|(^|[^a-z])nfs?e?([^a-z]|$)/.test(n);
+  return {cat, ord, role, excl, nf};
 }
 async function fatBuscarDocs(forcarNova){
   fat.docsMsg = 'Procurando a pasta do processo…'; fat.docs = null; fatRender();
@@ -4537,13 +4582,13 @@ async function fatBuscarDocs(forcarNova){
       if(h.kind==='file' && ehAverb(n)) fat.averb = n;
       if(h.kind!=='file' || !/\.(pdf|jpe?g|png)$/i.test(n)) continue;
       const i = fatDocInfo(n);
-      docs.push({nome:n, handle:h, cat:i.cat, ord:i.ord, role:i.role, inc:!i.excl, excl:i.excl});
+      docs.push({nome:n, handle:h, cat:i.cat, ord:i.ord, role:i.role, inc:!i.excl, excl:i.excl, nf:i.nf});
     }
     docs.sort((a,b)=>a.ord-b.ord || a.role-b.role || a.nome.localeCompare(b.nome,'pt'));
     fat.docsDir = fd;
     fat.docsMsg = 'Lendo o conteúdo dos documentos para conferir os valores…'; fat.docs = docs; fatSeguroAplicar(); fatRender();
     for(const d of docs){ await fatLerDoc(d); }
-    fatReclassificar(docs);
+    fatReclassificar(docs); fatNfFrete(docs);
     docs.forEach(d=>{ if(d.ord<500){ const k=FAT_CATS.findIndex(c=>fatFamilia(c)===fatFamilia(d.cat)); if(k>=0) d.ord=k; } });
     docs.sort((a,b)=>a.ord-b.ord || a.role-b.role || a.nome.localeCompare(b.nome,'pt'));
     fat.docsMsg = docs.length ? ('Pasta: '+pasta.name+' › FATURAMENTO') : 'A pasta FATURAMENTO está vazia.';
@@ -4571,7 +4616,7 @@ let __pdfjsOk = null;
 /* quando o nome do arquivo não diz o que é, descobre pelo conteúdo (valores e palavras-chave) */
 function fatReclassificar(docs){
   const grupos = {};
-  fat.linhas.filter(l=>l.inc && !l.extra && !['HONORÁRIO','Cadastro de produto no catálogo'].includes(l.cat) && l.cat!=='OUTROS').forEach(l=>{ (grupos[fatFamilia(l.cat)] = grupos[fatFamilia(l.cat)] || []).push(l); });
+  fat.linhas.filter(l=>l.inc && !l.extra && !['HONORÁRIO','Cadastro de produto no catálogo','SEGURO'].includes(l.cat) && l.cat!=='OUTROS').forEach(l=>{ (grupos[fatFamilia(l.cat)] = grupos[fatFamilia(l.cat)] || []).push(l); });
   const kw = {
     'ICMS': /icms|\bdare\b|sefaz|fazenda estadual|\bgnre\b/,
     'ARMAZENAGEM': /armazen|viracopos|\babv\b|libra|terminal|\bdai\b/,
@@ -4580,7 +4625,7 @@ function fatReclassificar(docs){
     'TRANSPORTE NACIONAL': /transport|frete|\bcte\b/
   };
   docs.forEach(d=>{
-    if(d.excl || !d.legivel) return;
+    if(d.nf || d.excl || !d.legivel) return;
     const t = fatNorm(d.texto);
     // papel: boleto x comprovante
     if(d.role===1){
@@ -4605,6 +4650,23 @@ function fatReclassificar(docs){
       const ix = FAT_CATS.indexOf(d.cat); d.ord = d.cat==='AFRMM' ? 999 : (ix>=0 ? ix : 500);
       d.porConteudo = true;
     }
+  });
+}
+/* NF do frete internacional: acha entre as NFs da pasta a que tem o valor do frete (e datas iguais às dos outros arquivos) e põe NO MEIO: boleto → NF → comprovante */
+function fatNfFrete(docs){
+  const nfs = docs.filter(d=>d.nf && d.legivel);
+  ['FRETE INTERNACIONAL','FRETE INTERNACIONAL COMPLEMENTAR'].forEach(cat=>{
+    const ls = fat.linhas.filter(l=>l.inc && !l.extra && l.cat===cat); if(!ls.length) return;
+    const vals = ls.map(l=>Math.round(fatNum(l.valor)*100)), T = vals.reduce((a,b)=>a+b,0);
+    const datas = new Set(ls.map(l=>l.pag).filter(Boolean));
+    docs.filter(d=>!d.nf && d.cat===cat && d.legivel).forEach(d=>d.datas.forEach(x=>datas.add(x)));
+    let best = null, bs = -1;
+    nfs.filter(d=>!d.nfUsado).forEach(d=>{
+      const pv = d.valores.has(T) ? 2 : (vals.some(v=>d.valores.has(v)) ? 1 : 0); if(!pv) return;
+      let dt = 0; d.datas.forEach(x=>{ if(datas.has(x)) dt++; });
+      const sc = pv*10 + dt; if(sc>bs){ bs = sc; best = d; }
+    });
+    if(best){ best.cat = cat; best.role = 1; best.excl = false; best.inc = true; best.nfUsado = true; best.porConteudo = true; best.ord = FAT_CATS.indexOf(cat); }
   });
 }
 async function fatPdfjsInit(){
@@ -4634,6 +4696,7 @@ async function fatLerDoc(d){
 }
 function fatFamilia(cat){
   const c = fatNorm(cat);
+  if(/compl/.test(c)) return cat; // complementar tem boleto e comprovante próprios, nunca misturados
   if(/^armazenagem/.test(c) && !/remo/.test(c)) return 'ARMAZENAGEM';
   if(/^icms/.test(c)) return 'ICMS';
   if(c==='ii'||c==='ipi'||c==='impostos federais'||c==='tela de debito') return 'FEDERAIS';
@@ -4667,7 +4730,7 @@ function fatConferir(){
     out.push({cat:'Cadastro de produto no catálogo', total:fat.linhas.filter(l=>l.inc && l.cat==='Cadastro de produto no catálogo').reduce((s,l)=>s+fatNum(l.valor),0), st:'info', msgs:['há cobrança de cadastro de produto na planilha, mas não achei a pasta "COBRAR R$ ... CADASTRO PRODUTO CATALOGO" em FATURAMENTO — confira']});
   const docs = fat.docs.filter(d=>d.inc);
   const grupos = {};
-  fat.linhas.filter(l=>l.inc && !l.extra && !['HONORÁRIO','Cadastro de produto no catálogo'].includes(l.cat)).forEach(l=>{
+  fat.linhas.filter(l=>l.inc && !l.extra && !['HONORÁRIO','Cadastro de produto no catálogo','SEGURO'].includes(l.cat)).forEach(l=>{
     if(l.cat==='OUTROS') return;
     const f = fatFamilia(l.cat); (grupos[f] = grupos[f] || []).push(l);
   });
@@ -4756,8 +4819,7 @@ async function fatEnviar(){
   if(fat.resp!=='aline' && fat.resp!=='andrei'){ toast('Marque antes: Cliente Aline ou Cliente Andrei.'); return; }
   const fin = fatFinal(fat);
   if(!fin.linhas.length){ toast('A planilha está vazia.'); return; }
-  const conf = fatConferir().filter(r=>r.st==='warn');
-  const pend = fin.avisos.length + conf.length;
+  const pend = fxAvisos(fin).filter(a=>(a.t==='rd'||a.t==='am') && !a.done).length;
   const txt = 'Enviar o faturamento '+fat.p.codigo+' ('+(fat.client?fat.client.nome:'')+') para '+FAT_EMAIL_PARA+', com cópia para '+fatCcTxt(fat.resp)+'?\n\nVai com a planilha no corpo do e-mail e o PDF TODOS OS DOCUMENTOS anexo. Se o envio der certo, o processo vai para "Aguardando Vidotti conferir".'+(pend?'\n\n⚠ Ainda há '+pend+' ponto(s) de atenção na tela. Enviar mesmo assim?':'');
   if(!confirm(txt)) return;
   fat.enviando = true; fat.docsMsg = 'Montando o PDF e enviando…'; fatRender();
@@ -4824,7 +4886,7 @@ function fatDocsHtml(cards){
   ${fat.docsMsg?`<div class="fx-hint" style="margin:0 0 10px;">${esc(fat.docsMsg)}</div>`:''}
   ${docs ? `<div class="fx-dcards">
       <div class="fx-dc" style="--c:${fxCor('HONORÁRIO')}"><b>Honorário</b><div class="fx-dl na"><i>–</i>Não precisa de documento</div></div>
-      ${cards.map(k=>`<div class="fx-dc" style="--c:${fxCor(k.cat)}"><b>${esc(k.titulo)}</b>${k.itens.map(i=>`<div class="fx-dl ${i.ok?'ok':'no'}"><i>${i.ok?'✓':'!'}</i>${i.ok?esc(i.n):esc(i.n)+' não encontrado'}</div>`).join('')}</div>`).join('')}
+      ${cards.map(k=>`<div class="fx-dc" style="--c:${fxCor(k.cat)}"><b>${esc(k.titulo)}</b>${k.itens.map(i=>i.ok ? `<div class="fx-dl ${i.opc?'na':'ok'}"><i>${i.opc?'–':'✓'}</i>${esc(i.n)}</div>` : `<div class="fx-dl ${i.ack?'ack':'no'}"><i>${i.ack?'✓':'!'}</i><span>${i.ack?esc(i.n)+' · conferido':esc(i.n)+' não encontrado'}</span><input type="checkbox" class="fx-ck sm" data-fx="ack" data-k="${escAttr(i.k)}" ${i.ack?'checked':''} title="Marcar como conferido / não se aplica"></div>`).join('')}</div>`).join('')}
     </div>
     <div class="fx-ordem"><span class="fx-xl">ORDEM NO PDF</span>${inc.map((d,i)=>`<span class="fx-o">${i+1}</span><span class="fx-oc">${esc(rotulo(d))}</span>`).join('<em>→</em>') || '<span class="fx-hint">nenhum arquivo marcado</span>'}</div>
     <div class="fx-sec2">Arquivos da pasta <small>marque o que entra no PDF · ↑↓ muda a ordem · 👁 abre para conferir</small></div>
@@ -4840,7 +4902,7 @@ function fatDocsHtml(cards){
       <span class="fx-hint">${fat.resp?'Cópia: '+esc(fatCcTxt(fat.resp)):'escolha para poder enviar'}</span></div>
     <div class="fx-btns"><button class="btn btn-gold" data-docact="pdf">Gerar PDF TODOS OS DOCUMENTOS</button>
     <button class="btn btn-gold" data-docact="enviar" ${(fat.enviando||fat.enviado)?'disabled':''} title="Envia ao Vidotti e muda o status">${fat.enviado?'✓ Enviado ao Vidotti':'✉ Enviar ao Vidotti'}</button></div></div>
-  <details class="fx-det"><summary>Ver detalhes da conferência de valores</summary>${fatConferHtml()||'<div class="fx-hint">Sem itens para conferir.</div>'}</details>`:''}`;
+`:''}`;
 }
 
 /* extras e atalhos da nova tela */
@@ -4860,6 +4922,8 @@ document.getElementById('fatBody').addEventListener('click', e=>{
   }
   else if(a==='xchip'){ fat.xOpen = true; fat.xVals = {n:b.dataset.nome||'', v:'', d:''}; fatRender(); const n = document.getElementById(b.dataset.nome?'fatXValor':'fatXNome'); if(n) n.focus(); }
   else if(a==='xcancel'){ fat.xOpen = false; fatRender(); }
+  else if(a==='ack'){ fat.ack = fat.ack || {}; fat.ack[b.dataset.k] = b.checked; fatRender(); }
+  else if(a==='verdi'){ window.open('https://prod.sicoex.01x.com.br/processo/buscar?busca_referencia='+encodeURIComponent(String(fat.p.codigo))+'&busca_modulo='+(fat.tipo==='DI'?1:7), '_blank', 'noopener'); }
   else if(a==='focuspag'){
     const i = fat.linhas.findIndex(l=>l.inc && !fatData(l.pag) && (l.cat===b.dataset.cat || (l.cat==='OUTROS' && l.ev===b.dataset.cat)));
     const n = i>=0 && document.querySelector('[data-fi="'+i+'"][data-f="pag"]'); if(n){ n.scrollIntoView({block:'center'}); n.focus(); }
