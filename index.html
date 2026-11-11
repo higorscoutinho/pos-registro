@@ -4961,10 +4961,11 @@ function sdaVenc(hoje){ // penúltimo dia útil do mês (se já passou, o do mê
   return sdaPad(v.getDate())+'/'+sdaPad(v.getMonth()+1)+'/'+v.getFullYear();
 }
 const sdaTabela = cif => Math.min(SDA_MAX, Math.max(SDA_MIN, Math.round(cif*0.02*100)/100));
+const sdaFixo = mod => /^\d+(?:[.,]\d{1,2})?$/.test(String(mod||'').trim()) ? parseFloat(String(mod).trim().replace(',','.')) : null;
 function sdaInit(){
   const mod = modalidadeOf(SX.p);
   const s = {cnpj:'', decl:'', valor:'', venc:sdaVenc(), linha:'ref svs '+SX.p.codigo, mod, conf:null, msg:'', busy:false, gerado:null};
-  if(/^\d+$/.test(mod)) s.valor = fatBR(Number(mod));
+  if(sdaFixo(mod)!==null) s.valor = fatBR(sdaFixo(mod));
   return s;
 }
 function sdaAutoPreencher(dados){ // chamado depois de ler a DUIMP/DI da pasta
@@ -4976,7 +4977,7 @@ function sdaAutoPreencher(dados){ // chamado depois de ler a DUIMP/DI da pasta
 function sdaRecalcular(){
   const s = SX.sda, cif = fatNum(SX.va) || SX.vaDI || 0;
   if(s.mod==='T'){ if(!cif){ toast('Sem valor aduaneiro (CIF) para calcular. Busque os documentos ou informe o CIF no honorário.'); return; } s.valor = fatBR(sdaTabela(cif)); }
-  else if(/^\d+$/.test(s.mod)) s.valor = fatBR(Number(s.mod));
+  else if(sdaFixo(s.mod)!==null) s.valor = fatBR(sdaFixo(s.mod));
   s.conf = s.conf; sdaRender();
 }
 function sdaCnpjOk(s){ return s.conf && s.conf.cnpj.replace(/\D/g,'') === String(s.cnpj).replace(/\D/g,''); }
@@ -4984,7 +4985,7 @@ function sdaCard(){
   const s = SX.sda; if(!s || s.mod==='X') return '';
   const c = SX.client, cif = fatNum(SX.va) || SX.vaDI || 0;
   const regra = (c && c.info ? c.info.split('\n').filter(l=>/sda|s\.d\.a/i.test(l)) : []);
-  const dica = s.mod==='T' ? (cif ? 'Tabela: 2% de R$ '+fatBR(cif)+' = R$ '+fatBR(cif*0.02)+' (mín. '+fatBR(SDA_MIN)+' · máx. '+fatBR(SDA_MAX)+')' : 'Tabela: 2% do valor aduaneiro (mín. '+fatBR(SDA_MIN)+' · máx. '+fatBR(SDA_MAX)+') — busque os documentos para ler o CIF') : 'Valor fixo do cadastro: R$ '+fatBR(Number(s.mod));
+  const dica = s.mod==='T' ? (cif ? 'Tabela: 2% de R$ '+fatBR(cif)+' = R$ '+fatBR(cif*0.02)+' (mín. '+fatBR(SDA_MIN)+' · máx. '+fatBR(SDA_MAX)+')' : 'Tabela: 2% do valor aduaneiro (mín. '+fatBR(SDA_MIN)+' · máx. '+fatBR(SDA_MAX)+') — busque os documentos para ler o CIF') : 'Valor fixo do cadastro: R$ '+fatBR(sdaFixo(s.mod)||0);
   const ja = SX.p.sdaGuia ? `<span class="fx-pill am">! SDA já gerado: guia ${esc(SX.p.sdaGuia)}${SX.p.sdaEm?' em '+esc(new Date(SX.p.sdaEm).toLocaleDateString('pt-BR')):''}</span>` : '';
   const ok = sdaCnpjOk(s);
   return `<section class="fx-card fx-sda">
@@ -5003,10 +5004,10 @@ function sdaCard(){
       <button class="btn" data-sda="conferir" type="button" ${s.busy?'disabled':''}>🔎 Conferir no SINDASP (não grava)</button>
       <button class="btn btn-gold" data-sda="gerar" type="button" ${(s.busy||!ok)?'disabled':''} title="${ok?'Grava a guia e salva o boleto':'Conferir antes'}">Gerar SDA e salvar PDF</button>
       ${s.gerado&&s.gerado.html&&!s.gerado.salvo?'<button class="btn" data-sda="pdfdenovo" type="button">Refazer o PDF (sem imprimir de novo)</button>':''}
- <button class="fx-link" data-sda="teste" type="button" title="Usa a tela Visualizar GRH de uma guia que já existe; não gasta impressão">testar o PDF com uma guia existente</button>
+
     </div>
-    <div class="fx-hint" style="margin-top:8px;">Guia já gravada (ex.: deu erro depois de gravar)? Informe o número para só baixar o boleto, <b>sem criar outra</b>:
-      <input class="fx-in tl" id="sdaGuiaNum" value="${escAttr(s.guiaNum||'')}" placeholder="7726924" style="width:110px;display:inline-block;"> <button class="btn" data-sda="boleto" type="button" ${s.busy?'disabled':''}>Baixar boleto desta guia</button></div>
+    ${(SX.p.sdaGuia||s.guiaNum)?`<div class="fx-hint" style="margin-top:8px;">Guia já gravada (ex.: deu erro depois de gravar)? Informe o número para só baixar o boleto, <b>sem criar outra</b>:
+      <input class="fx-in tl" id="sdaGuiaNum" value="${escAttr(s.guiaNum||SX.p.sdaGuia||'')}" placeholder="7726924" style="width:110px;display:inline-block;"> <button class="btn" data-sda="boleto" type="button" ${s.busy?'disabled':''}>Baixar boleto desta guia</button></div>`:''}
   </section>`;
 }
 
@@ -5074,6 +5075,7 @@ async function sdaGerar(){
     const resp = await fetch(API_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(Object.assign({action:'sdaGerar', importador:s.conf.importador, ref:String(SX.p.codigo)}, c))});
     const j = await resp.json();
     if(!j || !j.ok) throw new Error((j && j.error) || 'o servidor não confirmou');
+    if(!j.html && !j.pdf){ SX.p.sdaGuia = j.guia||SX.p.sdaGuia; save(); throw new Error('A guia '+(j.guia||'')+' foi gravada, mas o servidor não devolveu o boleto — atualize o Code.gs e faça nova implantação.'); }
     SX.p.sdaGuia = j.guia; SX.p.sdaEm = new Date().toISOString(); save();
     s.gerado = {guia:j.guia, html:j.html, pdf:j.pdf, nome:j.nome, salvo:false};
     s.msg = '✅ Guia '+j.guia+' gravada (R$ '+j.valor+', venc. '+j.vencimento+'). Montando o PDF…'+(j.aviso?' ⚠ '+j.aviso:''); sdaRender();
@@ -5083,12 +5085,13 @@ async function sdaGerar(){
 }
 async function sdaBoletoGuia(){
   const s = SX.sda; if(s.busy) return;
-  const n = String(s.guiaNum||'').replace(/\D/g,''); if(!n){ toast('Informe o número da guia.'); return; }
+  const n = String(s.guiaNum||SX.p.sdaGuia||'').replace(/\D/g,''); if(!n){ toast('Informe o número da guia.'); return; }
   if(!confirm('Baixar o boleto da guia '+n+'?\n\nIsso abre o boleto no SINDASP uma vez (o site limita a 3 impressões por guia). Não cria guia nova.')) return;
   s.busy = true; s.msg = 'Abrindo o boleto da guia '+n+'…'; sdaRender();
   try{
     const resp = await fetch(API_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({action:'sdaBoleto', guia:n, ref:String(SX.p.codigo)})});
     const j = await resp.json(); if(!j || !j.ok) throw new Error((j && j.error) || 'o servidor não confirmou');
+    if(!j.html && !j.pdf) throw new Error('o servidor não devolveu o boleto — atualize o Code.gs e faça uma nova implantação.');
     SX.p.sdaGuia = j.guia; if(!SX.p.sdaEm) SX.p.sdaEm = new Date().toISOString(); save();
     s.gerado = {guia:j.guia, html:j.html, pdf:j.pdf, nome:j.nome, salvo:false};
     await sdaSalvarPdf();
