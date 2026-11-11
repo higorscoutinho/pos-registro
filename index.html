@@ -4966,6 +4966,8 @@ function sdaInit(){
   const mod = modalidadeOf(SX.p);
   const s = {cnpj:'', decl:'', valor:'', venc:sdaVenc(), linha:'ref svs '+SX.p.codigo, mod, conf:null, msg:'', busy:false, gerado:null};
   if(sdaFixo(mod)!==null) s.valor = fatBR(sdaFixo(mod));
+  let d = 'jaque'; try{ d = localStorage.getItem('pr_sda_dest')==='pedro' ? 'pedro' : 'jaque'; }catch(e){}
+  s.dest = d; s.enviar = true;
   return s;
 }
 function sdaAutoPreencher(dados){ // chamado depois de ler a DUIMP/DI da pasta
@@ -5000,10 +5002,18 @@ function sdaCard(){
     <div class="fx-hint" style="margin:6px 0;">${esc(dica)} <button class="fx-link" data-sda="recalc" type="button">Recalcular</button>${regra.length?'<br>Cadastro do cliente: '+regra.map(esc).join(' · '):''}</div>
     ${s.conf ? `<div class="fx-av ${ok?'gn':'am'}"><i>${ok?'✓':'!'}</i><span>${ok?'<b>SINDASP:</b> ':''}${esc(s.conf.importador)} · ${esc(s.conf.cnpj)} — confira se é o importador certo.${ok?'':' O CNPJ foi alterado: confira de novo.'}</span></div>`:''}
     ${s.msg?`<div class="fx-hint" style="margin:6px 0;white-space:pre-wrap;word-break:break-word;">${esc(s.msg)}</div>`:''}
+    <div class="fx-hint" style="margin:8px 0 2px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
+      <label style="display:inline-flex;gap:5px;align-items:center;"><input type="checkbox" id="sdaEnviar" ${s.enviar?'checked':''}> Enviar e-mail e marcar o SDA como pago</label>
+      <span>Para:</span>
+      <label style="display:inline-flex;gap:4px;align-items:center;"><input type="radio" name="sdaDest" value="jaque" ${s.dest==='jaque'?'checked':''}> Jaque</label>
+      <label style="display:inline-flex;gap:4px;align-items:center;"><input type="radio" name="sdaDest" value="pedro" ${s.dest==='pedro'?'checked':''}> Pedro</label>
+      <span style="opacity:.8">(Adria e Financeiro no "Para"; Andrei, Vidotti, Aline e Pedro em cópia)</span>
+    </div>
     <div class="fx-btns" style="margin-top:8px;">
       <button class="btn" data-sda="conferir" type="button" ${s.busy?'disabled':''}>🔎 Conferir no SINDASP (não grava)</button>
-      <button class="btn btn-gold" data-sda="gerar" type="button" ${(s.busy||!ok)?'disabled':''} title="${ok?'Grava a guia e salva o boleto':'Conferir antes'}">Gerar SDA e salvar PDF</button>
-      ${s.gerado&&s.gerado.html&&!s.gerado.salvo?'<button class="btn" data-sda="pdfdenovo" type="button">Refazer o PDF (sem imprimir de novo)</button>':''}
+      <button class="btn btn-gold" data-sda="gerar" type="button" ${(s.busy||!ok||s.gerado)?'disabled':''} title="${ok?'Grava a guia, salva o boleto'+(s.enviar?' e envia o e-mail':''):'Conferir antes'}">${s.enviar?'Gerar SDA, salvar PDF e enviar e-mail':'Gerar SDA e salvar PDF'}</button>
+      ${s.gerado&&s.gerado.bytes&&!s.gerado.enviado?'<button class="btn btn-gold" data-sda="enviar" type="button" '+(s.busy?'disabled':'')+'>✉ Enviar e-mail agora</button>':''}
+      ${s.gerado&&s.gerado.html?'<button class="btn" data-sda="pdfoutro" type="button" '+(s.busy?'disabled':'')+' title="Refaz o PDF por outro método (não imprime o boleto de novo)">Refazer o PDF (outro método)</button>':''}
 
     </div>
 
@@ -5020,7 +5030,7 @@ async function sdaHtmlParaPdf(html){
     const doc = fr.contentDocument;
     await Promise.all(Array.from(doc.images).map(i=>i.complete?null:new Promise(r=>{ i.onload=i.onerror=r; })));
     await new Promise(r=>setTimeout(r,200));
-    const cv = await html2canvas(doc.body, {scale:2, backgroundColor:'#ffffff', logging:false, windowWidth:780});
+    const cv = await html2canvas(doc.body, {scale:3, backgroundColor:'#ffffff', logging:false, windowWidth:780});
     // recorta as margens brancas
     const pq = document.createElement('canvas'), k = 4; pq.width = Math.ceil(cv.width/k); pq.height = Math.ceil(cv.height/k);
     const pc = pq.getContext('2d'); pc.drawImage(cv,0,0,pq.width,pq.height);
@@ -5058,7 +5068,7 @@ async function sdaConferir(){
   s.busy = true; s.msg = 'Consultando o SINDASP… (não grava nada)'; s.conf = null; sdaRender();
   try{
     const d = await vcpApi('sdaConferir', {cnpj:s.cnpj});
-    if(String(d.versao)!=='3'){ s.conf = null; s.msg = '⚠ O Apps Script está DESATUALIZADO (versão '+(d.versao||'antiga')+'). Cole o Code.gs novo e faça Implantar → Gerenciar implantações → lápis → Versão: Nova versão → Implantar. Por segurança, não deixo gerar até atualizar.\n\nDiagnóstico (me mande um print disto): o sistema chama o final «…'+String(API_URL).slice(-14)+'» e recebeu: '+JSON.stringify(d).slice(0,260); s.busy = false; sdaRender(); return; }
+    if(String(d.versao)!=='4'){ s.conf = null; s.msg = '⚠ O Apps Script está DESATUALIZADO (versão '+(d.versao||'antiga')+'). Cole o Code.gs novo e faça Implantar → Gerenciar implantações → lápis → Versão: Nova versão → Implantar. Por segurança, não deixo gerar até atualizar.\n\nDiagnóstico (me mande um print disto): o sistema chama o final «…'+String(API_URL).slice(-14)+'» e recebeu: '+JSON.stringify(d).slice(0,260); s.busy = false; sdaRender(); return; }
     s.conf = {importador:d.importador, cnpj:d.cnpj}; s.msg = '';
   }catch(e){ s.msg = '❌ '+(e.message||e); }
   s.busy = false; sdaRender();
@@ -5069,7 +5079,7 @@ async function sdaGerar(){
   const falta = []; if(!c.declaracao) falta.push('declaração'); if(!(c.valor>=150)) falta.push('valor'); if(!c.vencimento) falta.push('vencimento');
   if(falta.length){ toast('Preencha: '+falta.join(', ')+'.'); return; }
   const dupl = SX.p.sdaGuia ? '\n\n⚠ Este processo já tem SDA gerado (guia '+SX.p.sdaGuia+'). Isto vai criar OUTRA guia.' : '';
-  if(!confirm('Gerar a GRH no SINDASP?\n\nImportador: '+s.conf.importador+' ('+s.conf.cnpj+')\nDeclaração: '+c.declaracao+'\nValor: R$ '+fatBR(c.valor)+'\nVencimento: '+c.vencimento+'\nLinha 1: '+c.linha1+'\n\nIsso GRAVA a guia de verdade e abre o boleto uma vez (o site limita a 3 impressões por guia).'+dupl)) return;
+  if(!confirm('Gerar a GRH no SINDASP?\n\nImportador: '+s.conf.importador+' ('+s.conf.cnpj+')\nDeclaração: '+c.declaracao+'\nValor: R$ '+fatBR(c.valor)+'\nVencimento: '+c.vencimento+'\nLinha 1: '+c.linha1+'\n'+(s.enviar?'E-mail: para '+(s.dest==='pedro'?'Pedro':'Jaque')+' (Adria e Financeiro; cópia Andrei, Vidotti, Aline, Pedro) e marcar SDA como pago.\n':'')+'\nIsso GRAVA a guia de verdade e abre o boleto uma vez (o site limita a 3 impressões por guia).'+dupl)) return;
   s.busy = true; s.msg = 'Gravando a guia no SINDASP e abrindo o boleto…'; sdaRender();
   try{
     const resp = await fetch(API_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(Object.assign({action:'sdaGerar', importador:s.conf.importador, ref:String(SX.p.codigo)}, c))});
@@ -5077,33 +5087,55 @@ async function sdaGerar(){
     if(!j || !j.ok) throw new Error((j && j.error) || 'o servidor não confirmou');
     if(!j.html && !j.pdf){ SX.p.sdaGuia = j.guia||SX.p.sdaGuia; save(); throw new Error('A guia '+(j.guia||'')+' foi gravada, mas o servidor não devolveu o boleto — atualize o Code.gs e faça nova implantação.'); }
     SX.p.sdaGuia = j.guia; SX.p.sdaEm = new Date().toISOString(); save();
-    s.gerado = {guia:j.guia, html:j.html, pdf:j.pdf, nome:j.nome, salvo:false};
+    s.gerado = {guia:j.guia, html:j.html, pdf:j.pdf, nome:j.nome, valor:j.valor, salvo:false, enviado:false, bytes:null, metodo:''};
     s.msg = '✅ Guia '+j.guia+' gravada (R$ '+j.valor+', venc. '+j.vencimento+'). Montando o PDF…'+(j.aviso?' ⚠ '+j.aviso:''); sdaRender();
     await sdaSalvarPdf();
+    if(s.enviar && s.gerado && s.gerado.bytes) await sdaEnviar();
   }catch(e){ s.msg = '❌ '+(e.message||e); const mg = String(e.message||'').match(/A guia (\d+) foi gravada/); if(mg){ s.guiaNum = mg[1]; SX.p.sdaGuia = mg[1]; SX.p.sdaEm = new Date().toISOString(); save(); } }
   s.busy = false; sdaRender();
 }
-async function sdaPdfBytes(d){
-  if(d && d.pdf){ try{ const bin = atob(d.pdf), u = new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i); if(String.fromCharCode(u[0],u[1],u[2],u[3])==='%PDF') return u; }catch(e){} }
-  return await sdaHtmlParaPdf(d.html);
+function sdaB64ParaBytes(b64){ try{ const bin = atob(b64), u = new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i); return String.fromCharCode(u[0],u[1],u[2],u[3])==='%PDF' ? u : null; }catch(e){ return null; } }
+function sdaBytesParaB64(u){ let s = ''; for(let i=0;i<u.length;i+=0x8000) s += String.fromCharCode.apply(null, u.subarray(i,i+0x8000)); return btoa(s); }
+// metodo 'nav' = desenha o boleto no navegador (fiel ao que você vê); 'google' = PDF feito pelo Apps Script
+async function sdaPdfBytes(d, metodo){
+  const viaGoogle = () => d && d.pdf ? sdaB64ParaBytes(d.pdf) : null;
+  if(metodo==='google'){ const u = viaGoogle(); if(u) return {bytes:u, metodo:'google'}; throw new Error('O Apps Script não devolveu PDF.'); }
+  try{ return {bytes: await sdaHtmlParaPdf(d.html), metodo:'nav'}; }
+  catch(e){ const u = viaGoogle(); if(u) return {bytes:u, metodo:'google'}; throw e; }
 }
-async function sdaSalvarPdf(){
+async function sdaSalvarPdf(metodo){
   const s = SX.sda, g = s.gerado; if(!g) return;
   try{
-    const bytes = await sdaPdfBytes(g);
-    const r = await fatSalvarArquivo(g.nome+'.pdf', bytes);
-    g.salvo = true; s.msg = '✅ Guia '+g.guia+' gravada. PDF '+(r.ok?'salvo na pasta FATURAMENTO: ':'baixado (não consegui gravar na pasta: '+r.erro+'): ')+r.nome;
+    const r0 = await sdaPdfBytes(g, metodo); g.bytes = r0.bytes; g.metodo = r0.metodo;
+    const r = await fatSalvarArquivo(g.nome+'.pdf', g.bytes);
+    g.salvo = true; s.msg = '✅ Guia '+g.guia+' gravada. PDF '+(r.ok?'salvo na pasta FATURAMENTO: ':'baixado (não consegui gravar na pasta: '+r.erro+'): ')+r.nome+' ('+(g.metodo==='google'?'feito pelo Apps Script':'desenhado no navegador')+')';
     toast('SDA gerado: guia '+g.guia);
   }catch(e){
     s.msg = '⚠ A guia '+g.guia+' FOI gravada, mas não consegui montar o PDF ('+(e.message||e)+'). Use "Refazer o PDF" (não imprime de novo) ou abra a guia no site.';
   }
+}
+async function sdaAssinatura(){
+  try{ const r = await fetch('assinatura.png',{cache:'force-cache'}); if(!r.ok) return ''; const t = r.headers.get('content-type')||''; if(!/image\/png/i.test(t)) return ''; const u = new Uint8Array(await r.arrayBuffer()); return u.length>1000 ? sdaBytesParaB64(u) : ''; }catch(e){ return ''; }
+}
+async function sdaEnviar(){
+  const s = SX.sda, g = s.gerado; if(!g || !g.bytes || g.enviado) return;
+  const prev = s.msg; s.busy = true; s.msg = (prev?prev+'\n':'')+'Enviando o e-mail para '+(s.dest==='pedro'?'Pedro':'Jaque')+'…'; sdaRender();
+  try{
+    const resp = await fetch(API_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({action:'sdaEnviar', dest:s.dest, cliente:(SX.client?SX.client.nome:''), ref:String(SX.p.codigo), valor:g.valor||s.valor, pdfBase64:sdaBytesParaB64(g.bytes), assinaturaB64: await sdaAssinatura()})});
+    const j = await resp.json();
+    if(!j || !j.ok) throw new Error((j && j.error) || 'o servidor não confirmou o envio');
+    g.enviado = true; SX.p.sdaPago = true; save();
+    s.msg = '✅ Guia '+g.guia+' gravada, PDF salvo e e-mail enviado ("'+j.assunto+'"). SDA marcado como pago.';
+    toast('E-mail do SDA enviado — SDA pago ✓');
+  }catch(e){ s.msg = '✅ Guia '+g.guia+' gravada e PDF salvo.\n❌ O e-mail NÃO foi enviado e o SDA NÃO foi marcado como pago: '+(e.message||e)+'\nUse "Enviar e-mail agora" (não cria outra guia).'; }
+  s.busy = false; sdaRender();
 }
 async function sdaTeste(){
   const n = prompt('Número de uma guia que já existe (ex.: 7725896).\nUsa a tela "Visualizar GRH", que não gasta impressão.'); if(!n) return;
   const s = SX.sda; s.msg = 'Montando o PDF de teste…'; sdaRender();
   try{
     const d = await vcpApi('sdaTestePdf', {guia:n});
-    const bytes = await sdaPdfBytes(d);
+    const bytes = (await sdaPdfBytes(d)).bytes;
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([bytes],{type:'application/pdf'})); a.download = 'TESTE guia '+d.guia+'.pdf'; document.body.appendChild(a); a.click();
     setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1500);
     s.msg = 'PDF de teste baixado (guia '+d.guia+'). Confira se ficou legível.';
@@ -5116,11 +5148,16 @@ document.getElementById('sdaGerBody').addEventListener('input', e=>{
   SX.sda[m] = t.value;
   if(m==='cnpj'){ const b = document.querySelector('[data-sda="gerar"]'); const ok = sdaCnpjOk(SX.sda); if(b){ b.disabled = !ok || SX.sda.busy; } }
 });
+document.getElementById('sdaGerBody').addEventListener('change', e=>{
+  const t = e.target; if(!SX || !SX.sda) return;
+  if(t.name==='sdaDest'){ SX.sda.dest = t.value==='pedro' ? 'pedro' : 'jaque'; try{ localStorage.setItem('pr_sda_dest', SX.sda.dest); }catch(x){} sdaRender(); }
+  else if(t.id==='sdaEnviar'){ SX.sda.enviar = !!t.checked; sdaRender(); }
+});
 document.getElementById('sdaGerBody').addEventListener('click', e=>{
   const b = e.target.closest('[data-sda]'); if(!b || !SX || !SX.sda) return;
   const a = b.dataset.sda;
   if(a==='conferir') sdaConferir(); else if(a==='gerar') sdaGerar(); else if(a==='recalc') sdaRecalcular();
-  else if(a==='pdfdenovo') sdaSalvarPdf().then(()=>sdaRender()); else if(a==='teste') sdaTeste(); else if(a==='limpar'){ if(confirm('Remover a marca de guia '+SX.p.sdaGuia+' deste processo?\n(Não apaga nada no SINDASP.)')){ SX.p.sdaGuia=''; SX.p.sdaEm=''; SX.sda.guiaNum=''; save(); sdaRender(); } }
+  else if(a==='enviar') sdaEnviar(); else if(a==='pdfoutro'){ const g = SX.sda.gerado; SX.sda.busy = true; sdaRender(); sdaSalvarPdf(g && g.metodo==='nav' ? 'google' : 'nav').then(()=>{ SX.sda.busy = false; sdaRender(); }); } else if(a==='pdfdenovo') sdaSalvarPdf().then(()=>sdaRender()); else if(a==='teste') sdaTeste(); else if(a==='limpar'){ if(confirm('Remover a marca de guia '+SX.p.sdaGuia+' deste processo?\n(Não apaga nada no SINDASP.)')){ SX.p.sdaGuia=''; SX.p.sdaEm=''; SX.sda.guiaNum=''; save(); sdaRender(); } }
 });
 /* --- janela própria do SDA (fora do Faturar) --- */
 let SX = null;
