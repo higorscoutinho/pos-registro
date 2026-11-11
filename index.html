@@ -5006,8 +5006,7 @@ function sdaCard(){
       ${s.gerado&&s.gerado.html&&!s.gerado.salvo?'<button class="btn" data-sda="pdfdenovo" type="button">Refazer o PDF (sem imprimir de novo)</button>':''}
 
     </div>
-    ${(SX.p.sdaGuia||s.guiaNum)?`<div class="fx-hint" style="margin-top:8px;">Guia já gravada (ex.: deu erro depois de gravar)? Informe o número para só baixar o boleto, <b>sem criar outra</b>:
-      <input class="fx-in tl" id="sdaGuiaNum" value="${escAttr(s.guiaNum||SX.p.sdaGuia||'')}" placeholder="7726924" style="width:110px;display:inline-block;"> <button class="btn" data-sda="boleto" type="button" ${s.busy?'disabled':''}>Baixar boleto desta guia</button></div>`:''}
+
   </section>`;
 }
 
@@ -5059,6 +5058,7 @@ async function sdaConferir(){
   s.busy = true; s.msg = 'Consultando o SINDASP… (não grava nada)'; s.conf = null; sdaRender();
   try{
     const d = await vcpApi('sdaConferir', {cnpj:s.cnpj});
+    if(String(d.versao)!=='3'){ s.conf = null; s.msg = '⚠ O Apps Script está DESATUALIZADO (versão '+(d.versao||'antiga')+'). Cole o Code.gs novo e faça Implantar → Gerenciar implantações → lápis → Versão: Nova versão → Implantar. Por segurança, não deixo gerar até atualizar.'; s.busy = false; sdaRender(); return; }
     s.conf = {importador:d.importador, cnpj:d.cnpj}; s.msg = '';
   }catch(e){ s.msg = '❌ '+(e.message||e); }
   s.busy = false; sdaRender();
@@ -5081,21 +5081,6 @@ async function sdaGerar(){
     s.msg = '✅ Guia '+j.guia+' gravada (R$ '+j.valor+', venc. '+j.vencimento+'). Montando o PDF…'+(j.aviso?' ⚠ '+j.aviso:''); sdaRender();
     await sdaSalvarPdf();
   }catch(e){ s.msg = '❌ '+(e.message||e); const mg = String(e.message||'').match(/A guia (\d+) foi gravada/); if(mg){ s.guiaNum = mg[1]; SX.p.sdaGuia = mg[1]; SX.p.sdaEm = new Date().toISOString(); save(); } }
-  s.busy = false; sdaRender();
-}
-async function sdaBoletoGuia(){
-  const s = SX.sda; if(s.busy) return;
-  const n = String(s.guiaNum||SX.p.sdaGuia||'').replace(/\D/g,''); if(!n){ toast('Informe o número da guia.'); return; }
-  if(!confirm('Baixar o boleto da guia '+n+'?\n\nIsso abre o boleto no SINDASP uma vez (o site limita a 3 impressões por guia). Não cria guia nova.')) return;
-  s.busy = true; s.msg = 'Abrindo o boleto da guia '+n+'…'; sdaRender();
-  try{
-    const resp = await fetch(API_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({action:'sdaBoleto', guia:n, ref:String(SX.p.codigo)})});
-    const j = await resp.json(); if(!j || !j.ok) throw new Error((j && j.error) || 'o servidor não confirmou');
-    if(!j.html && !j.pdf) throw new Error('o servidor não devolveu o boleto — atualize o Code.gs e faça uma nova implantação.');
-    SX.p.sdaGuia = j.guia; if(!SX.p.sdaEm) SX.p.sdaEm = new Date().toISOString(); save();
-    s.gerado = {guia:j.guia, html:j.html, pdf:j.pdf, nome:j.nome, salvo:false};
-    await sdaSalvarPdf();
-  }catch(e){ s.msg = '❌ '+(e.message||e); }
   s.busy = false; sdaRender();
 }
 async function sdaPdfBytes(d){
@@ -5127,7 +5112,7 @@ async function sdaTeste(){
 }
 document.getElementById('sdaGerBody').addEventListener('input', e=>{
   const t = e.target; if(!SX || !SX.sda) return;
-  const m = {sdaGuiaNum:'guiaNum', sdaCnpj:'cnpj', sdaDecl:'decl', sdaValor:'valor', sdaVenc:'venc', sdaLinha:'linha'}[t.id]; if(!m) return;
+  const m = {sdaCnpj:'cnpj', sdaDecl:'decl', sdaValor:'valor', sdaVenc:'venc', sdaLinha:'linha'}[t.id]; if(!m) return;
   SX.sda[m] = t.value;
   if(m==='cnpj'){ const b = document.querySelector('[data-sda="gerar"]'); const ok = sdaCnpjOk(SX.sda); if(b){ b.disabled = !ok || SX.sda.busy; } }
 });
@@ -5135,7 +5120,7 @@ document.getElementById('sdaGerBody').addEventListener('click', e=>{
   const b = e.target.closest('[data-sda]'); if(!b || !SX || !SX.sda) return;
   const a = b.dataset.sda;
   if(a==='conferir') sdaConferir(); else if(a==='gerar') sdaGerar(); else if(a==='recalc') sdaRecalcular();
-  else if(a==='pdfdenovo') sdaSalvarPdf().then(()=>sdaRender()); else if(a==='teste') sdaTeste(); else if(a==='boleto') sdaBoletoGuia(); else if(a==='limpar'){ if(confirm('Remover a marca de guia '+SX.p.sdaGuia+' deste processo?\n(Não apaga nada no SINDASP.)')){ SX.p.sdaGuia=''; SX.p.sdaEm=''; SX.sda.guiaNum=''; save(); sdaRender(); } }
+  else if(a==='pdfdenovo') sdaSalvarPdf().then(()=>sdaRender()); else if(a==='teste') sdaTeste(); else if(a==='limpar'){ if(confirm('Remover a marca de guia '+SX.p.sdaGuia+' deste processo?\n(Não apaga nada no SINDASP.)')){ SX.p.sdaGuia=''; SX.p.sdaEm=''; SX.sda.guiaNum=''; save(); sdaRender(); } }
 });
 /* --- janela própria do SDA (fora do Faturar) --- */
 let SX = null;
