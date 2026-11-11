@@ -4961,7 +4961,7 @@ function sdaVenc(hoje){ // penúltimo dia útil do mês (se já passou, o do mê
   return sdaPad(v.getDate())+'/'+sdaPad(v.getMonth()+1)+'/'+v.getFullYear();
 }
 const sdaTabela = cif => Math.min(SDA_MAX, Math.max(SDA_MIN, Math.round(cif*0.02*100)/100));
-const sdaFixo = mod => /^\d+(?:[.,]\d{1,2})?$/.test(String(mod||'').trim()) ? parseFloat(String(mod).trim().replace(',','.')) : null;
+const sdaFixo = mod => { const t = String(mod||'').trim().replace(/^r\$\s*/i,''); if(/^\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?$/.test(t) || /^\d+(?:,\d{1,2})?$/.test(t)) return parseFloat(t.replace(/\./g,'').replace(',','.')); if(/^\d+\.\d{1,2}$/.test(t)) return parseFloat(t); return null; };
 function sdaInit(){
   const mod = modalidadeOf(SX.p);
   const s = {cnpj:'', decl:'', valor:'', venc:sdaVenc(), linha:'ref svs '+SX.p.codigo, mod, conf:null, msg:'', busy:false, gerado:null};
@@ -4986,7 +4986,7 @@ function sdaCard(){
   const c = SX.client, cif = fatNum(SX.va) || SX.vaDI || 0;
   const regra = (c && c.info ? c.info.split('\n').filter(l=>/sda|s\.d\.a/i.test(l)) : []);
   const dica = s.mod==='T' ? (cif ? 'Tabela: 2% de R$ '+fatBR(cif)+' = R$ '+fatBR(cif*0.02)+' (mín. '+fatBR(SDA_MIN)+' · máx. '+fatBR(SDA_MAX)+')' : 'Tabela: 2% do valor aduaneiro (mín. '+fatBR(SDA_MIN)+' · máx. '+fatBR(SDA_MAX)+') — busque os documentos para ler o CIF') : 'Valor fixo do cadastro: R$ '+fatBR(sdaFixo(s.mod)||0);
-  const ja = SX.p.sdaGuia ? `<span class="fx-pill am">! SDA já gerado: guia ${esc(SX.p.sdaGuia)}${SX.p.sdaEm?' em '+esc(new Date(SX.p.sdaEm).toLocaleDateString('pt-BR')):''}</span>` : '';
+  const ja = SX.p.sdaGuia ? `<span class="fx-pill am">! SDA já gerado: guia ${esc(SX.p.sdaGuia)}${SX.p.sdaEm?' em '+esc(new Date(SX.p.sdaEm).toLocaleDateString('pt-BR')):''} <button class="fx-link" data-sda="limpar" type="button" title="Se esta marca estiver errada, remova">não é esta — limpar</button></span>` : '';
   const ok = sdaCnpjOk(s);
   return `<section class="fx-card fx-sda">
     <div class="fx-ch"><h4>S.D.A.</h4><span class="fx-hint">gera a guia (GRH) no SINDASP e salva o boleto em PDF na pasta FATURAMENTO</span>${ja}</div>
@@ -5135,7 +5135,7 @@ document.getElementById('sdaGerBody').addEventListener('click', e=>{
   const b = e.target.closest('[data-sda]'); if(!b || !SX || !SX.sda) return;
   const a = b.dataset.sda;
   if(a==='conferir') sdaConferir(); else if(a==='gerar') sdaGerar(); else if(a==='recalc') sdaRecalcular();
-  else if(a==='pdfdenovo') sdaSalvarPdf().then(()=>sdaRender()); else if(a==='teste') sdaTeste(); else if(a==='boleto') sdaBoletoGuia();
+  else if(a==='pdfdenovo') sdaSalvarPdf().then(()=>sdaRender()); else if(a==='teste') sdaTeste(); else if(a==='boleto') sdaBoletoGuia(); else if(a==='limpar'){ if(confirm('Remover a marca de guia '+SX.p.sdaGuia+' deste processo?\n(Não apaga nada no SINDASP.)')){ SX.p.sdaGuia=''; SX.p.sdaEm=''; SX.sda.guiaNum=''; save(); sdaRender(); } }
 });
 /* --- janela própria do SDA (fora do Faturar) --- */
 let SX = null;
