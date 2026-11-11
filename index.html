@@ -4999,7 +4999,7 @@ function sdaCard(){
     </div>
     <div class="fx-hint" style="margin:6px 0;">${esc(dica)} <button class="fx-link" data-sda="recalc" type="button">Recalcular</button>${regra.length?'<br>Cadastro do cliente: '+regra.map(esc).join(' · '):''}</div>
     ${s.conf ? `<div class="fx-av ${ok?'gn':'am'}"><i>${ok?'✓':'!'}</i><span>${ok?'<b>SINDASP:</b> ':''}${esc(s.conf.importador)} · ${esc(s.conf.cnpj)} — confira se é o importador certo.${ok?'':' O CNPJ foi alterado: confira de novo.'}</span></div>`:''}
-    ${s.msg?`<div class="fx-hint" style="margin:6px 0;">${esc(s.msg)}</div>`:''}
+    ${s.msg?`<div class="fx-hint" style="margin:6px 0;white-space:pre-wrap;word-break:break-word;">${esc(s.msg)}</div>`:''}
     <div class="fx-btns" style="margin-top:8px;">
       <button class="btn" data-sda="conferir" type="button" ${s.busy?'disabled':''}>🔎 Conferir no SINDASP (não grava)</button>
       <button class="btn btn-gold" data-sda="gerar" type="button" ${(s.busy||!ok)?'disabled':''} title="${ok?'Grava a guia e salva o boleto':'Conferir antes'}">Gerar SDA e salvar PDF</button>
@@ -5058,7 +5058,7 @@ async function sdaConferir(){
   s.busy = true; s.msg = 'Consultando o SINDASP… (não grava nada)'; s.conf = null; sdaRender();
   try{
     const d = await vcpApi('sdaConferir', {cnpj:s.cnpj});
-    if(String(d.versao)!=='3'){ s.conf = null; s.msg = '⚠ O Apps Script está DESATUALIZADO (versão '+(d.versao||'antiga')+'). Cole o Code.gs novo e faça Implantar → Gerenciar implantações → lápis → Versão: Nova versão → Implantar. Por segurança, não deixo gerar até atualizar.'; s.busy = false; sdaRender(); return; }
+    if(String(d.versao)!=='3'){ s.conf = null; s.msg = '⚠ O Apps Script está DESATUALIZADO (versão '+(d.versao||'antiga')+'). Cole o Code.gs novo e faça Implantar → Gerenciar implantações → lápis → Versão: Nova versão → Implantar. Por segurança, não deixo gerar até atualizar.\n\nDiagnóstico (me mande um print disto): o sistema chama o final «…'+String(API_URL).slice(-14)+'» e recebeu: '+JSON.stringify(d).slice(0,260); s.busy = false; sdaRender(); return; }
     s.conf = {importador:d.importador, cnpj:d.cnpj}; s.msg = '';
   }catch(e){ s.msg = '❌ '+(e.message||e); }
   s.busy = false; sdaRender();
