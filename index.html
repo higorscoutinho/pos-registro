@@ -5092,7 +5092,8 @@ async function sdaGerar(){
     s.gerado = {guia:j.guia, html:j.html, pdf:j.pdf, nome:j.nome, valor:j.valor, salvo:false, enviado:false, bytes:null, metodo:''};
     s.msg = '✅ Guia '+j.guia+' gravada (R$ '+j.valor+', venc. '+j.vencimento+'). Montando o PDF…'+(j.aviso?' ⚠ '+j.aviso:''); sdaRender();
     await sdaSalvarPdf();
-    if(s.enviar && s.gerado && s.gerado.bytes) await sdaEnviar();
+    if(s.enviar && s.gerado && s.gerado.bytes && s.gerado.metodo==='nav') await sdaEnviar();
+    else if(s.enviar && s.gerado && s.gerado.metodo==='google') s.msg += '\n⏸ E-mail NÃO enviado: o PDF ficou no modelo simples. Clique em "Refazer o PDF" e depois em "Enviar e-mail com o PDF da pasta".';
   }catch(e){ s.msg = '❌ '+(e.message||e); const mg = String(e.message||'').match(/A guia (\d+) foi gravada/); if(mg){ s.guiaNum = mg[1]; SX.p.sdaGuia = mg[1]; SX.p.sdaEm = new Date().toISOString(); save(); } }
   s.busy = false; sdaRender();
 }
@@ -5102,15 +5103,20 @@ function sdaBytesParaB64(u){ let s = ''; for(let i=0;i<u.length;i+=0x8000) s += 
 async function sdaPdfBytes(d, metodo){
   const viaGoogle = () => d && d.pdf ? sdaB64ParaBytes(d.pdf) : null;
   if(metodo==='google'){ const u = viaGoogle(); if(u) return {bytes:u, metodo:'google'}; throw new Error('O Apps Script não devolveu PDF.'); }
-  try{ return {bytes: await sdaHtmlParaPdf(d.html), metodo:'nav'}; }
-  catch(e){ const u = viaGoogle(); if(u) return {bytes:u, metodo:'google'}; throw e; }
+  let erro;
+  for(let t=0;t<3;t++){
+    try{ return {bytes: await sdaHtmlParaPdf(d.html), metodo:'nav'}; }
+    catch(e){ erro = e; await new Promise(r=>setTimeout(r,700)); }
+  }
+  const u = viaGoogle(); if(u) return {bytes:u, metodo:'google', erroNav:(erro&&erro.message)||String(erro)};
+  throw erro;
 }
 async function sdaSalvarPdf(metodo){
   const s = SX.sda, g = s.gerado; if(!g) return;
   try{
     const r0 = await sdaPdfBytes(g, metodo); g.bytes = r0.bytes; g.metodo = r0.metodo;
     const r = await fatSalvarArquivo(g.nome+'.pdf', g.bytes);
-    g.salvo = true; s.msg = '✅ Guia '+g.guia+' gravada. PDF '+(r.ok?'salvo na pasta FATURAMENTO: ':'baixado (não consegui gravar na pasta: '+r.erro+'): ')+r.nome+' ('+(g.metodo==='google'?'feito pelo Apps Script':'desenhado no navegador')+')';
+    g.salvo = true; s.msg = '✅ Guia '+g.guia+' gravada. PDF '+(r.ok?'salvo na pasta FATURAMENTO: ':'baixado (não consegui gravar na pasta: '+r.erro+'): ')+r.nome+' ('+(g.metodo==='google'?'feito pelo Apps Script — o modelo bonito falhou: '+(r0.erroNav||'?')+'. Use "Refazer o PDF" antes de enviar':'modelo com linhas')+')';
     toast('SDA gerado: guia '+g.guia);
   }catch(e){
     s.msg = '⚠ A guia '+g.guia+' FOI gravada, mas não consegui montar o PDF ('+(e.message||e)+'). Use "Refazer o PDF" (não imprime de novo) ou abra a guia no site.';
