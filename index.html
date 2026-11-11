@@ -5013,6 +5013,8 @@ function sdaCard(){
       <button class="btn" data-sda="conferir" type="button" ${s.busy?'disabled':''}>🔎 Conferir no SINDASP (não grava)</button>
       <button class="btn btn-gold" data-sda="gerar" type="button" ${(s.busy||!ok||s.gerado)?'disabled':''} title="${ok?'Grava a guia, salva o boleto'+(s.enviar?' e envia o e-mail':''):'Conferir antes'}">${s.enviar?'Gerar SDA, salvar PDF e enviar e-mail':'Gerar SDA e salvar PDF'}</button>
       ${s.gerado&&s.gerado.bytes&&!s.gerado.enviado?'<button class="btn btn-gold" data-sda="enviar" type="button" '+(s.busy?'disabled':'')+'>✉ Enviar e-mail agora</button>':''}
+      ${s.gerado&&s.gerado.html?'<button class="btn btn-gold" data-sda="imprimir" type="button" title="Abre o boleto e a janela de imprimir do Chrome: escolha Salvar como PDF e salve na pasta FATURAMENTO (o nome já vem preenchido)">🖨 Salvar PDF pelo Chrome</button>':''}
+      ${s.gerado&&s.gerado.html?'<button class="btn" data-sda="enviarpasta" type="button" '+(s.busy?'disabled':'')+' title="Anexa o PDF que você salvou na pasta FATURAMENTO e envia o e-mail">✉ Enviar e-mail com o PDF da pasta</button>':''}
       ${s.gerado&&s.gerado.html?'<button class="btn" data-sda="pdfoutro" type="button" '+(s.busy?'disabled':'')+' title="Refaz o PDF por outro método (não imprime o boleto de novo)">Refazer o PDF (outro método)</button>':''}
 
     </div>
@@ -5114,6 +5116,31 @@ async function sdaSalvarPdf(metodo){
     s.msg = '⚠ A guia '+g.guia+' FOI gravada, mas não consegui montar o PDF ('+(e.message||e)+'). Use "Refazer o PDF" (não imprime de novo) ou abra a guia no site.';
   }
 }
+function sdaImprimir(){
+  const g = SX.sda.gerado; if(!g || !g.html) return;
+  const w = window.open('', '_blank');
+  if(!w){ toast('O navegador bloqueou a nova janela. Libere pop-ups para este site.'); return; }
+  let html = g.html.replace(/<title[\s\S]*?<\/title>/i,'');
+  html = /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, m=>m+'<title>'+esc(g.nome)+'</title>') : '<title>'+esc(g.nome)+'</title>'+html;
+  w.document.open(); w.document.write(html); w.document.close();
+  try{ w.document.title = g.nome; }catch(e){}
+  const go = ()=>{ try{ w.focus(); w.print(); }catch(e){} };
+  if(w.document.readyState==='complete') setTimeout(go,500); else w.addEventListener('load', ()=>setTimeout(go,500));
+  SX.sda.msg = (SX.sda.msg?SX.sda.msg+'\n':'')+'Na janela de impressão: Destino = Salvar como PDF → Salvar na pasta FATURAMENTO do processo (nome sugerido: '+g.nome+'.pdf). Depois clique em "Enviar e-mail com o PDF da pasta".'; sdaRender();
+}
+async function sdaEnviarDaPasta(){
+  const s = SX.sda, g = s.gerado; if(!g || s.busy) return;
+  try{
+    if(!SX.docsDir) throw new Error('não tenho acesso à pasta FATURAMENTO deste processo');
+    const fh = await SX.docsDir.getFileHandle(g.nome+'.pdf');
+    const u = new Uint8Array(await (await fh.getFile()).arrayBuffer());
+    if(u.length<1500 || String.fromCharCode(u[0],u[1],u[2],u[3])!=='%PDF') throw new Error('o arquivo "'+g.nome+'.pdf" da pasta não é um PDF válido');
+    g.bytes = u; g.metodo = 'pasta'; g.salvo = true;
+  }catch(e){
+    s.msg = '❌ Não achei o PDF salvo: '+((e&&e.name==='NotFoundError')?'"'+g.nome+'.pdf" não está na pasta FATURAMENTO. Salve com o nome sugerido.':(e.message||e)); sdaRender(); return;
+  }
+  await sdaEnviar();
+}
 async function sdaAssinatura(){
   try{ const r = await fetch('assinatura.png',{cache:'force-cache'}); if(!r.ok) return ''; const t = r.headers.get('content-type')||''; if(!/image\/png/i.test(t)) return ''; const u = new Uint8Array(await r.arrayBuffer()); return u.length>1000 ? sdaBytesParaB64(u) : ''; }catch(e){ return ''; }
 }
@@ -5157,7 +5184,7 @@ document.getElementById('sdaGerBody').addEventListener('click', e=>{
   const b = e.target.closest('[data-sda]'); if(!b || !SX || !SX.sda) return;
   const a = b.dataset.sda;
   if(a==='conferir') sdaConferir(); else if(a==='gerar') sdaGerar(); else if(a==='recalc') sdaRecalcular();
-  else if(a==='enviar') sdaEnviar(); else if(a==='pdfoutro'){ const g = SX.sda.gerado; SX.sda.busy = true; sdaRender(); sdaSalvarPdf(g && g.metodo==='nav' ? 'google' : 'nav').then(()=>{ SX.sda.busy = false; sdaRender(); }); } else if(a==='pdfdenovo') sdaSalvarPdf().then(()=>sdaRender()); else if(a==='teste') sdaTeste(); else if(a==='limpar'){ if(confirm('Remover a marca de guia '+SX.p.sdaGuia+' deste processo?\n(Não apaga nada no SINDASP.)')){ SX.p.sdaGuia=''; SX.p.sdaEm=''; SX.sda.guiaNum=''; save(); sdaRender(); } }
+  else if(a==='enviar') sdaEnviar(); else if(a==='imprimir') sdaImprimir(); else if(a==='enviarpasta') sdaEnviarDaPasta(); else if(a==='pdfoutro'){ const g = SX.sda.gerado; SX.sda.busy = true; sdaRender(); sdaSalvarPdf(g && g.metodo==='nav' ? 'google' : 'nav').then(()=>{ SX.sda.busy = false; sdaRender(); }); } else if(a==='pdfdenovo') sdaSalvarPdf().then(()=>sdaRender()); else if(a==='teste') sdaTeste(); else if(a==='limpar'){ if(confirm('Remover a marca de guia '+SX.p.sdaGuia+' deste processo?\n(Não apaga nada no SINDASP.)')){ SX.p.sdaGuia=''; SX.p.sdaEm=''; SX.sda.guiaNum=''; save(); sdaRender(); } }
 });
 /* --- janela própria do SDA (fora do Faturar) --- */
 let SX = null;
