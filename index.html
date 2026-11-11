@@ -5070,7 +5070,7 @@ async function sdaConferir(){
   s.busy = true; s.msg = 'Consultando o SINDASP… (não grava nada)'; s.conf = null; sdaRender();
   try{
     const d = await vcpApi('sdaConferir', {cnpj:s.cnpj});
-    if(String(d.versao)!=='4'){ s.conf = null; s.msg = '⚠ O Apps Script está DESATUALIZADO (versão '+(d.versao||'antiga')+'). Cole o Code.gs novo e faça Implantar → Gerenciar implantações → lápis → Versão: Nova versão → Implantar. Por segurança, não deixo gerar até atualizar.\n\nDiagnóstico (me mande um print disto): o sistema chama o final «…'+String(API_URL).slice(-14)+'» e recebeu: '+JSON.stringify(d).slice(0,260); s.busy = false; sdaRender(); return; }
+    if(String(d.versao)!=='5'){ s.conf = null; s.msg = '⚠ O Apps Script está DESATUALIZADO (versão '+(d.versao||'antiga')+'). Cole o Code.gs novo e faça Implantar → Gerenciar implantações → lápis → Versão: Nova versão → Implantar. Por segurança, não deixo gerar até atualizar.\n\nDiagnóstico (me mande um print disto): o sistema chama o final «…'+String(API_URL).slice(-14)+'» e recebeu: '+JSON.stringify(d).slice(0,260); s.busy = false; sdaRender(); return; }
     s.conf = {importador:d.importador, cnpj:d.cnpj}; s.msg = '';
   }catch(e){ s.msg = '❌ '+(e.message||e); }
   s.busy = false; sdaRender();
