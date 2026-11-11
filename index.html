@@ -5007,7 +5007,7 @@ function sdaCard(){
       <span>Para:</span>
       <label style="display:inline-flex;gap:4px;align-items:center;"><input type="radio" name="sdaDest" value="jaque" ${s.dest==='jaque'?'checked':''}> Jaque</label>
       <label style="display:inline-flex;gap:4px;align-items:center;"><input type="radio" name="sdaDest" value="pedro" ${s.dest==='pedro'?'checked':''}> Pedro</label>
-      <span style="opacity:.8">(Adria e Financeiro no "Para"; Andrei, Vidotti, Aline e Pedro em cópia)</span>
+      <span style="opacity:.8">(Adria e Financeiro no "Para"; Andrei, Vidotti, Aline, Pedro e você em cópia)</span>
     </div>
     <div class="fx-btns" style="margin-top:8px;">
       <button class="btn" data-sda="conferir" type="button" ${s.busy?'disabled':''}>🔎 Conferir no SINDASP (não grava)</button>
@@ -5070,7 +5070,7 @@ async function sdaConferir(){
   s.busy = true; s.msg = 'Consultando o SINDASP… (não grava nada)'; s.conf = null; sdaRender();
   try{
     const d = await vcpApi('sdaConferir', {cnpj:s.cnpj});
-    if(String(d.versao)!=='5'){ s.conf = null; s.msg = '⚠ O Apps Script está DESATUALIZADO (versão '+(d.versao||'antiga')+'). Cole o Code.gs novo e faça Implantar → Gerenciar implantações → lápis → Versão: Nova versão → Implantar. Por segurança, não deixo gerar até atualizar.\n\nDiagnóstico (me mande um print disto): o sistema chama o final «…'+String(API_URL).slice(-14)+'» e recebeu: '+JSON.stringify(d).slice(0,260); s.busy = false; sdaRender(); return; }
+    if(String(d.versao)!=='6'){ s.conf = null; s.msg = '⚠ O Apps Script está DESATUALIZADO (versão '+(d.versao||'antiga')+'). Cole o Code.gs novo e faça Implantar → Gerenciar implantações → lápis → Versão: Nova versão → Implantar. Por segurança, não deixo gerar até atualizar.\n\nDiagnóstico (me mande um print disto): o sistema chama o final «…'+String(API_URL).slice(-14)+'» e recebeu: '+JSON.stringify(d).slice(0,260); s.busy = false; sdaRender(); return; }
     s.conf = {importador:d.importador, cnpj:d.cnpj}; s.msg = '';
   }catch(e){ s.msg = '❌ '+(e.message||e); }
   s.busy = false; sdaRender();
@@ -5081,7 +5081,7 @@ async function sdaGerar(){
   const falta = []; if(!c.declaracao) falta.push('declaração'); if(!(c.valor>=150)) falta.push('valor'); if(!c.vencimento) falta.push('vencimento');
   if(falta.length){ toast('Preencha: '+falta.join(', ')+'.'); return; }
   const dupl = SX.p.sdaGuia ? '\n\n⚠ Este processo já tem SDA gerado (guia '+SX.p.sdaGuia+'). Isto vai criar OUTRA guia.' : '';
-  if(!confirm('Gerar a GRH no SINDASP?\n\nImportador: '+s.conf.importador+' ('+s.conf.cnpj+')\nDeclaração: '+c.declaracao+'\nValor: R$ '+fatBR(c.valor)+'\nVencimento: '+c.vencimento+'\nLinha 1: '+c.linha1+'\n'+(s.enviar?'E-mail: para '+(s.dest==='pedro'?'Pedro':'Jaque')+' (Adria e Financeiro; cópia Andrei, Vidotti, Aline, Pedro) e marcar SDA como pago.\n':'')+'\nIsso GRAVA a guia de verdade e abre o boleto uma vez (o site limita a 3 impressões por guia).'+dupl)) return;
+  if(!confirm('Gerar a GRH no SINDASP?\n\nImportador: '+s.conf.importador+' ('+s.conf.cnpj+')\nDeclaração: '+c.declaracao+'\nValor: R$ '+fatBR(c.valor)+'\nVencimento: '+c.vencimento+'\nLinha 1: '+c.linha1+'\n'+(s.enviar?'E-mail: para '+(s.dest==='pedro'?'Pedro':'Jaque')+' (Adria e Financeiro; cópia Andrei, Vidotti, Aline, Pedro e você) e marcar SDA como pago.\n':'')+'\nIsso GRAVA a guia de verdade e abre o boleto uma vez (o site limita a 3 impressões por guia).'+dupl)) return;
   s.busy = true; s.msg = 'Gravando a guia no SINDASP e abrindo o boleto…'; sdaRender();
   try{
     const resp = await fetch(API_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(Object.assign({action:'sdaGerar', importador:s.conf.importador, ref:String(SX.p.codigo)}, c))});
