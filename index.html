@@ -980,6 +980,7 @@
     </label>
     <div class="modal-foot">
       <button class="btn btn-danger btn-ghost" id="btnDeleteProcess" style="display:none;margin-right:auto;">Excluir</button>
+       <button class="btn btn-sm" id="btnSdaProcess" style="display:none;padding:4px 10px;min-width:0;" title="Gerar o SDA deste processo no SINDASP">SDA</button>
       <button class="btn btn-sm" id="btnFaturarProcess" style="display:none;padding:4px 10px;min-width:0;" title="Faturar este processo" aria-label="Faturar">$</button>
       <button class="btn" id="btnArchiveProcess" style="display:none;">Concluir e arquivar</button>
       <button class="btn btn-ghost" id="btnCancelProcess">Cancelar</button>
@@ -1190,6 +1191,15 @@
     <div class="modal-foot">
       <button class="btn btn-gold" id="btnSdaFechar">Fechar</button>
     </div>
+  </div>
+</div>
+
+<!-- MODAL: S.D.A. (gerar guia no SINDASP) -->
+<div class="overlay" id="sdaGerOverlay">
+  <div class="modal" style="max-width:820px;max-height:92vh;display:flex;flex-direction:column;">
+    <div id="sdaGerHead" style="margin-bottom:10px;"></div>
+    <div id="sdaGerBody" style="overflow-y:auto;flex:1;"></div>
+    <div class="modal-foot"><button class="btn btn-gold" id="btnSdaGerFechar">Fechar</button></div>
   </div>
 </div>
 
@@ -2034,6 +2044,7 @@ function openProcessModal(id){
   updateOriginaisLock();
   document.getElementById('btnDeleteProcess').style.display = p ? '' : 'none';
   document.getElementById('btnFaturarProcess').style.display = p ? '' : 'none';
+  document.getElementById('btnSdaProcess').style.display = p ? '' : 'none';
   processOverlay.classList.add('show');
 }
 document.getElementById('btnNewProcess').addEventListener('click', ()=>openProcessModal(null));
@@ -3946,7 +3957,7 @@ function renderSdaModal(){
     <tbody>${ps.map(p=>{ const st=stageById(p.status); const c=clientById(p.clienteId);
       return `<tr><td><input type="checkbox" data-sdapago="${escAttr(p.id)}" style="width:18px;height:18px;cursor:pointer;" title="Marcar SDA como paga"></td>
         <td><b>${esc(p.codigo)}</b></td><td>${esc(c?c.nome:'(cliente removido)')}</td><td>${esc(st?st.label:p.status)}</td>
-        <td><button class="btn" style="padding:6px 12px;" data-sdaopen="${escAttr(p.id)}">Abrir</button></td></tr>`; }).join('')}</tbody></table>`
+        <td style="white-space:nowrap;"><button class="btn btn-gold" style="padding:6px 12px;" data-sdager="${escAttr(p.id)}" title="Gerar a guia no SINDASP">${p.sdaGuia?'SDA ✓ '+esc(p.sdaGuia):'Gerar SDA'}</button> <button class="btn" style="padding:6px 12px;" data-sdaopen="${escAttr(p.id)}">Abrir</button></td></tr>`; }).join('')}</tbody></table>`
     : '<div class="gd-empty">Nenhuma SDA pendente. ✅</div>';
 }
 function openSdaModal(){ renderSdaModal(); sdaOverlay.classList.add('show'); }
@@ -3958,6 +3969,7 @@ document.getElementById('sdaBody').addEventListener('change', e=>{
   toast('SDA marcada como paga — '+p.codigo);
 });
 document.getElementById('sdaBody').addEventListener('click', e=>{
+  const g = e.target.closest('[data-sdager]'); if(g){ sdaAbrir(g.dataset.sdager); return; }
   const b = e.target.closest('[data-sdaopen]'); if(!b) return;
   sdaOverlay.classList.remove('show'); openProcessModal(b.dataset.sdaopen);
 });
@@ -4198,7 +4210,7 @@ async function openFaturar(id){
   const client = clientById(p.clienteId);
   { const mv=document.getElementById('fatMover'); if(mv) mv.checked=false; }
   fat = {p, client, ack:{}, sda:null, linhas:[], solic:{}, honValor:'', va:'', tipo:'', receitasHon:[], carregando:true, erro:'', docs:null, docsMsg:'', resp: (client && client.responsavel) || ''};
-  fat.sda = sdaInit();
+  
   fatOverlay.classList.add('show');
   fatRender();
   try{
@@ -4374,7 +4386,6 @@ function fatRender(){
         <button class="btn btn-sm btn-ghost" data-fx="xcancel" type="button">Cancelar</button>
       </div>` : ''}
     </section>
-    ${sdaCard()}
     <section class="fx-card">${fatDocsHtml(cards)}</section>
    </div>
    <div class="fx-right">
@@ -4614,6 +4625,7 @@ async function fatLerDI(pasta){
     if(fat.sda && fat.sda.decl) parts.push('declaração '+fat.sda.decl);
     fat.diMsg = '"'+doc.nome+'": '+(parts.length ? parts.join(' · ') : 'não achei seguro nem valor aduaneiro no texto — confira à mão')+'.';
     if(fat.seguroDI===null) fat.diMsg = '"'+doc.nome+'": não achei o seguro no texto'+(fat.vaDI?' (valor aduaneiro R$ '+fatBR(fat.vaDI)+')':'')+' — confira à mão.';
+    if(fat.soSda) return;
     // valor aduaneiro entra no honorário (CMS/Industrial acima de R$ 500 mil), se você ainda não digitou
     if(fat.vaDI && (fatEhCMS(fat.client)||fatEhIndustrial(fat.client)) && !fat.va){ fat.va = fatBR(fat.vaDI); const hh = fatCalcHon(fat); if(hh) fat.honValor = hh; }
   }catch(e){ fat.diMsg = 'Não consegui ler a DUIMP/DI da pasta: '+(e.message||e); }
@@ -4950,30 +4962,30 @@ function sdaVenc(hoje){ // penúltimo dia útil do mês (se já passou, o do mê
 }
 const sdaTabela = cif => Math.min(SDA_MAX, Math.max(SDA_MIN, Math.round(cif*0.02*100)/100));
 function sdaInit(){
-  const mod = modalidadeOf(fat.p);
-  const s = {cnpj:'', decl:'', valor:'', venc:sdaVenc(), linha:'ref svs '+fat.p.codigo, mod, conf:null, msg:'', busy:false, gerado:null};
+  const mod = modalidadeOf(SX.p);
+  const s = {cnpj:'', decl:'', valor:'', venc:sdaVenc(), linha:'ref svs '+SX.p.codigo, mod, conf:null, msg:'', busy:false, gerado:null};
   if(/^\d+$/.test(mod)) s.valor = fatBR(Number(mod));
   return s;
 }
 function sdaAutoPreencher(dados){ // chamado depois de ler a DUIMP/DI da pasta
-  const s = fat.sda; if(!s) return;
+  const s = SX && SX.sda; if(!s) return;
   if(dados.decl && !s.decl) s.decl = dados.decl;
   if(dados.cnpj && !s.cnpj) s.cnpj = dados.cnpj;
-  if(s.mod==='T' && !s.valor && fat.vaDI) s.valor = fatBR(sdaTabela(fat.vaDI));
+  if(s.mod==='T' && !s.valor && SX.vaDI) s.valor = fatBR(sdaTabela(SX.vaDI));
 }
 function sdaRecalcular(){
-  const s = fat.sda, cif = fatNum(fat.va) || fat.vaDI || 0;
+  const s = SX.sda, cif = fatNum(SX.va) || SX.vaDI || 0;
   if(s.mod==='T'){ if(!cif){ toast('Sem valor aduaneiro (CIF) para calcular. Busque os documentos ou informe o CIF no honorário.'); return; } s.valor = fatBR(sdaTabela(cif)); }
   else if(/^\d+$/.test(s.mod)) s.valor = fatBR(Number(s.mod));
-  s.conf = s.conf; fatRender();
+  s.conf = s.conf; sdaRender();
 }
 function sdaCnpjOk(s){ return s.conf && s.conf.cnpj.replace(/\D/g,'') === String(s.cnpj).replace(/\D/g,''); }
 function sdaCard(){
-  const s = fat.sda; if(!s || s.mod==='X') return '';
-  const c = fat.client, cif = fatNum(fat.va) || fat.vaDI || 0;
+  const s = SX.sda; if(!s || s.mod==='X') return '';
+  const c = SX.client, cif = fatNum(SX.va) || SX.vaDI || 0;
   const regra = (c && c.info ? c.info.split('\n').filter(l=>/sda|s\.d\.a/i.test(l)) : []);
   const dica = s.mod==='T' ? (cif ? 'Tabela: 2% de R$ '+fatBR(cif)+' = R$ '+fatBR(cif*0.02)+' (mín. '+fatBR(SDA_MIN)+' · máx. '+fatBR(SDA_MAX)+')' : 'Tabela: 2% do valor aduaneiro (mín. '+fatBR(SDA_MIN)+' · máx. '+fatBR(SDA_MAX)+') — busque os documentos para ler o CIF') : 'Valor fixo do cadastro: R$ '+fatBR(Number(s.mod));
-  const ja = fat.p.sdaGuia ? `<span class="fx-pill am">! SDA já gerado: guia ${esc(fat.p.sdaGuia)}${fat.p.sdaEm?' em '+esc(new Date(fat.p.sdaEm).toLocaleDateString('pt-BR')):''}</span>` : '';
+  const ja = SX.p.sdaGuia ? `<span class="fx-pill am">! SDA já gerado: guia ${esc(SX.p.sdaGuia)}${SX.p.sdaEm?' em '+esc(new Date(SX.p.sdaEm).toLocaleDateString('pt-BR')):''}</span>` : '';
   const ok = sdaCnpjOk(s);
   return `<section class="fx-card fx-sda">
     <div class="fx-ch"><h4>S.D.A.</h4><span class="fx-hint">gera a guia (GRH) no SINDASP e salva o boleto em PDF na pasta FATURAMENTO</span>${ja}</div>
@@ -5024,8 +5036,8 @@ async function sdaHtmlParaPdf(html){
 }
 async function fatSalvarArquivo(nome, bytes){
   try{
-    if(!fat.docsDir) throw new Error('sem pasta');
-    const fh = await fat.docsDir.getFileHandle(nome, {create:true});
+    if(!SX.docsDir) throw new Error('sem pasta');
+    const fh = await SX.docsDir.getFileHandle(nome, {create:true});
     const w = await fh.createWritable(); await w.write(bytes); await w.close();
     return {ok:true, nome};
   }catch(e){
@@ -5035,57 +5047,56 @@ async function fatSalvarArquivo(nome, bytes){
   }
 }
 function sdaLerCampos(){
-  const s = fat.sda, v = fatNum(s.valor);
+  const s = SX.sda, v = fatNum(s.valor);
   return {cnpj:s.cnpj.trim(), declaracao:s.decl.trim(), valor:v, vencimento:s.venc.trim(), linha1:s.linha.trim()};
 }
 async function sdaConferir(){
-  const s = fat.sda; if(s.busy) return;
+  const s = SX.sda; if(s.busy) return;
   if(String(s.cnpj).replace(/\D/g,'').length<11){ toast('Informe o CNPJ do importador (ele é lido da DUIMP/DI da pasta).'); return; }
-  s.busy = true; s.msg = 'Consultando o SINDASP… (não grava nada)'; s.conf = null; fatRender();
+  s.busy = true; s.msg = 'Consultando o SINDASP… (não grava nada)'; s.conf = null; sdaRender();
   try{
     const d = await vcpApi('sdaConferir', {cnpj:s.cnpj});
     s.conf = {importador:d.importador, cnpj:d.cnpj}; s.msg = '';
   }catch(e){ s.msg = '❌ '+(e.message||e); }
-  s.busy = false; fatRender();
+  s.busy = false; sdaRender();
 }
 async function sdaGerar(){
-  const s = fat.sda; if(s.busy || !sdaCnpjOk(s)) return;
+  const s = SX.sda; if(s.busy || !sdaCnpjOk(s)) return;
   const c = sdaLerCampos();
   const falta = []; if(!c.declaracao) falta.push('declaração'); if(!(c.valor>=150)) falta.push('valor'); if(!c.vencimento) falta.push('vencimento');
   if(falta.length){ toast('Preencha: '+falta.join(', ')+'.'); return; }
-  const dupl = fat.p.sdaGuia ? '\n\n⚠ Este processo já tem SDA gerado (guia '+fat.p.sdaGuia+'). Isto vai criar OUTRA guia.' : '';
+  const dupl = SX.p.sdaGuia ? '\n\n⚠ Este processo já tem SDA gerado (guia '+SX.p.sdaGuia+'). Isto vai criar OUTRA guia.' : '';
   if(!confirm('Gerar a GRH no SINDASP?\n\nImportador: '+s.conf.importador+' ('+s.conf.cnpj+')\nDeclaração: '+c.declaracao+'\nValor: R$ '+fatBR(c.valor)+'\nVencimento: '+c.vencimento+'\nLinha 1: '+c.linha1+'\n\nIsso GRAVA a guia de verdade e abre o boleto uma vez (o site limita a 3 impressões por guia).'+dupl)) return;
-  s.busy = true; s.msg = 'Gravando a guia no SINDASP e abrindo o boleto…'; fatRender();
+  s.busy = true; s.msg = 'Gravando a guia no SINDASP e abrindo o boleto…'; sdaRender();
   try{
-    const resp = await fetch(API_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(Object.assign({action:'sdaGerar', importador:s.conf.importador, ref:String(fat.p.codigo)}, c))});
+    const resp = await fetch(API_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(Object.assign({action:'sdaGerar', importador:s.conf.importador, ref:String(SX.p.codigo)}, c))});
     const j = await resp.json();
     if(!j || !j.ok) throw new Error((j && j.error) || 'o servidor não confirmou');
-    fat.p.sdaGuia = j.guia; fat.p.sdaEm = new Date().toISOString(); save();
+    SX.p.sdaGuia = j.guia; SX.p.sdaEm = new Date().toISOString(); save();
     s.gerado = {guia:j.guia, html:j.html, pdf:j.pdf, nome:j.nome, salvo:false};
-    s.msg = '✅ Guia '+j.guia+' gravada (R$ '+j.valor+', venc. '+j.vencimento+'). Montando o PDF…'+(j.aviso?' ⚠ '+j.aviso:''); fatRender();
+    s.msg = '✅ Guia '+j.guia+' gravada (R$ '+j.valor+', venc. '+j.vencimento+'). Montando o PDF…'+(j.aviso?' ⚠ '+j.aviso:''); sdaRender();
     await sdaSalvarPdf();
   }catch(e){ s.msg = '❌ '+(e.message||e); }
-  s.busy = false; fatRender();
+  s.busy = false; sdaRender();
 }
 async function sdaPdfBytes(d){
   if(d && d.pdf){ try{ const bin = atob(d.pdf), u = new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i); if(String.fromCharCode(u[0],u[1],u[2],u[3])==='%PDF') return u; }catch(e){} }
   return await sdaHtmlParaPdf(d.html);
 }
 async function sdaSalvarPdf(){
-  const s = fat.sda, g = s.gerado; if(!g) return;
+  const s = SX.sda, g = s.gerado; if(!g) return;
   try{
     const bytes = await sdaPdfBytes(g);
     const r = await fatSalvarArquivo(g.nome+'.pdf', bytes);
     g.salvo = true; s.msg = '✅ Guia '+g.guia+' gravada. PDF '+(r.ok?'salvo na pasta FATURAMENTO: ':'baixado (não consegui gravar na pasta: '+r.erro+'): ')+r.nome;
     toast('SDA gerado: guia '+g.guia);
-    if(r.ok) fatBuscarDocs(false);
   }catch(e){
     s.msg = '⚠ A guia '+g.guia+' FOI gravada, mas não consegui montar o PDF ('+(e.message||e)+'). Use "Refazer o PDF" (não imprime de novo) ou abra a guia no site.';
   }
 }
 async function sdaTeste(){
   const n = prompt('Número de uma guia que já existe (ex.: 7725896).\nUsa a tela "Visualizar GRH", que não gasta impressão.'); if(!n) return;
-  const s = fat.sda; s.msg = 'Montando o PDF de teste…'; fatRender();
+  const s = SX.sda; s.msg = 'Montando o PDF de teste…'; sdaRender();
   try{
     const d = await vcpApi('sdaTestePdf', {guia:n});
     const bytes = await sdaPdfBytes(d);
@@ -5093,20 +5104,52 @@ async function sdaTeste(){
     setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1500);
     s.msg = 'PDF de teste baixado (guia '+d.guia+'). Confira se ficou legível.';
   }catch(e){ s.msg = '❌ '+(e.message||e); }
-  fatRender();
+  sdaRender();
 }
-document.getElementById('fatBody').addEventListener('input', e=>{
-  const t = e.target; if(!fat || !fat.sda) return;
+document.getElementById('sdaGerBody').addEventListener('input', e=>{
+  const t = e.target; if(!SX || !SX.sda) return;
   const m = {sdaCnpj:'cnpj', sdaDecl:'decl', sdaValor:'valor', sdaVenc:'venc', sdaLinha:'linha'}[t.id]; if(!m) return;
-  fat.sda[m] = t.value;
-  if(m==='cnpj'){ const b = document.querySelector('[data-sda="gerar"]'); const ok = sdaCnpjOk(fat.sda); if(b){ b.disabled = !ok || fat.sda.busy; } }
+  SX.sda[m] = t.value;
+  if(m==='cnpj'){ const b = document.querySelector('[data-sda="gerar"]'); const ok = sdaCnpjOk(SX.sda); if(b){ b.disabled = !ok || SX.sda.busy; } }
 });
-document.getElementById('fatBody').addEventListener('click', e=>{
-  const b = e.target.closest('[data-sda]'); if(!b || !fat || !fat.sda) return;
+document.getElementById('sdaGerBody').addEventListener('click', e=>{
+  const b = e.target.closest('[data-sda]'); if(!b || !SX || !SX.sda) return;
   const a = b.dataset.sda;
   if(a==='conferir') sdaConferir(); else if(a==='gerar') sdaGerar(); else if(a==='recalc') sdaRecalcular();
-  else if(a==='pdfdenovo') sdaSalvarPdf().then(()=>fatRender()); else if(a==='teste') sdaTeste();
+  else if(a==='pdfdenovo') sdaSalvarPdf().then(()=>sdaRender()); else if(a==='teste') sdaTeste();
 });
+/* --- janela própria do SDA (fora do Faturar) --- */
+let SX = null;
+const sdaGerOverlay = document.getElementById('sdaGerOverlay');
+function sdaRender(){
+  if(!SX) return;
+  document.getElementById('sdaGerHead').innerHTML = `<h3 style="margin:0;">S.D.A. — processo ${esc(SX.p.codigo)}</h3><div class="sub" style="color:var(--muted);font-size:12.5px;">${esc(SX.client?SX.client.nome:'(cliente removido)')} · modalidade ${esc(SX.sda.mod)}</div>`;
+  const aviso = SX.sda.mod==='X' ? '<div class="fx-hint">Este cliente/processo não paga SDA (modalidade X).</div>' : '';
+  document.getElementById('sdaGerBody').innerHTML = (SX.lendo?'<div class="fx-hint" style="margin-bottom:6px;">Lendo a DUIMP/DI na pasta do processo…</div>':(SX.diMsg?'<div class="fx-hint" style="margin-bottom:6px;">'+esc(SX.diMsg)+'</div>':'')) + (SX.pastaMsg?'<div class="fx-hint" style="margin-bottom:6px;">'+esc(SX.pastaMsg)+'</div>':'') + aviso + (SX.sda.mod==='X'?'':sdaCard());
+}
+async function sdaAbrir(id){
+  const p = state.processes.find(x=>x.id===id); if(!p) return;
+  SX = {p, client: clientById(p.clienteId), va:'', vaDI:null, docsDir:null, lendo:true, diMsg:'', pastaMsg:'', soSda:true};
+  SX.sda = sdaInit();
+  sdaGerOverlay.classList.add('show'); sdaRender();
+  try{
+    const root = await fatPegarPasta(false);
+    const pasta = await fatAchaPastaProcesso(root, String(p.codigo).trim(), 0);
+    if(!pasta){ SX.pastaMsg = 'Não achei a pasta do processo '+p.codigo+' em "'+root.name+'". Preencha os campos à mão; o PDF será baixado.'; }
+    else{
+      for await (const [n,h] of pasta.entries()){ if(h.kind==='directory' && /^faturamento$/i.test(n.trim())) SX.docsDir = h; }
+      if(!SX.docsDir) SX.pastaMsg = 'A pasta '+pasta.name+' não tem a subpasta FATURAMENTO; o PDF será baixado.';
+      const old = fat; fat = SX;
+      try{ await fatLerDI(pasta); } finally { fat = old; }
+    }
+  }catch(e){ SX.pastaMsg = (e && e.name==='AbortError') ? 'Seleção de pasta cancelada — preencha à mão; o PDF será baixado.' : 'Não consegui ler a pasta: '+((e&&e.message)||e); }
+  SX.lendo = false; if(SX.sda.mod==='T' && !SX.sda.valor && SX.vaDI) SX.sda.valor = fatBR(sdaTabela(SX.vaDI));
+  sdaRender();
+}
+document.getElementById('btnSdaGerFechar').addEventListener('click', ()=>{ sdaGerOverlay.classList.remove('show'); SX = null; document.getElementById('sdaGerBody').innerHTML=''; if(sdaOverlay.classList.contains('show')) renderSdaModal(); renderAll(); });
+sdaGerOverlay.addEventListener('click', e=>{ if(e.target===sdaGerOverlay && __mdTarget===sdaGerOverlay && !(SX&&SX.sda.busy)) document.getElementById('btnSdaGerFechar').click(); });
+document.getElementById('btnSdaProcess').addEventListener('click', ()=>{ const id = document.getElementById('p_id').value; if(!id) return; processOverlay.classList.remove('show'); sdaAbrir(id); });
+
 
 function fatDocsHtml(cards){
   cards = cards || fxCards();
