@@ -609,6 +609,10 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/><path d="M7 9l5-5 5 5"/><path d="M12 4v12"/></svg>
             <span class="nav-label">Status do dia</span>
           </button>
+          <button class="nav-btn" data-view="sx-docs">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3v5h5"/><path d="M6 3h8l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M9 14l2 2 4-4"/></svg>
+            <span class="nav-label">Docs da NF (Sicoex)</span>
+          </button>
           <button class="nav-btn" data-view="terceiros">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3v5h5"/><path d="M6 3h8l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M8 13h8M8 17h5"/></svg>
             <span class="nav-label">Status Terceiros</span>
@@ -854,6 +858,25 @@
       <div id="rdFinalizadosBody"></div>
     </section>
 
+    <!-- DOCUMENTOS DA NF (SICOEX) -->
+    <section id="view-sx-docs" style="display:none;">
+      <div class="topbar">
+        <div>
+          <h2>Documentos para a nota fiscal</h2>
+          <div class="sub">Busca no Sicoex e salva na pasta do processo no seu computador</div>
+        </div>
+      </div>
+      <div class="card" style="padding:16px 18px;max-width:760px;">
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+          <div class="field" style="margin:0;"><label>Referência</label><input id="sx_ref" type="text" inputmode="numeric" placeholder="ex: 14128" style="width:130px;"></div>
+          <div class="field" style="margin:0;flex:1;min-width:200px;"><label>Cliente</label><input id="sx_cli" type="text" list="sx_clis" placeholder="nome do cliente"></div>
+          <datalist id="sx_clis"></datalist>
+          <button class="btn btn-gold" id="btnSxGerar">Gerar documentos</button>
+        </div>
+        <div id="sxMsg" style="margin-top:14px;font-size:13.5px;line-height:1.6;white-space:pre-wrap;"></div>
+      </div>
+    </section>
+
     <!-- RETIRADA DOCUMENTAL: INSTRUÇÕES -->
     <section id="view-rd-solicitar" style="display:none;">
       <div class="topbar">
@@ -996,6 +1019,7 @@
     </label>
     <div class="modal-foot">
       <button class="btn btn-danger btn-ghost" id="btnDeleteProcess" style="display:none;margin-right:auto;">Excluir</button>
+       <button class="btn btn-sm" id="btnSxProcess" style="display:none;padding:4px 10px;min-width:0;" title="Gerar os documentos da NF no Sicoex" aria-label="Documentos da NF">🧾</button>
        <button class="btn btn-sm" id="btnRetProcess" style="display:none;padding:4px 10px;min-width:0;" title="Solicitar retirada dos originais ao representante" aria-label="Solicitar retirada">📦</button>
        <button class="btn btn-sm" id="btnSdaProcess" style="display:none;padding:4px 10px;min-width:0;" title="Gerar o SDA deste processo no SINDASP">SDA</button>
       <button class="btn btn-sm" id="btnFaturarProcess" style="display:none;padding:4px 10px;min-width:0;" title="Faturar este processo" aria-label="Faturar">$</button>
@@ -1595,7 +1619,7 @@ function toast(msg){
 }
 
 /* ============ NAV ============ */
-const views = ['geral','board','export','clients','archive','terceiros','rd-dashboard','rd-processos','rd-finalizados','rd-solicitar','rd-instrucoes','rd-importar','ex-vcp','ex-madeira'];
+const views = ['geral','board','export','clients','archive','terceiros','rd-dashboard','rd-processos','rd-finalizados','rd-solicitar','sx-docs','rd-instrucoes','rd-importar','ex-vcp','ex-madeira'];
 document.getElementById('nav').addEventListener('click', e=>{
   const btn = e.target.closest('.nav-btn');
   if(!btn) return;
@@ -1611,6 +1635,7 @@ document.getElementById('nav').addEventListener('click', e=>{
   if(view==='board') setTimeout(fitBoard,0);
   if(view==='export') buildExportBox();
   if(view==='terceiros') loadTerceiros();
+  if(view==='sx-docs') sxPreparar();
   if(view==='rd-dashboard') renderRDDashboard();
   if(view==='rd-processos') renderRDProcessos();
   if(view==='rd-finalizados') renderRDFinalizados();
@@ -2069,7 +2094,7 @@ function openProcessModal(id){
   updateOriginaisLock();
   document.getElementById('btnDeleteProcess').style.display = p ? '' : 'none';
   document.getElementById('btnFaturarProcess').style.display = p ? '' : 'none';
-  document.getElementById('btnSdaProcess').style.display = p ? '' : 'none'; document.getElementById('btnRetProcess').style.display = p ? '' : 'none';
+  document.getElementById('btnSdaProcess').style.display = p ? '' : 'none'; document.getElementById('btnRetProcess').style.display = p ? '' : 'none'; document.getElementById('btnSxProcess').style.display = p ? '' : 'none';
   processOverlay.classList.add('show');
 }
 document.getElementById('btnNewProcess').addEventListener('click', ()=>openProcessModal(null));
@@ -5708,6 +5733,66 @@ document.getElementById('btnRetManual').addEventListener('click', retAbrirManual
 document.getElementById('btnRetFechar').addEventListener('click',()=>{ retOverlay.classList.remove('show'); RET=null; document.getElementById('retBody').innerHTML=''; });
 document.getElementById('btnRetProcess').addEventListener('click',()=>{ const id=document.getElementById('p_id').value; if(!id) return; processOverlay.classList.remove('show'); retAbrir(id); });
 
+
+/* ============ DOCUMENTOS DA NF (SICOEX) ============ */
+function sxMsg(t){ document.getElementById('sxMsg').textContent = t; }
+function sxPreparar(){
+  document.getElementById('sx_clis').innerHTML = state.clients.map(c=>'<option value="'+String(c.nome||'').replace(/"/g,'&quot;')+'">').join('');
+}
+function sxAbrir(ref, cli){
+  document.querySelector('.nav-btn[data-view="sx-docs"]').click();
+  document.getElementById('sx_ref').value = ref||''; document.getElementById('sx_cli').value = cli||''; sxMsg('');
+}
+async function sxGravar(dir, nome, b64){
+  const bin = atob(b64), u = new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i);
+  const fh = await dir.getFileHandle(nome, {create:true}); const w = await fh.createWritable(); await w.write(u); await w.close();
+}
+async function sxGerar(){
+  const ref = document.getElementById('sx_ref').value.trim(), cli = document.getElementById('sx_cli').value.trim();
+  if(!/^\d{3,8}$/.test(ref)){ sxMsg('Digite a referência do processo (só números).'); return; }
+  if(!API_URL){ sxMsg('Conecte o Google Sheets (API_URL) primeiro.'); return; }
+  const btn = document.getElementById('btnSxGerar'); btn.disabled = true;
+  try{
+    sxMsg('Escolhendo a pasta…');
+    const root = await fatPegarPasta();
+    const pasta = await fatAchaPastaProcesso(root, ref, 0);
+    if(!pasta){ sxMsg('Não achei a pasta do processo '+ref+' dentro de "'+root.name+'". Crie a pasta e tente de novo.'); return; }
+    sxMsg('Buscando no Sicoex… (leva alguns segundos)');
+    const resp = await fetch(API_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({action:'sicoexDocs', ref})});
+    const d = await resp.json();
+    if(!d.ok){ sxMsg('⚠ '+(d.error||'Erro ao buscar no Sicoex.')); return; }
+    if(String(d.versao)!=='9'){ sxMsg('⚠ O Apps Script está desatualizado. Cole o Code.gs novo e faça Implantar → Gerenciar implantações → lápis → Nova versão.'); return; }
+    let fat = null; const salvos = [];
+    for(const a of d.arquivos){
+      let dir = pasta;
+      if(a.destino==='faturamento'){
+        if(!fat){ for await (const [n,h] of pasta.entries()){ if(h.kind==='directory' && /^faturamento$/i.test(n.trim())) fat = h; } if(!fat) fat = await pasta.getDirectoryHandle('FATURAMENTO', {create:true}); }
+        dir = fat;
+      }
+      await sxGravar(dir, a.nome, a.b64); salvos.push((a.destino==='faturamento'?'FATURAMENTO › ':'')+a.nome);
+    }
+    // número da DUIMP/DI nas observações do processo
+    let obsTxt = '';
+    if(d.numero){
+      const rotulo = d.tipo==='DUIMP' ? 'DUIMP' : 'DI';
+      const p = state.processes.filter(x=>String(x.codigo)===ref).sort((a,b)=>(a.archived?1:0)-(b.archived?1:0))[0];
+      if(p){
+        const linha = rotulo+' '+d.numero;
+        if(!String(p.observacao||'').includes(d.numero)){ p.observacao = (p.observacao ? p.observacao+' / ' : '')+linha; save(); obsTxt = '\n📝 '+linha+' escrito nas observações do processo.'; }
+        else obsTxt = '\n📝 '+linha+' já estava nas observações.';
+      } else obsTxt = '\n📝 '+rotulo+' '+d.numero+' (o processo '+ref+' não está no quadro, então não escrevi nas observações).';
+    }
+    sxMsg('✅ '+d.tipo+' '+ref+(cli?' — '+cli:'')+': '+salvos.length+' arquivo(s) salvos em "'+pasta.name+'":\n• '+salvos.join('\n• ')+obsTxt+(d.avisos&&d.avisos.length?'\n\n⚠ Avisos:\n• '+d.avisos.join('\n• '):''));
+  }catch(e){
+    sxMsg('⚠ '+(e && e.name==='AbortError' ? 'Seleção de pasta cancelada.' : (e && e.message ? e.message : e)));
+  }finally{ btn.disabled = false; }
+}
+document.getElementById('btnSxGerar').addEventListener('click', sxGerar);
+document.getElementById('btnSxProcess').addEventListener('click',()=>{
+  const id=document.getElementById('p_id').value; if(!id) return;
+  const p=state.processes.find(x=>x.id===id); const c=p?clientById(p.clienteId):null;
+  processOverlay.classList.remove('show'); sxAbrir(p?String(p.codigo):'', c?c.nome:'');
+});
 </script>
 </body>
 </html>
