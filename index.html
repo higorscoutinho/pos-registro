@@ -4157,8 +4157,10 @@ function fatFinal(f){
   const grupos = {};
   f.linhas.forEach(l=>{
     if(!l.inc) return;
-    const cat = l.cat==='OUTROS' ? (l.ev||'OUTROS') : l.cat;
-    const g = grupos[cat] || (grupos[cat] = {nome:cat, valor:0, datas:[], semData:0, ordem: l.cat==='OUTROS' ? 999 : FAT_CATS.indexOf(l.cat)});
+    let cat = l.cat==='OUTROS' ? (l.ev||'OUTROS') : l.cat, ordem = l.cat==='OUTROS' ? 999 : FAT_CATS.indexOf(l.cat);
+    // Armazenagem T1 e T2 (tabelas diferentes) NUNCA se juntam: cada uma vira a sua linha
+    if(l.cat==='ARMAZENAGEM'){ const tm = fatNorm((l.ev||'')+' '+(l.forn||'')).match(/(?:^|[^a-z0-9])t\s?-?\s?([12])(?![0-9])/); if(tm){ cat = 'ARMAZENAGEM T'+tm[1]; ordem += tm[1]==='2' ? 0.2 : 0.1; } }
+    const g = grupos[cat] || (grupos[cat] = {nome:cat, valor:0, datas:[], semData:0, ordem, catOrig:l.cat});
     g.valor += fatNum(l.valor);
     const d = fatData(l.pag); if(d) g.datas.push(d); else g.semData++;
   });
@@ -5281,7 +5283,7 @@ document.getElementById('fatBody').addEventListener('click', e=>{
   else if(a==='ack'){ fat.ack = fat.ack || {}; fat.ack[b.dataset.k] = b.checked; fatRender(); }
   else if(a==='verdi'){ if(fat.diDoc) fatVerArquivo(fat.diDoc); else toast('Busque os documentos primeiro: a DUIMP/DI é lida da pasta do processo.'); }
   else if(a==='focuspag'){
-    const i = fat.linhas.findIndex(l=>l.inc && !fatData(l.pag) && (l.cat===b.dataset.cat || (l.cat==='OUTROS' && l.ev===b.dataset.cat)));
+    const i = fat.linhas.findIndex(l=>l.inc && !fatData(l.pag) && (l.cat===b.dataset.cat || (l.cat==='ARMAZENAGEM' && /^ARMAZENAGEM T[12]$/.test(b.dataset.cat) && new RegExp('(^|[^a-z0-9])t\\s?-?\\s?'+b.dataset.cat.slice(-1)+'(?![0-9])','i').test(l.ev||'')) || (l.cat==='OUTROS' && l.ev===b.dataset.cat)));
     const n = i>=0 && document.querySelector('[data-fi="'+i+'"][data-f="pag"]'); if(n){ n.scrollIntoView({block:'center'}); n.focus(); }
   }
 });
