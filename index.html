@@ -635,6 +635,10 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="7" height="16" rx="1.5"/><rect x="14" y="4" width="7" height="9" rx="1.5"/></svg>
             <span class="nav-label">Processos</span>
           </button>
+          <button class="nav-btn" data-view="rd-solicitar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16v12H4z"/><path d="M4 7l8 6 8-6"/></svg>
+            <span class="nav-label">Retirar por e-mail</span>
+          </button>
           <button class="nav-btn" data-view="rd-instrucoes">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3v5h5"/><path d="M6 3h8l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M8 13h8M8 17h5"/></svg>
             <span class="nav-label">Instruções de Retirada</span>
@@ -851,6 +855,18 @@
     </section>
 
     <!-- RETIRADA DOCUMENTAL: INSTRUÇÕES -->
+    <section id="view-rd-solicitar" style="display:none;">
+      <div class="topbar">
+        <div>
+          <h2>Retirar documentos por e-mail</h2>
+          <div class="sub">Solicitação ao representante (Kalau, Isaac e Agatha) para processos que não estão no sistema — a mesma tela do 📦 do processo</div>
+        </div>
+        <div class="actions"><button class="btn btn-gold" id="btnRetManual">📦 Nova solicitação</button></div>
+      </div>
+      <div class="card" style="padding:16px 18px;font-size:13.5px;line-height:1.6;">
+        Informe a referência e o cliente; o app procura a pasta do processo, lê a <b>DI/DUIMP</b> (CNPJ e razão social) e o <b>CCT / extrato de conhecimento</b> (AWB, HAWB, agente de cargas e aeroporto), monta a autorização em PDF, anexa procuração e desconsolidação e envia o e-mail. A retirada também é registrada em <b>Retirada Documental → Processos</b> como "aguardando retirada".
+      </div>
+    </section>
     <section id="view-rd-instrucoes" style="display:none;">
       <div class="topbar">
         <div>
@@ -1579,7 +1595,7 @@ function toast(msg){
 }
 
 /* ============ NAV ============ */
-const views = ['geral','board','export','clients','archive','terceiros','rd-dashboard','rd-processos','rd-finalizados','rd-instrucoes','rd-importar','ex-vcp','ex-madeira'];
+const views = ['geral','board','export','clients','archive','terceiros','rd-dashboard','rd-processos','rd-finalizados','rd-solicitar','rd-instrucoes','rd-importar','ex-vcp','ex-madeira'];
 document.getElementById('nav').addEventListener('click', e=>{
   const btn = e.target.closest('.nav-btn');
   if(!btn) return;
@@ -5425,40 +5441,102 @@ async function retEscolherProcuracao(i){
   if(!RET.f.razaoEdit) RET.f.razao = rz;
   if(!RET.f.cnpjEdit && m) RET.f.cnpj = m[1].replace(/\D/g,'').replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,'$1.$2.$3/$4-$5');
 }
-async function retAbrir(id){
-  const p = state.processes.find(x=>x.id===id); if(!p) return;
-  const client = clientById(p.clienteId);
-  const ref = String(p.codigo).trim();
-  const rd = rdProcessos().find(x=>String(x.ref).trim()===ref) || null;
+function retNovo(p, client, ref, rd){
   const local = (rd && rd.local) || 'VIRACOPOS';
-  RET = {p, client, rd, dir:null, files:[], procCands:[], procIdx:0, busy:false, msg:'', lendo:true,
+  RET = {p, client, rd, dir:null, files:[], procCands:[], procIdx:0, busy:false, msg:'', lendo:true, manual:!p,
     f:{ref, clienteAssunto:((rd&&rd.cliente)||(client?client.nome:'')).replace(/\s*\(.*$/,''), local, agente:'', retirar:'', obs:'', mawb:(rd&&rd.mawb)||'', hawb:(rd&&rd.hawb)||'',
        saud:'', para:'', motoboy:false, modelo:retIsGru(local)?'GRU':'VCP', dhl:false, nota:'Segue número da conta para retirada:', copia:true, conta:'', razao:'', cnpj:'', procMsg:'', pastaMsg:''}};
   const dp = retDestPadrao(RET.f); RET.f.saud = dp.saud; RET.f.para = dp.para.join('; ');
   if(rd && /donizete/i.test(rd.responsavelRetirada||'')) RET.f.motoboy = true;
   retAplicarAgente(RET.f.agente);
-  { const ch = retChave(client), emp = retEmpresaSalva(ch); if(emp){ RET.f.razao = emp.razao; RET.f.cnpj = emp.cnpj; RET.f.razaoEdit = RET.f.cnpjEdit = true; }
-    RET.f.chave = ch; RET.f.conta = retContaImg(ch);
-    if(ch==='AUDIO') RET.f.modelo = 'DHL';
-    if(/\bDHL\b/i.test((rd&&rd.agenteDeCargas)||'')){ RET.f.dhl = true; RET.f.agente = 'DHL'; retAplicarAgente('DHL'); } }
+  retAplicarCliente();
+}
+function retAplicarCliente(){
+  const f = RET.f, rd = RET.rd, ch = retChave(RET.client), emp = retEmpresaSalva(ch);
+  if(emp){ f.razao = emp.razao; f.cnpj = emp.cnpj; f.razaoEdit = f.cnpjEdit = true; }
+  f.chave = ch; f.conta = retContaImg(ch);
+  if(ch==='AUDIO') f.modelo = 'DHL';
+  if(/\bDHL\b/i.test((rd&&rd.agenteDeCargas)||'')){ f.dhl = true; f.agente = 'DHL'; retAplicarAgente('DHL'); }
+}
+async function retAbrir(id){
+  const p = state.processes.find(x=>x.id===id); if(!p) return;
+  const client = clientById(p.clienteId), ref = String(p.codigo).trim();
+  retNovo(p, client, ref, rdProcessos().find(x=>String(x.ref).trim()===ref) || null);
   retOverlay.classList.add('show'); retRender();
+  await retCarregarTudo();
+}
+async function retAbrirManual(){
+  retNovo(null, null, '', null);
+  RET.lendo = false; retOverlay.classList.add('show'); retRender();
+}
+function retSetCliente(nome){
+  const n = retNorm(nome).trim(); const f = RET.f;
+  RET.client = n ? (state.clients.find(c=>retNorm(c.nome)===n) || state.clients.find(c=>retTokensCliente(c).some(t=>n.split(/[^A-Z0-9]+/).includes(t)))) || null : null;
+  f.clienteAssunto = nome.trim().replace(/\s*\(.*$/,'');
+  retAplicarCliente();
+}
+function retSetRef(ref){
+  const f = RET.f; f.ref = ref.trim();
+  const rd = rdProcessos().find(x=>String(x.ref).trim()===f.ref) || null; RET.rd = rd;
+  if(rd){ if(rd.cliente && !f.clienteAssunto) f.clienteAssunto = rd.cliente; if(rd.mawb && !f.mawb) f.mawb = rd.mawb; if(rd.hawb && !f.hawb) f.hawb = rd.hawb; if(rd.local) f.local = rd.local; if(/donizete/i.test(rd.responsavelRetirada||'')) f.motoboy = true; }
+}
+/* CCT / extrato de conhecimento: AWB, HAWB, agente de cargas e aeroporto */
+function retInterpretaCCT(t){
+  const x = String(t).replace(/\s+/g,' '), out = {};
+  const awb = /\b(\d{3})[-\s]?(\d{8})\b/;
+  let m = x.match(/(?:master|mawb|conhecimento\s+(?:a[eé]reo\s+)?(?:m[aã]e|master))[^0-9]{0,40}(\d{3}[-\s]?\d{8})/i); if(m) out.mawb = m[1].replace(/\s/g,'-').replace(/^(\d{3})(\d{8})$/,'$1-$2');
+  m = x.match(/(?:house|hawb|filhote|conhecimento\s+(?:a[eé]reo\s+)?(?:house|filho))[^A-Za-z0-9]{0,40}([A-Z0-9][A-Z0-9\-]{5,24})/i); if(m && !/^(?:MASTER|HOUSE|CONHECIMENTO)$/i.test(m[1])) out.hawb = m[1];
+  if(!out.mawb){ const k = x.match(awb); if(k) out.mawb = k[1]+'-'+k[2]; }
+  m = x.match(/agente\s+de\s+carga[^A-Za-z0-9]{0,20}(?:\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}\s*[-–]?\s*)?([A-Z0-9][A-Za-z0-9ÀÁÂÃÇÉÊÍÓÔÕÚàáâãçéêíóôõú&.,'()\/ \-]{3,80}?)(?=\s+(?:CNPJ|CPF|Consignat|Embarcador|Porto|Aeroporto|Recinto|Data|Tipo|Situa|Pa[ií]s|\d{2}\.\d{3}\.)|$)/i);
+  if(m) out.agente = m[1].trim();
+  if(/viracopos|campinas|\bvcp\b|sbkp/i.test(x)) out.local = 'VIRACOPOS'; else if(/guarulhos|cumbica|\bgru\b|sbgr/i.test(x)) out.local = 'GUARULHOS';
+  return out;
+}
+async function retLerCCT(pasta){
+  try{
+    const todos = await retProcurarPdfs(pasta, 1, []);
+    const doc = todos.find(d=>/\bcct\b/i.test(d.nome)) || todos.find(d=>/extrato.{0,6}conhec/i.test(d.nome)); if(!doc) return null;
+    if(!(await fatPdfjsInit())) return {doc:doc.nome};
+    const bytes = await (await doc.handle.getFile()).arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({data:new Uint8Array(bytes)}).promise;
+    let t=''; for(let i=1;i<=Math.min(pdf.numPages,5);i++){ const pg=await pdf.getPage(i); const c=await pg.getTextContent(); t+=c.items.map(x=>x.str).join(' ')+'\n'; }
+    const r = retInterpretaCCT(t); r.doc = doc.nome; r.texto = t.length; return r;
+  }catch(e){ return null; }
+}
+function retAplicarCCT(c){
+  const f = RET.f; if(!c) return; const achou = [];
+  if(c.local && f.local!==c.local){ f.local = c.local; f.modelo = retIsGru(c.local)?'GRU':'VCP'; if(!RET.f.paraEdit){ const dp = retDestPadrao(f); f.saud = dp.saud; f.para = dp.para.join('; '); } }
+  if(c.mawb && !f.mawb){ f.mawb = c.mawb; achou.push('AWB '+c.mawb); }
+  if(c.hawb && !f.hawb){ f.hawb = c.hawb; achou.push('HAWB '+c.hawb); }
+  if(c.local) achou.push('aeroporto '+c.local);
+  if(c.agente){
+    const ag = retAgentesDoLocal(f.local), n = retNorm(c.agente);
+    const hit = ag.find(a=>a.agente.split('/').some(p=>{ const q = retNorm(p).trim(); return q && (n.includes(q) || q.includes(n)); }));
+    if(hit && !f.retirar.trim()){ retAplicarAgente(hit.agente); achou.push('agente '+hit.agente); if(/dhl/i.test(hit.agente)) f.dhl = true; }
+    else achou.push('agente "'+c.agente+'"'+(hit?'':' (não está nas Instruções de Retirada — escolha na lista)'));
+  }
+  f.cctMsg = c.mawb||c.hawb||c.agente||c.local ? 'Lido de "'+c.doc+'": '+achou.join(' · ') : 'Achei "'+c.doc+'" mas não consegui reconhecer os campos — preencha à mão.';
+}
+async function retCarregarTudo(){
+  const f = RET.f, ref = f.ref; RET.lendo = true; RET.files = RET.files.filter(x=>x.tipo==='procuracao'||x.fonte==='anexado agora'); f.pastaMsg = ''; f.empMsg = ''; f.cctMsg = ''; retRender();
   try{
     const root = await fatPegarPasta(false);
     const pasta = await fatAchaPastaProcesso(root, ref, 0);
-    if(!pasta) RET.f.pastaMsg = 'Não achei a pasta do processo '+ref+' em "'+root.name+'". Anexe os arquivos à mão; a autorização será baixada.';
+    if(!pasta) f.pastaMsg = 'Não achei a pasta do processo '+ref+' em "'+root.name+'". Anexe os arquivos à mão; a autorização será baixada.';
     else{
       RET.dir = pasta;
       const di = await retLerDI(pasta);
       if(di && di.cnpj){
-        RET.f.cnpj = di.cnpj; RET.f.cnpjEdit = true;
-        if(di.razao){ RET.f.razao = di.razao.toUpperCase(); RET.f.razaoEdit = true; }
-        else if(RET.f.razao && RET.f.cnpj.replace(/\D/g,'').slice(0,8)!==((RET.f.cnpjSalvo||'').replace(/\D/g,'').slice(0,8)) && !RET.f.razaoEdit){ /* mantém razão da procuração */ }
-        RET.f.empMsg = 'Empresa lida de "'+di.doc+'"'+(di.razao?'':' (só o CNPJ — confira a razão social)');
-      } else if(di){ RET.f.empMsg = 'Achei "'+di.doc+'" mas não consegui ler o CNPJ — confira à mão.'; }
+        f.cnpj = di.cnpj; f.cnpjEdit = true;
+        if(di.razao){ f.razao = di.razao.toUpperCase(); f.razaoEdit = true; }
+        f.empMsg = 'Empresa lida de "'+di.doc+'"'+(di.razao?'':' (só o CNPJ — confira a razão social)');
+      } else if(di){ f.empMsg = 'Achei "'+di.doc+'" mas não consegui ler o CNPJ — confira à mão.'; }
+      const cct = await retLerCCT(pasta);
+      if(cct) retAplicarCCT(cct); else f.cctMsg = 'Não achei o CCT / extrato de conhecimento na pasta — preencha o AWB à mão.';
       const achados = await retProcurarPdfs(pasta, 1, []);
       for(const d of achados){ if(/desconsolid/i.test(d.nome) && !/autoriza/i.test(d.nome)){ const file = await d.handle.getFile(); RET.files.push({nome:d.nome, bytes:new Uint8Array(await file.arrayBuffer()), inc:true, tipo:'descon', fonte:'pasta do processo'}); } }
     }
-  }catch(e){ RET.f.pastaMsg = (e&&e.name==='AbortError') ? 'Seleção de pasta cancelada.' : 'Não consegui ler a pasta: '+((e&&e.message)||e); }
+  }catch(e){ f.pastaMsg = (e&&e.name==='AbortError') ? 'Seleção de pasta cancelada.' : 'Não consegui ler a pasta: '+((e&&e.message)||e); }
   retRender();
   await retBuscarProcuracao(false);
   RET.lendo = false; retRender();
@@ -5511,11 +5589,13 @@ function retRender(){
   const cc = retCc(RET.client); const para = [RET_MAIL.adria].concat(f.para.split(/[;,\s]+/).filter(Boolean));
   const faltas = retFaltas(); const mb = retTotalMB();
   const vcp = retIsVcp(f.local);
-  document.getElementById('retHead').innerHTML = '<h3 style="margin:0;">📦 Solicitar retirada — '+esc(f.ref)+' <span style="font-weight:400;color:var(--muted);">'+esc(RET.client?RET.client.nome:'')+'</span></h3>';
+  const manualHtml = RET.manual ? `<div class="row"><div class="field"><label>Referência SVS LOG</label><input id="retRef" value="${escAttr(f.ref)}" placeholder="Ex: 14300"></div><div class="field"><label>Cliente</label><input id="retCli" list="retCliList" value="${escAttr(f.clienteAssunto)}" placeholder="Escolha ou digite"><datalist id="retCliList">${state.clients.map(c=>`<option value="${escAttr(c.nome)}">`).join('')}</datalist></div></div><div style="margin:2px 0 8px;"><button class="btn btn-sm" type="button" id="retBuscar" ${(!f.ref||RET.lendo)?'disabled':''}>🔎 Buscar pasta, DI/DUIMP, CCT e desconsolidação</button> <span class="ret-sub">não achando, anexe e preencha à mão</span></div>` : '';
+  document.getElementById('retHead').innerHTML = '<h3 style="margin:0;">📦 Solicitar retirada'+(f.ref?' — '+esc(f.ref):'')+' <span style="font-weight:400;color:var(--muted);">'+esc(RET.client?RET.client.nome:'')+'</span></h3>';
   const arqs = RET.files.map((x,i)=>`<div class="ret-arq"><input type="checkbox" style="width:auto" data-retinc="${i}" ${x.inc?'checked':''}> <span>${esc(x.nome)}</span> <span class="ret-sub">${(x.bytes.length/1024).toFixed(0)} KB · ${esc(x.fonte||'')}</span> <button class="btn btn-sm btn-ghost" data-retdel="${i}" type="button" title="Tirar da lista">✕</button></div>`).join('')
     + `<div class="ret-arq"><input type="checkbox" style="width:auto" checked disabled> <span>AUTORIZAÇÃO - ${esc(f.ref)}.pdf</span> <span class="ret-sub">gerada agora com o AWB e a empresa abaixo</span></div>`;
   const procSel = RET.procCands.length>1 ? `<select id="retProcSel">${RET.procCands.map((d,i)=>`<option value="${i}" ${i===RET.procIdx?'selected':''}>${esc(d.nome)}</option>`).join('')}</select>` : '';
   document.getElementById('retBody').innerHTML = `
+  ${manualHtml}${f.cctMsg?`<div class="ret-msg">${esc(f.cctMsg)}</div>`:''}
   <style>.ret-arq{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:13px;border-bottom:1px solid var(--border);cursor:pointer}.ret-arq .btn{margin-left:auto;padding:0 8px}.ret-sub{color:var(--muted);font-size:11.5px}.ret-sec{margin:14px 0 6px;font-weight:700;font-size:13px}.ret-msg{font-size:12.5px;color:var(--muted);margin:4px 0;white-space:pre-wrap}.ret-sum{background:var(--surface-2,#f4f4f6);border-radius:8px;padding:10px 12px;font-size:12.5px;line-height:1.6;margin-top:10px}</style>
   <div class="row">
     <div class="field"><label>Local de retirada</label><select id="retLocal">${rdRef().locaisRetirada.map(l=>`<option ${retNorm(l)===retNorm(f.local)?'selected':''}>${esc(l)}</option>`).join('')}</select></div>
@@ -5566,7 +5646,11 @@ function retRender(){
 function retWire(){
   const f = RET.f, $ = id => document.getElementById(id);
   const bind = (id,key,after) => { const el=$(id); if(el) el.addEventListener('input',()=>{ f[key]=el.value; if(after) after(); retResumo(); }); };
-  bind('retRetirar','retirar'); bind('retMawb','mawb'); bind('retHawb','hawb'); bind('retSaud','saud'); bind('retPara','para');
+  { const rf=$('retRef'); if(rf) rf.addEventListener('input',()=>{ retSetRef(rf.value); const b=$('retBuscar'); if(b) b.disabled = !f.ref || RET.lendo; retResumo(); });
+    const rc=$('retCli'); if(rc) rc.addEventListener('change',()=>{ retSetCliente(rc.value); retRender(); });
+    const rb=$('retBuscar'); if(rb) rb.addEventListener('click',async()=>{ const cl=$('retCli'); if(cl && cl.value!==f.clienteAssunto) retSetCliente(cl.value); await retCarregarTudo(); }); }
+  bind('retPara','para',()=>{ f.paraEdit=true; });
+  bind('retRetirar','retirar'); bind('retMawb','mawb'); bind('retHawb','hawb'); bind('retSaud','saud');
   bind('retRazao','razao',()=>{ f.razaoEdit=true; }); bind('retCnpj','cnpj',()=>{ f.cnpjEdit=true; }); bind('retAssuntoNome','clienteAssunto');
   $('retLocal').addEventListener('change',e=>{ f.local=e.target.value; f.modelo=retIsGru(f.local)?'GRU':'VCP'; const dp=retDestPadrao(f); f.saud=dp.saud; f.para=dp.para.join('; '); f.agente=''; f.retirar=''; f.obs=''; retRender(); });
   $('retAgente').addEventListener('change',e=>{ retAplicarAgente(e.target.value); retRender(); });
@@ -5614,12 +5698,13 @@ async function retEnviar(){
     const resp2 = (retIsVcp(f.local) && f.motoboy) ? respNome('Donizete') : (atual || (retIsVcp(f.local) ? respNome('Kalau') : (retIsGru(f.local) ? respNome('Isaac') : '')));
     const dados = {ref:f.ref, cliente:f.clienteAssunto, mawb:f.mawb.trim(), hawb:f.hawb.trim(), local:f.local, agenteDeCargas:f.agente||(RET.rd&&RET.rd.agenteDeCargas)||'', responsavelRetirada:resp2, dataSolicitacao:hoje};
     if(RET.rd) rdUpsertProcesso(Object.assign({}, RET.rd, dados)); else rdUpsertProcesso(Object.assign({id:rdUid()}, dados));
-    RET.p.retSolEm = new Date().toISOString(); RET.p.originais = true; save();
+    if(RET.p){ RET.p.retSolEm = new Date().toISOString(); RET.p.originais = true; } save();
     RET.msg = '✅ Solicitação enviada ("'+j.assunto+'"). '+(rs.ok?'Autorização salva na pasta do processo.':'Autorização baixada (não consegui gravar na pasta).')+' Retirada registrada em Retirada Documental'+(/donizete/i.test(resp2)?' (motoboy: R$ 15 no relatório)':'')+'.';
     toast('Retirada solicitada ✓');
   }catch(e){ RET.msg = '❌ O e-mail NÃO foi enviado: '+(e.message||e); }
   RET.busy = false; retRender();
 }
+document.getElementById('btnRetManual').addEventListener('click', retAbrirManual);
 document.getElementById('btnRetFechar').addEventListener('click',()=>{ retOverlay.classList.remove('show'); RET=null; document.getElementById('retBody').innerHTML=''; });
 document.getElementById('btnRetProcess').addEventListener('click',()=>{ const id=document.getElementById('p_id').value; if(!id) return; processOverlay.classList.remove('show'); retAbrir(id); });
 
