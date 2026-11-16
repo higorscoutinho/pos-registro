@@ -5373,6 +5373,27 @@ function retTokensCliente(c){
   return retNorm(c?c.nome:'').split(/[^A-Z0-9]+/).filter(t=>t.length>=3 && !stop.has(t));
 }
 function retValidade(nome){ const m = String(nome).match(/(\d{2})[-.\/](\d{2})[-.\/](\d{4})/g); if(!m) return 0; const d = m[m.length-1].match(/(\d{2})[-.\/](\d{2})[-.\/](\d{4})/); return +(d[3]+d[2]+d[1]); }
+function retAcharRazao(t, cnpj){
+  const x = String(t).replace(/\s+/g,' ');
+  const suf = '(?:LTDA\\.?|S\\.?\\s?\\/?\\s?A\\.?|EIRELI|EPP|ME\\b|S\\/A)';
+  const nome = '([A-Z0-9][A-Z0-9ÀÁÂÃÇÉÊÍÓÔÕÚ&.,\'\\/ \\-]{4,110}?'+suf+')';
+  const i = x.indexOf(cnpj); if(i<0) return '';
+  const dep = x.slice(i+cnpj.length, i+cnpj.length+160).match(new RegExp('^[\\s:\\-–]*(?:nome|raz[aã]o social)?[\\s:\\-–]*'+nome));
+  if(dep) return dep[1].trim();
+  const ant = x.slice(Math.max(0,i-200), i).replace(/(?:CNPJ|CPF\/CNPJ|CNPJ\/CPF)[\s:\-]*$/i,'');
+  const m = ant.match(new RegExp(nome+'[\\s:\\-–]*(?:CNPJ|CPF\\/CNPJ|CNPJ\\/CPF)?[\\s:\\-–]*$'));
+  return m ? m[1].trim() : '';
+}
+async function retLerDI(pasta){
+  try{
+    const doc = await fatAchaDI(pasta, 0); if(!doc || !(await fatPdfjsInit())) return null;
+    const bytes = await (await doc.handle.getFile()).arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({data:new Uint8Array(bytes)}).promise;
+    let t=''; for(let i=1;i<=Math.min(pdf.numPages,6);i++){ const pg=await pdf.getPage(i); const c=await pg.getTextContent(); t+=c.items.map(x=>x.str).join(' ')+'\n'; }
+    const cnpj = fatAcharCnpj(t); if(!cnpj) return {doc:doc.nome, cnpj:'', razao:''};
+    return {doc:doc.nome, cnpj, razao:retAcharRazao(t, cnpj)};
+  }catch(e){ return null; }
+}
 async function retBuscarProcuracao(forcar, interativo){
   const f = RET.f; f.procMsg = '';
   try{
@@ -5412,6 +5433,7 @@ async function retAbrir(id){
     f:{ref, clienteAssunto:((rd&&rd.cliente)||(client?client.nome:'')).replace(/\s*\(.*$/,''), local, agente:'', retirar:'', obs:'', mawb:(rd&&rd.mawb)||'', hawb:(rd&&rd.hawb)||'',
        saud:'', para:'', motoboy:false, modelo:retIsGru(local)?'GRU':'VCP', dhl:false, nota:'Segue número da conta para retirada:', copia:true, conta:'', razao:'', cnpj:'', procMsg:'', pastaMsg:''}};
   const dp = retDestPadrao(RET.f); RET.f.saud = dp.saud; RET.f.para = dp.para.join('; ');
+  if(rd && /donizete/i.test(rd.responsavelRetirada||'')) RET.f.motoboy = true;
   retAplicarAgente(RET.f.agente);
   { const ch = retChave(client), emp = retEmpresaSalva(ch); if(emp){ RET.f.razao = emp.razao; RET.f.cnpj = emp.cnpj; RET.f.razaoEdit = RET.f.cnpjEdit = true; }
     RET.f.chave = ch; RET.f.conta = retContaImg(ch);
@@ -5424,6 +5446,13 @@ async function retAbrir(id){
     if(!pasta) RET.f.pastaMsg = 'Não achei a pasta do processo '+ref+' em "'+root.name+'". Anexe os arquivos à mão; a autorização será baixada.';
     else{
       RET.dir = pasta;
+      const di = await retLerDI(pasta);
+      if(di && di.cnpj){
+        RET.f.cnpj = di.cnpj; RET.f.cnpjEdit = true;
+        if(di.razao){ RET.f.razao = di.razao.toUpperCase(); RET.f.razaoEdit = true; }
+        else if(RET.f.razao && RET.f.cnpj.replace(/\D/g,'').slice(0,8)!==((RET.f.cnpjSalvo||'').replace(/\D/g,'').slice(0,8)) && !RET.f.razaoEdit){ /* mantém razão da procuração */ }
+        RET.f.empMsg = 'Empresa lida de "'+di.doc+'"'+(di.razao?'':' (só o CNPJ — confira a razão social)');
+      } else if(di){ RET.f.empMsg = 'Achei "'+di.doc+'" mas não consegui ler o CNPJ — confira à mão.'; }
       const achados = await retProcurarPdfs(pasta, 1, []);
       for(const d of achados){ if(/desconsolid/i.test(d.nome) && !/autoriza/i.test(d.nome)){ const file = await d.handle.getFile(); RET.files.push({nome:d.nome, bytes:new Uint8Array(await file.arrayBuffer()), inc:true, tipo:'descon', fonte:'pasta do processo'}); } }
     }
@@ -5504,6 +5533,7 @@ function retRender(){
   </div>
   ${vcp?`<label style="display:flex;gap:8px;align-items:center;margin:6px 0;cursor:pointer;"><input type="checkbox" id="retMoto" style="width:auto;" ${f.motoboy?'checked':''}><span style="font-size:13px;font-weight:500;">Retirada com o <b>motoboy</b> (Donizete — conta R$ 15 no relatório) — desmarcado = retira com o Kalau</span></label>`:''}
   <div class="ret-sec">Autorização</div>
+  ${f.empMsg?`<div class="ret-msg">${esc(f.empMsg)}</div>`:''}
   <div class="row">
     <div class="field"><label>Razão social</label><input id="retRazao" value="${escAttr(f.razao)}"></div>
     <div class="field"><label>CNPJ</label><input id="retCnpj" value="${escAttr(f.cnpj)}"></div>
@@ -5578,7 +5608,8 @@ async function retEnviar(){
     if(f.chave){ retLs('pr_ret_emp_'+f.chave, JSON.stringify({razao:f.razao.trim(), cnpj:f.cnpj.trim()})); }
     const hoje = rdToday();
     const respNome = n => { const ex = rdRef().responsaveis.find(r=>retNorm(r.nome).includes(retNorm(n))); return ex ? ex.nome : n.toUpperCase(); };
-    const resp2 = retIsVcp(f.local) ? respNome(f.motoboy?'Donizete':'Kalau') : (retIsGru(f.local)?respNome('Isaac'):((RET.rd&&RET.rd.responsavelRetirada)||''));
+    const atual = (RET.rd&&RET.rd.responsavelRetirada)||'';
+    const resp2 = (retIsVcp(f.local) && f.motoboy) ? respNome('Donizete') : (atual || (retIsVcp(f.local) ? respNome('Kalau') : (retIsGru(f.local) ? respNome('Isaac') : '')));
     const dados = {ref:f.ref, cliente:f.clienteAssunto, mawb:f.mawb.trim(), hawb:f.hawb.trim(), local:f.local, agenteDeCargas:f.agente||(RET.rd&&RET.rd.agenteDeCargas)||'', responsavelRetirada:resp2, dataSolicitacao:hoje};
     if(RET.rd) rdUpsertProcesso(Object.assign({}, RET.rd, dados)); else rdUpsertProcesso(Object.assign({id:rdUid()}, dados));
     RET.p.retSolEm = new Date().toISOString(); RET.p.originais = true; save();
