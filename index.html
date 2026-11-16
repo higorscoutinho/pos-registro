@@ -5576,11 +5576,13 @@ async function retEnviar(){
     if(!j || !j.ok) throw new Error((j && j.error) || 'o servidor não confirmou o envio');
     RET.sent = true;
     if(f.chave){ retLs('pr_ret_emp_'+f.chave, JSON.stringify({razao:f.razao.trim(), cnpj:f.cnpj.trim()})); }
-    const hoje = rdToday(), resp2 = retIsVcp(f.local) ? (f.motoboy?'Donizete':'Kalau') : (retIsGru(f.local)?'Isaac':((RET.rd&&RET.rd.responsavelRetirada)||''));
+    const hoje = rdToday();
+    const respNome = n => { const ex = rdRef().responsaveis.find(r=>retNorm(r.nome).includes(retNorm(n))); return ex ? ex.nome : n.toUpperCase(); };
+    const resp2 = retIsVcp(f.local) ? respNome(f.motoboy?'Donizete':'Kalau') : (retIsGru(f.local)?respNome('Isaac'):((RET.rd&&RET.rd.responsavelRetirada)||''));
     const dados = {ref:f.ref, cliente:f.clienteAssunto, mawb:f.mawb.trim(), hawb:f.hawb.trim(), local:f.local, agenteDeCargas:f.agente||(RET.rd&&RET.rd.agenteDeCargas)||'', responsavelRetirada:resp2, dataSolicitacao:hoje};
     if(RET.rd) rdUpsertProcesso(Object.assign({}, RET.rd, dados)); else rdUpsertProcesso(Object.assign({id:rdUid()}, dados));
-    RET.p.retSolEm = new Date().toISOString(); save();
-    RET.msg = '✅ Solicitação enviada ("'+j.assunto+'"). '+(rs.ok?'Autorização salva na pasta do processo.':'Autorização baixada (não consegui gravar na pasta).')+' Retirada registrada em Retirada Documental'+(resp2==='Donizete'?' (motoboy: R$ 15 no relatório)':'')+'.';
+    RET.p.retSolEm = new Date().toISOString(); RET.p.originais = true; save();
+    RET.msg = '✅ Solicitação enviada ("'+j.assunto+'"). '+(rs.ok?'Autorização salva na pasta do processo.':'Autorização baixada (não consegui gravar na pasta).')+' Retirada registrada em Retirada Documental'+(/donizete/i.test(resp2)?' (motoboy: R$ 15 no relatório)':'')+'.';
     toast('Retirada solicitada ✓');
   }catch(e){ RET.msg = '❌ O e-mail NÃO foi enviado: '+(e.message||e); }
   RET.busy = false; retRender();
