@@ -952,7 +952,7 @@
             <div class="field"><label>Nº do documento (sem traço)</label><input id="arm_num" type="text"></div>
             <div class="field" id="arm_chave_f"><label>Chave de acesso</label><input id="arm_chave" type="text" placeholder="respeite maiúsculas/minúsculas"></div>
             <div class="field"><label>AWB (sem traço)</label><input id="arm_awb" type="text"></div>
-            <div class="field"><label>HAWB (vazio = repete o AWB)</label><input id="arm_hawb" type="text"></div>
+            <div class="field"><label>HAWB (sem AWB house: repete o AWB)</label><input id="arm_hawb" type="text"></div>
             <div class="field"><label>Cálculo ou recálculo</label><select id="arm_calc"><option value="Cálculo">Cálculo</option><option value="Recalculo">Recálculo</option></select></div>
             <div class="field" id="arm_det_f"><label>Detalhamento da carga (2 palavras)</label><input id="arm_det" type="text"></div>
             <div class="field"><label>Data da retirada</label><input id="arm_data" type="date"></div>
@@ -5889,7 +5889,7 @@ function armAcharRazao(T, cnpj){
 }
 function armDetalhe(T){
   const x = String(T).replace(/\s+/g,' ');
-  const STOP = new Set(['DE','DA','DO','DAS','DOS','PARA','COM','SEM','EM','E','OU','A','O','AS','OS','UM','UMA','NO','NA','POR','TIPO','MODELO','MARCA','NOVO','NOVA','USADO','PECA','PECAS','PARTE','PARTES','PN','P/N','REF','COD','CODIGO','NCM','ITEM','QTD','QUANTIDADE','UNIDADE','UNID','PAIS','ORIGEM','VALOR','DESCRICAO','DETALHADA','DETALHAMENTO','MERCADORIA','PRODUTO','DENOMINACAO','COMPLEMENTAR','FABRICANTE','CONDICAO','VENDA','INCOTERM','SERIE','LOTE']);
+  const STOP = new Set(['DE','DA','DO','DAS','DOS','PARA','COM','SEM','EM','E','OU','A','O','AS','OS','UM','UMA','NO','NA','POR','TIPO','MODELO','MARCA','NOVO','NOVA','USADO','PECA','PECAS','PARTE','PARTES','PN','P/N','REF','COD','CODIGO','NCM','ITEM','QTD','QUANTIDADE','UNIDADE','UNID','PAIS','ORIGEM','VALOR','DESCRICAO','DETALHADA','DETALHAMENTO','MERCADORIA','PRODUTO','DENOMINACAO','COMPLEMENTAR','FABRICANTE','CONDICAO','VENDA','INCOTERM','SERIE','LOTE','DATA','FABRICACAO','VALIDADE','FATURA','NOTA','FISCAL','NUMERO','TOTAL','PESO','LIQUIDO','BRUTO','CLASSIFICACAO','FORNECEDOR','EXPORTADOR','IMPORTADOR','MOEDA','CONDICOES','ADICAO','DECLARACAO','DESCRITIVO','CARACTERISTICAS']);
   const norm = w => w.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase();
   const duas = txt => {
     const ws = (txt.match(/[A-Za-zÀ-ú]{3,}/g)||[]).filter(w=>!STOP.has(norm(w)));
@@ -5938,7 +5938,7 @@ async function armLer(){
     const det = armDetalhe(T);
     ARM.nomeDoc = doc.nome; ARM.pasta = pasta.name;
     document.getElementById('arm_tipo').value = ehDuimp ? 'DUIMP' : 'DI';
-    document.getElementById('arm_num').value = num; document.getElementById('arm_awb').value = awb; document.getElementById('arm_hawb').value = hawb;
+    document.getElementById('arm_num').value = num; document.getElementById('arm_awb').value = awb; document.getElementById('arm_hawb').value = hawb || awb;
     document.getElementById('arm_det').value = det; document.getElementById('arm_cnpj').value = cnpj; document.getElementById('arm_razao').value = razao;
     if(!document.getElementById('arm_cli').value){ const c = cp ? clientById(cp.clienteId) : null; if(c) document.getElementById('arm_cli').value = c.nome; }
     document.getElementById('arm_anexo').textContent = doc.nome+'  (pasta "'+pasta.name+'")';
@@ -5958,6 +5958,7 @@ function armCopiar(){
   const o = {k:'arm', sol, tipo, num:v('arm_num').replace(/[\s\-]/g,''), chave:v('arm_chave'), awb, hawb:(v('arm_hawb').replace(/[\s\-]/g,'')||awb), calc:v('arm_calc'), det:v('arm_det'), data:v('arm_data'), cnpj:v('arm_cnpj'), razao:v('arm_razao'), anexo:ARM.nomeDoc};
   (navigator.clipboard?navigator.clipboard.writeText(JSON.stringify(o)):Promise.reject()).then(()=>armMsg('📋 Pedido copiado. Agora abra o formulário do VCP e clique no favorito "Preencher VCP".')).catch(()=>{ armMsg('Não consegui copiar automaticamente. Copie este texto e cole quando o favorito pedir:\n'+JSON.stringify(o)); });
 }
+document.getElementById('arm_awb').addEventListener('input', ()=>{ const a=document.getElementById('arm_awb'), h=document.getElementById('arm_hawb'); if(!h.value.trim() || h.value===a.dataset.prev) h.value = a.value; a.dataset.prev = a.value; });
 document.getElementById('btnArmLer').addEventListener('click', armLer);
 document.getElementById('btnArmCopiar').addEventListener('click', armCopiar);
 </script>
