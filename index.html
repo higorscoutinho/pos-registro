@@ -5891,6 +5891,14 @@ function armDetalhe(T){
   const x = String(T).replace(/\s+/g,' ');
   const STOP = new Set(['DE','DA','DO','DAS','DOS','PARA','COM','SEM','EM','E','OU','A','O','AS','OS','UM','UMA','NO','NA','POR','TIPO','MODELO','MARCA','NOVO','NOVA','USADO','PECA','PECAS','PARTE','PARTES','PN','P/N','REF','COD','CODIGO','NCM','ITEM','QTD','QUANTIDADE','UNIDADE','UNID','PAIS','ORIGEM','VALOR','DESCRICAO','DETALHADA','DETALHAMENTO','MERCADORIA','PRODUTO','DENOMINACAO','COMPLEMENTAR','FABRICANTE','CONDICAO','VENDA','INCOTERM','SERIE','LOTE','DATA','FABRICACAO','VALIDADE','FATURA','NOTA','FISCAL','NUMERO','TOTAL','PESO','LIQUIDO','BRUTO','CLASSIFICACAO','FORNECEDOR','EXPORTADOR','IMPORTADOR','MOEDA','CONDICOES','ADICAO','DECLARACAO','DESCRITIVO','CARACTERISTICAS']);
   const norm = w => w.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase();
+  const nomeProd = txt => {
+    const ws = (String(txt).match(/[A-Za-zÀ-ú]{2,}/g)||[]), out = []; let sig = 0;
+    for(const w of ws){ const st = STOP.has(norm(w)) || w.length<3; if(!st){ out.push(w.toLowerCase()); if(++sig>=2) break; } else if(sig>=1 && out.length){ out.push(w.toLowerCase()); } }
+    while(out.length && (STOP.has(norm(out[out.length-1])) || out[out.length-1].length<3)) out.pop();
+    const r = out.join(' '); return r ? r.charAt(0).toUpperCase()+r.slice(1) : '';
+  };
+  const mp = x.match(/C[óo]digo\s+do\s+produto\s*:?\s*(?:Vers[ãa]o\s*:?\s*)?(?:\d+\s*[-–]\s*)?([A-Za-zÀ-ú][^:]{2,120})/i);
+  if(mp){ const r = nomeProd(mp[1]); if(r) return r; }
   const duas = txt => {
     const ws = (txt.match(/[A-Za-zÀ-ú]{3,}/g)||[]).filter(w=>!STOP.has(norm(w)));
     if(ws.length<1) return '';
