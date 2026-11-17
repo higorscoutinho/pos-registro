@@ -873,6 +873,7 @@
           <datalist id="sx_clis"></datalist>
           <button class="btn btn-gold" id="btnSxGerar">Gerar documentos</button>
         </div>
+        <label style="display:flex;gap:8px;align-items:center;margin-top:12px;font-size:13px;"><input type="checkbox" id="sx_dare" checked style="width:auto;"> Em DI, também gerar a DARE do ICMS (preenche vencimento e pagamento com a data de hoje no Sicoex)</label>
         <div id="sxMsg" style="margin-top:14px;font-size:13.5px;line-height:1.6;white-space:pre-wrap;"></div>
       </div>
     </section>
@@ -5758,10 +5759,10 @@ async function sxGerar(){
     const pasta = await fatAchaPastaProcesso(root, ref, 0);
     if(!pasta){ sxMsg('Não achei a pasta do processo '+ref+' dentro de "'+root.name+'". Crie a pasta e tente de novo.'); return; }
     sxMsg('Buscando no Sicoex… (leva alguns segundos)');
-    const resp = await fetch(API_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({action:'sicoexDocs', ref})});
+    const resp = await fetch(API_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({action:'sicoexDocs', ref, dare: document.getElementById('sx_dare').checked})});
     const d = await resp.json();
     if(!d.ok){ sxMsg('⚠ '+(d.error||'Erro ao buscar no Sicoex.')); return; }
-    if(String(d.versao)!=='9'){ sxMsg('⚠ O Apps Script está desatualizado. Cole o Code.gs novo e faça Implantar → Gerenciar implantações → lápis → Nova versão.'); return; }
+    if(String(d.versao)!=='10'){ sxMsg('⚠ O Apps Script está desatualizado. Cole o Code.gs novo e faça Implantar → Gerenciar implantações → lápis → Nova versão.'); return; }
     let fat = null; const salvos = [];
     for(const a of d.arquivos){
       let dir = pasta;
