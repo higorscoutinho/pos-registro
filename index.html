@@ -5873,6 +5873,20 @@ function armTipoUI(){
 }
 document.getElementById('arm_tipo').addEventListener('change', armTipoUI);
 document.getElementById('arm_calc').addEventListener('change', armTipoUI);
+function armAcharRazao(T, cnpj){
+  const x = String(T).replace(/\s+/g,' ');
+  const suf = '(?:LTDA\\.?|S\\.?\\s?\\/?\\s?A\\.?|EIRELI|EPP|\\bME\\b)';
+  const nome = '[A-Z0-9][A-Z0-9ÀÁÂÃÇÉÊÍÓÔÕÚ&.,\'\\/ \\-]{3,110}?'+suf;
+  const reIni = new RegExp('^[\\s:\\-–]*(?:\\d{2}\\.?\\d{3}\\.?\\d{3}\\/?\\d{4}-?\\d{2}[\\s:\\-–]*)?('+nome+')');
+  const rotulos = /(?:nome\s+(?:do\s+)?importador|raz[ãa]o\s+social(?:\s+do\s+importador)?|importador(?:\s*\/\s*adquirente)?)/ig;
+  let m; while((m = rotulos.exec(x)) !== null){
+    const dep = x.slice(m.index + m[0].length, m.index + m[0].length + 220).match(reIni);
+    if(dep) return dep[1].trim();
+  }
+  const r = cnpj ? retAcharRazao(x, cnpj) : ''; if(r && /[A-Z]{3}/.test(r) && r.length>6) return r;
+  const i = x.search(/IMPORTADOR/i); const rest = i>=0 ? x.slice(i, i+800) : x.slice(0, 4000);
+  const g = rest.match(new RegExp(nome)); return g ? g[0].trim() : '';
+}
 async function armLer(){
   const ref = document.getElementById('arm_ref').value.trim();
   if(!/^[0-9A-Za-z][0-9A-Za-z\-. \/]{2,20}$/.test(ref)){ armMsg('Digite a referência do processo.'); return; }
@@ -5894,11 +5908,13 @@ async function armLer(){
     const nDI = T.match(/\b(\d{2})\s*\/\s*(\d{7})\s*-\s*(\d)\b/) || T.match(/N[úu]mero\s*(?:da\s*)?(?:DI|Declara[çc][ãa]o)[^0-9]{0,30}(\d{10})\b/i);
     const ehDuimp = !!nDuimp || /duimp/i.test(doc.nome);
     const num = nDuimp ? nDuimp[1]+nDuimp[2] : (nDI ? nDI.slice(1).join('').replace(/\D/g,'') : '');
-    const cnpj = fatAcharCnpj(T) || ''; const razao = cnpj ? retAcharRazao(T, cnpj) : '';
+    const cnpj = fatAcharCnpj(T) || ''; const razao = armAcharRazao(T, cnpj);
+    const cct = await retLerCCT(pasta);
     const cp = state.processes.find(x=>String(x.codigo).trim().toUpperCase()===ref.toUpperCase());
     const rd = (state.retirada && state.retirada.processos || []).find(x=>String(x.ref).trim().toUpperCase()===ref.toUpperCase()) || {};
-    let awb = String(rd.mawb||'').replace(/[^0-9A-Za-z]/g,''), hawb = String(rd.hawb||'').replace(/[\s\-]/g,'');
-    if(!awb){ const m = T.match(/\b(\d{3})\s*-\s*(\d{8})\b/); if(m) awb = m[1]+m[2]; }
+    let awb = String((cct&&cct.mawb)||rd.mawb||'').replace(/[^0-9A-Za-z]/g,''), hawb = String((cct&&cct.hawb)||rd.hawb||'').replace(/[\s\-]/g,'');
+    let fonteAwb = cct&&cct.mawb ? 'CCT "'+cct.doc+'"' : (rd.mawb ? 'Retirada Documental' : '');
+    if(!awb){ const m = T.match(/\b(\d{3})\s*-?\s*(\d{8})\b/); if(m){ awb = m[1]+m[2]; fonteAwb = 'DUIMP/DI'; } }
     const dm = T.match(/(?:DESCRI[ÇC][ÃA]O\s+DETALHADA\s+DA\s+MERCADORIA|DESCRI[ÇC][ÃA]O\s+DA\s+MERCADORIA|DENOMINA[ÇC][ÃA]O\s+DO\s+PRODUTO|DESCRI[ÇC][ÃA]O\s+DO\s+PRODUTO)[:\s]+([A-Za-zÀ-ú][^.;|]{3,80})/i);
     const det = dm ? dm[1].trim().split(/\s+/).slice(0,2).join(' ').toLowerCase().replace(/^./,c=>c.toUpperCase()) : '';
     ARM.nomeDoc = doc.nome; ARM.pasta = pasta.name;
@@ -5909,7 +5925,7 @@ async function armLer(){
     document.getElementById('arm_anexo').textContent = doc.nome+'  (pasta "'+pasta.name+'")';
     document.getElementById('armForm').style.display = ''; armTipoUI();
     const falta = []; if(!num) falta.push('número'); if(!awb) falta.push('AWB'); if(!cnpj) falta.push('CNPJ'); if(ehDuimp) falta.push('chave de acesso'); falta.push('data da retirada');
-    armMsg('✅ Li "'+doc.nome+'". Confira os campos e preencha: '+falta.join(', ')+'.');
+    armMsg('✅ Li "'+doc.nome+'"'+(cct?' e o CCT "'+cct.doc+'"':' (não achei o CCT/Extrato de conhecimento na pasta)')+'. '+(awb?'AWB de '+fonteAwb+'. ':'')+(razao?'':'Razão social não reconhecida: digite. ')+'Confira e preencha: '+falta.join(', ')+'.');
   }catch(e){ armMsg('⚠ '+((e&&e.name==='AbortError')?'Seleção de pasta cancelada.':(e&&e.message)||e)); }
   finally{ btn.disabled = false; }
 }
