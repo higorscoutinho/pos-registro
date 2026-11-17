@@ -669,6 +669,10 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
             <span class="nav-label">Consultar carga (VCP)</span> <span class="count" id="cnt-ex-vcp" style="display:none;">0</span>
           </button>
+          <button class="nav-btn" data-view="ex-arm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-6 9 6v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M9 21V12h6v9"/></svg>
+            <span class="nav-label">Armazenagem VCP</span>
+          </button>
           <button class="nav-btn" data-view="ex-madeira">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22V12"/><path d="M12 12c-4 0-7-3-7-7 4 0 7 3 7 7z"/><path d="M12 15c3 0 5.5-2.2 5.5-5.5C14.2 9.5 12 11.8 12 15z"/></svg>
             <span class="nav-label">Verifica madeira</span> <span class="count" id="cnt-ex-mad" style="display:none;">0</span>
@@ -925,6 +929,57 @@
         </div>
       </div>
       <div id="exVcpBody"></div>
+    </section>
+
+    <!-- Extras: ARMAZENAGEM VCP (tarifação) -->
+    <section id="view-ex-arm" style="display:none;">
+      <div class="topbar">
+        <div>
+          <h2>Solicitar armazenagem (VCP Cargo)</h2>
+          <div class="sub">Lê a DUIMP/DI da pasta do processo e preenche o formulário de tarifação do Viracopos para você</div>
+        </div>
+      </div>
+      <div class="card" style="padding:16px 18px;max-width:860px;">
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+          <div class="field" style="margin:0;"><label>Referência</label><input id="arm_ref" type="text" placeholder="ex: 14260" style="width:150px;"></div>
+          <div class="field" style="margin:0;flex:1;min-width:200px;"><label>Cliente</label><input id="arm_cli" type="text" list="sx_clis" placeholder="nome do cliente"></div>
+          <button class="btn btn-gold" id="btnArmLer">Ler da pasta</button>
+        </div>
+        <div id="armMsg" style="margin-top:12px;font-size:13.5px;line-height:1.6;white-space:pre-wrap;"></div>
+        <div id="armForm" style="display:none;margin-top:14px;">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;">
+            <div class="field"><label>Tipo</label><select id="arm_tipo"><option>DUIMP</option><option>DI</option></select></div>
+            <div class="field"><label>Nº do documento (sem traço)</label><input id="arm_num" type="text"></div>
+            <div class="field" id="arm_chave_f"><label>Chave de acesso</label><input id="arm_chave" type="text" placeholder="respeite maiúsculas/minúsculas"></div>
+            <div class="field"><label>AWB (sem traço)</label><input id="arm_awb" type="text"></div>
+            <div class="field"><label>HAWB (vazio = repete o AWB)</label><input id="arm_hawb" type="text"></div>
+            <div class="field"><label>Cálculo ou recálculo</label><select id="arm_calc"><option value="Cálculo">Cálculo</option><option value="Recalculo">Recálculo</option></select></div>
+            <div class="field" id="arm_det_f"><label>Detalhamento da carga (2 palavras)</label><input id="arm_det" type="text"></div>
+            <div class="field"><label>Data da retirada</label><input id="arm_data" type="date"></div>
+            <div class="field"><label>CNPJ do importador</label><input id="arm_cnpj" type="text"></div>
+            <div class="field"><label>Razão social</label><input id="arm_razao" type="text"></div>
+          </div>
+          <div style="font-size:12.5px;margin:4px 0 12px;opacity:.85;">Recebimento de guias: sempre "E-mail(s) informado(s) nesta solicitação (Portal)". Anexo (você escolhe na janela): <b id="arm_anexo">—</b></div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn btn-gold" id="btnArmCopiar">1) Copiar pedido</button>
+            <a class="btn" id="armAbrir" href="https://app.pipefy.com/public/form/r-PcB9Yu" target="_blank" rel="noopener">2) Abrir formulário do VCP</a>
+          </div>
+          <div style="font-size:12.5px;margin-top:8px;opacity:.85;">3) Na página do formulário, clique no favorito <b>Preencher VCP</b>. Ele preenche tudo; você só escolhe o PDF e clica em "Enviar tarifação".</div>
+        </div>
+      </div>
+      <div class="card" style="padding:16px 18px;max-width:860px;margin-top:14px;">
+        <div style="font-weight:600;margin-bottom:6px;">Seus dados (solicitante) — ficam só neste navegador</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
+          <div class="field"><label>Nome</label><input id="armS_nome" type="text"></div>
+          <div class="field"><label>Contato</label><input id="armS_tel" type="text"></div>
+          <div class="field"><label>CPF</label><input id="armS_cpf" type="text" placeholder="digite uma vez"></div>
+          <div class="field"><label>E-mail</label><input id="armS_email" type="text"></div>
+        </div>
+        <div style="font-weight:600;margin:14px 0 6px;">Favorito "Preencher VCP" (instalar uma vez)</div>
+        <div style="font-size:13px;line-height:1.6;">Arraste o botão abaixo para a barra de favoritos do Chrome (se a barra não aparece, use Ctrl+Shift+B):<br>
+          <a id="armBookmark" class="btn btn-gold" href="#" draggable="true" style="display:inline-block;margin:8px 0;" onclick="alert('Não clique: arraste este botão para a barra de favoritos.');return false;">Preencher VCP</a>
+          <div style="opacity:.8;">Se o Chrome pedir, permita que a página leia a área de transferência na primeira vez.</div></div>
+      </div>
     </section>
 
     <!-- Extras: VERIFICA MADEIRA -->
@@ -1620,7 +1675,7 @@ function toast(msg){
 }
 
 /* ============ NAV ============ */
-const views = ['geral','board','export','clients','archive','terceiros','rd-dashboard','rd-processos','rd-finalizados','rd-solicitar','sx-docs','rd-instrucoes','rd-importar','ex-vcp','ex-madeira'];
+const views = ['geral','board','export','clients','archive','terceiros','rd-dashboard','rd-processos','rd-finalizados','rd-solicitar','sx-docs','rd-instrucoes','rd-importar','ex-vcp','ex-arm','ex-madeira'];
 document.getElementById('nav').addEventListener('click', e=>{
   const btn = e.target.closest('.nav-btn');
   if(!btn) return;
@@ -1643,6 +1698,7 @@ document.getElementById('nav').addEventListener('click', e=>{
   if(view==='rd-instrucoes') renderRDInstrucoes();
   if(view==='rd-importar') renderRDImportar();
   if(view==='ex-vcp') renderExVCP();
+  if(view==='ex-arm') armPreparar();
   if(view==='ex-madeira') renderExMadeira();
 });
 
@@ -5795,6 +5851,80 @@ document.getElementById('btnSxProcess').addEventListener('click',()=>{
   const p=state.processes.find(x=>x.id===id); const c=p?clientById(p.clienteId):null;
   processOverlay.classList.remove('show'); sxAbrir(p?String(p.codigo):'', c?c.nome:'');
 });
+
+/* ============ EXTRAS: ARMAZENAGEM VCP ============ */
+const ARM = {nomeDoc:'', pasta:''};
+const ARM_BM = "(async () => {\n  const W = ms => new Promise(r => setTimeout(r, ms));\n  const q = s => document.querySelector(s);\n  const waitFor = async (fn, ms = 10000) => { const t = Date.now(); while (Date.now() - t < ms) { const v = fn(); if (v) return v; await W(150); } return null; };\n  const banner = (msg, cor) => {\n    let b = document.getElementById('pr-arm-banner');\n    if (!b) { b = document.createElement('div'); b.id = 'pr-arm-banner'; b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:2147483647;padding:12px 16px;border-radius:10px;font:600 14px/1.4 system-ui,sans-serif;color:#fff;box-shadow:0 6px 24px rgba(0,0,0,.3);white-space:pre-wrap'; document.body.appendChild(b); }\n    b.style.background = cor || '#1d4ed8'; b.textContent = msg;\n  };\n  let D = window.__PRARM || null;\n  if (!D) { try { D = JSON.parse(await navigator.clipboard.readText()); } catch (e) {} }\n  if (!D || D.k !== 'arm') { try { D = JSON.parse(prompt('Cole aqui o pedido copiado do sistema (aba Extras > Armazenagem VCP):') || 'null'); } catch (e) { D = null; } }\n  if (!D || D.k !== 'arm') { alert('N\u00e3o achei o pedido. No sistema, clique em \"Copiar pedido\" e depois neste favorito.'); return; }\n  try {\n    const setv = (el, v) => {\n      const proto = el.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;\n      Object.getOwnPropertyDescriptor(proto, 'value').set.call(el, v);\n      el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); el.dispatchEvent(new Event('blur', { bubbles: true }));\n    };\n    const text = async (sel, v) => { const el = await waitFor(() => q(sel)); if (!el) throw new Error('Campo n\u00e3o encontrado: ' + sel); el.scrollIntoView({ block: 'center' }); await W(150); el.focus(); setv(el, v); await W(250); };\n    const radio = async (sel) => { const r = await waitFor(() => q(sel)); if (!r) throw new Error('Op\u00e7\u00e3o n\u00e3o encontrada: ' + sel); for (let i = 0; i < 12 && !r.checked; i++) { r.click(); await W(350); } if (!r.checked) throw new Error('N\u00e3o consegui marcar: ' + sel); };\n    const mouse = (el) => { for (const t of ['mousedown', 'mouseup', 'click']) el.dispatchEvent(new MouseEvent(t, { bubbles: true, cancelable: true, view: window })); };\n    const select = async (sel, label) => {\n      const inp = await waitFor(() => q(sel)); if (!inp) throw new Error('Lista n\u00e3o encontrada: ' + sel);\n      inp.scrollIntoView({ block: 'center' }); await W(250);\n      for (let i = 0; i < 6; i++) {\n        let el = inp; const alvos = [];\n        for (let k = 0; k < 4 && el; k++) { alvos.push(el); el = el.parentElement; }\n        alvos.forEach(mouse); await W(450);\n        const op = Array.from(document.querySelectorAll('div')).find(e => e.offsetParent && e.children.length === 0 && (e.innerText || '').trim() === label);\n        if (op) { mouse(op); await W(600); return; }\n      }\n      throw new Error('Op\u00e7\u00e3o \"' + label + '\" n\u00e3o apareceu.');\n    };\n    const date = async (sel, dd, mm, yyyy) => {\n      const g = await waitFor(() => q(sel)); if (!g) throw new Error('Campo de data n\u00e3o encontrado.');\n      g.scrollIntoView({ block: 'center' }); await W(250);\n      const segs = Array.from(g.querySelectorAll('[role=spinbutton]'));\n      const typ = async (seg, txt) => { seg.focus(); await W(150); for (const ch of txt) { seg.dispatchEvent(new InputEvent('beforeinput', { data: ch, inputType: 'insertText', bubbles: true, cancelable: true })); await W(110); } };\n      await typ(segs[0], dd); await typ(segs[1], mm); await typ(segs[2], yyyy); await W(300);\n    };\n    const clickBtn = async (txt, nth) => {\n      const lista = await waitFor(() => { const l = Array.from(document.querySelectorAll('button')).filter(b => b.offsetParent && (b.innerText || '').trim() === txt); return l.length ? l : null; });\n      if (!lista) throw new Error('Bot\u00e3o n\u00e3o encontrado: ' + txt);\n      const b = nth === 'last' ? lista[lista.length - 1] : lista[0]; b.scrollIntoView({ block: 'center' }); await W(200); b.click(); await W(900);\n    };\n    const P = 'publicForm-', C = '[id^=connectionStartForm]';\n    const cs = suf => C + suf;\n\n    banner('Preenchendo o formul\u00e1rio do VCP\u2026 n\u00e3o clique em nada.');\n    // 1) Aviso inicial\n    const cb = await waitFor(() => q('#publicForm-Checklist-prezado_cliente-0')); if (!cb) throw new Error('N\u00e3o achei o formul\u00e1rio. Abra a p\u00e1gina de tarifa\u00e7\u00e3o do Viracopos (Pipefy).');\n    if (!cb.checked) { cb.click(); await W(700); }\n    // 2) Solicitante\n    await text('#' + P + 'ShortText-nome_name', D.sol.nome);\n    await text('#' + P + 'Phone-contato_contact', D.sol.tel);\n    await radio('#' + P + 'Radio-cpf_cnpj-0');\n    if (D.sol.cpf) await text('#' + P + 'Document-cpf', D.sol.cpf);\n    await text('#' + P + 'Email-e_mail_solicitante', D.sol.email);\n    await radio('[id^=publicForm-Radio-em_observ_ncia][id$=\"-0\"]');\n    // 3) Importador\n    await clickBtn('Adicionar importador', 'first');\n    await radio(cs('[id$=Radio-estrangeiro-1]'));\n    await radio(cs('[id$=Radio-cpf_cnpj-1]'));\n    await text(cs('[id$=Document-cnpj]'), D.cnpj);\n    await text(cs('[id$=ShortText-nome_raz_o_social_name_company_name]'), D.razao);\n    await select(cs('[id$=Select-tipo_de_recebimento_de_guias_type_of_receipt]'), 'E-mail(s) informado(s) nesta solicita\u00e7\u00e3o (Portal)');\n    await text(cs('[id$=LongText-e_mail_s_notificados_1_por_linha]'), D.sol.email);\n    // 4) Documento\n    await clickBtn('Adicionar documento', 'first');\n    await radio(cs(D.tipo === 'DUIMP' ? '[id$=Radio-tipo_de_documento-1]' : '[id$=Radio-tipo_de_documento-0]'));\n    await text(cs('[id$=ShortText-n_documento_n_document]'), D.num);\n    if (D.tipo === 'DUIMP') await text(cs('[id$=ShortText-chave_de_acesso]'), D.chave);\n    await text(cs('[id$=ShortText-awb]'), D.awb);\n    if (D.hawb) await text(cs('[id$=ShortText-hawb]'), D.hawb);\n    await select(cs('[id$=Select-tipo_c_lculo_calculation_type]'), D.calc === 'Recalculo' ? 'Recalculo' : 'C\u00e1lculo');\n    if (D.calc !== 'Recalculo') {\n      await select(cs('[id$=Select-detalhamento_da_carga]'), 'Outros');\n      await text(cs('[id$=ShortText-outra_carga]'), D.det);\n    }\n    const [yy, mm, dd] = D.data.split('-');\n    await date(cs('[id$=Date-data_de_retirada_date_for_withdrawing]'), dd, mm, yy);\n    // 5) Anexo (manual: o navegador s\u00f3 deixa o usu\u00e1rio escolher o arquivo)\n    if (D.test) { banner('TESTE: preenchi tudo, parei antes do anexo.', '#15803d'); return; }\n    banner('Quase pronto! Escolha o arquivo: ' + D.anexo + '\\n(abri a janela; se n\u00e3o abriu, clique em \"Adicionar novos arquivos\")', '#b45309');\n    const fin = Array.from(document.querySelectorAll('input[type=file]')).find(f => f.offsetParent || true);\n    try { if (fin) fin.click(); } catch (e) {}\n    // espera o anexo aparecer (o campo de arquivo ganha um item) e salva o documento e o importador\n    const antes = document.body.innerText.length;\n    const nome = String(D.anexo || '').replace(/\\.pdf$/i, '').slice(0, 25);\n    const anexado = await waitFor(() => document.body.innerText.includes(nome) && document.body.innerText.length !== antes, 300000);\n    if (!anexado) { banner('N\u00e3o vi o anexo ser conclu\u00eddo. Anexe o PDF, clique em \"Adicionar documento\", depois em \"Adicionar importador\" e confira antes de enviar.', '#b91c1c'); return; }\n    await W(2500);\n    await clickBtn('Adicionar documento', 'last');\n    await W(1200);\n    await clickBtn('Adicionar importador', 'last');\n    await W(1000);\n    banner('\u2705 Preenchido. Confira tudo e clique em \"Enviar tarifa\u00e7\u00e3o\".', '#15803d');\n  } catch (e) {\n    banner('\u26a0 ' + (e && e.message ? e.message : e) + '\\nTermine o preenchimento \u00e0 m\u00e3o ou recarregue a p\u00e1gina e tente de novo.', '#b91c1c');\n  }\n})();\n";
+function armMsg(t){ document.getElementById('armMsg').textContent = t; }
+function armSol(){ try{ return JSON.parse(localStorage.getItem('pr_arm_sol')||'null')||{}; }catch(e){ return {}; } }
+function armPreparar(){
+  sxPreparar();
+  const d = Object.assign({nome:'GUILHERME BRESSAN CANOBEL', tel:'19 99435-1987', cpf:'', email:'HIGOR@SVSLOG.COM.BR'}, armSol());
+  [['nome','armS_nome'],['tel','armS_tel'],['cpf','armS_cpf'],['email','armS_email']].forEach(([k,id])=>{ const el=document.getElementById(id); if(!el.value) el.value = d[k]||''; });
+  document.getElementById('armBookmark').setAttribute('href', 'javascript:'+encodeURIComponent(ARM_BM));
+}
+['armS_nome','armS_tel','armS_cpf','armS_email'].forEach(id=>document.getElementById(id).addEventListener('input', ()=>{
+  const o = {nome:document.getElementById('armS_nome').value.trim(), tel:document.getElementById('armS_tel').value.trim(), cpf:document.getElementById('armS_cpf').value.trim(), email:document.getElementById('armS_email').value.trim()};
+  try{ localStorage.setItem('pr_arm_sol', JSON.stringify(o)); }catch(e){}
+}));
+function armTipoUI(){
+  document.getElementById('arm_chave_f').style.display = document.getElementById('arm_tipo').value==='DUIMP' ? '' : 'none';
+  document.getElementById('arm_det_f').style.display = document.getElementById('arm_calc').value==='Cálculo' ? '' : 'none';
+}
+document.getElementById('arm_tipo').addEventListener('change', armTipoUI);
+document.getElementById('arm_calc').addEventListener('change', armTipoUI);
+async function armLer(){
+  const ref = document.getElementById('arm_ref').value.trim();
+  if(!/^[0-9A-Za-z][0-9A-Za-z\-. \/]{2,20}$/.test(ref)){ armMsg('Digite a referência do processo.'); return; }
+  const btn = document.getElementById('btnArmLer'); btn.disabled = true;
+  try{
+    armMsg('Escolhendo a pasta…');
+    const root = await fatPegarPasta();
+    let pasta = await fatAchaPastaProcesso(root, ref, 0);
+    if(!pasta && /^\d+/.test(ref) && /\D/.test(ref)) pasta = await fatAchaPastaProcesso(root, ref.match(/^\d+/)[0], 0);
+    if(!pasta){ armMsg('Não achei a pasta do processo '+ref+' em "'+root.name+'".'); return; }
+    const doc = await fatAchaDI(pasta, 0);
+    if(!doc){ armMsg('Não achei a DUIMP/DI (PDF) na pasta "'+pasta.name+'".'); return; }
+    if(!(await fatPdfjsInit())){ armMsg('Não consegui carregar o leitor de PDF.'); return; }
+    armMsg('Lendo "'+doc.nome+'"…');
+    const pdf = await pdfjsLib.getDocument({data:new Uint8Array(await (await doc.handle.getFile()).arrayBuffer())}).promise;
+    let t=''; for(let i=1;i<=Math.min(pdf.numPages,10);i++){ const pg=await pdf.getPage(i); const c=await pg.getTextContent(); t+=c.items.map(x=>x.str).join(' ')+'\n'; }
+    const T = t.replace(/\s+/g,' ');
+    const nDuimp = T.match(/\b(\d{2}BR\d{10,11})\s*-?\s*(\d)\b/);
+    const nDI = T.match(/\b(\d{2})\s*\/\s*(\d{7})\s*-\s*(\d)\b/) || T.match(/N[úu]mero\s*(?:da\s*)?(?:DI|Declara[çc][ãa]o)[^0-9]{0,30}(\d{10})\b/i);
+    const ehDuimp = !!nDuimp || /duimp/i.test(doc.nome);
+    const num = nDuimp ? nDuimp[1]+nDuimp[2] : (nDI ? nDI.slice(1).join('').replace(/\D/g,'') : '');
+    const cnpj = fatAcharCnpj(T) || ''; const razao = cnpj ? retAcharRazao(T, cnpj) : '';
+    const cp = state.processes.find(x=>String(x.codigo).trim().toUpperCase()===ref.toUpperCase());
+    const rd = (state.retirada && state.retirada.processos || []).find(x=>String(x.ref).trim().toUpperCase()===ref.toUpperCase()) || {};
+    let awb = String(rd.mawb||'').replace(/[^0-9A-Za-z]/g,''), hawb = String(rd.hawb||'').replace(/[\s\-]/g,'');
+    if(!awb){ const m = T.match(/\b(\d{3})\s*-\s*(\d{8})\b/); if(m) awb = m[1]+m[2]; }
+    const dm = T.match(/(?:DESCRI[ÇC][ÃA]O\s+DETALHADA\s+DA\s+MERCADORIA|DESCRI[ÇC][ÃA]O\s+DA\s+MERCADORIA|DENOMINA[ÇC][ÃA]O\s+DO\s+PRODUTO|DESCRI[ÇC][ÃA]O\s+DO\s+PRODUTO)[:\s]+([A-Za-zÀ-ú][^.;|]{3,80})/i);
+    const det = dm ? dm[1].trim().split(/\s+/).slice(0,2).join(' ').toLowerCase().replace(/^./,c=>c.toUpperCase()) : '';
+    ARM.nomeDoc = doc.nome; ARM.pasta = pasta.name;
+    document.getElementById('arm_tipo').value = ehDuimp ? 'DUIMP' : 'DI';
+    document.getElementById('arm_num').value = num; document.getElementById('arm_awb').value = awb; document.getElementById('arm_hawb').value = hawb;
+    document.getElementById('arm_det').value = det; document.getElementById('arm_cnpj').value = cnpj; document.getElementById('arm_razao').value = razao;
+    if(!document.getElementById('arm_cli').value){ const c = cp ? clientById(cp.clienteId) : null; if(c) document.getElementById('arm_cli').value = c.nome; }
+    document.getElementById('arm_anexo').textContent = doc.nome+'  (pasta "'+pasta.name+'")';
+    document.getElementById('armForm').style.display = ''; armTipoUI();
+    const falta = []; if(!num) falta.push('número'); if(!awb) falta.push('AWB'); if(!cnpj) falta.push('CNPJ'); if(ehDuimp) falta.push('chave de acesso'); falta.push('data da retirada');
+    armMsg('✅ Li "'+doc.nome+'". Confira os campos e preencha: '+falta.join(', ')+'.');
+  }catch(e){ armMsg('⚠ '+((e&&e.name==='AbortError')?'Seleção de pasta cancelada.':(e&&e.message)||e)); }
+  finally{ btn.disabled = false; }
+}
+function armCopiar(){
+  const v = id => document.getElementById(id).value.trim();
+  const tipo = v('arm_tipo'), dm = tipo==='DUIMP', calc = v('arm_calc')==='Cálculo';
+  const sol = Object.assign({nome:'GUILHERME BRESSAN CANOBEL', tel:'19 99435-1987', cpf:'', email:'HIGOR@SVSLOG.COM.BR'}, armSol());
+  const faltam = []; if(!v('arm_num')) faltam.push('número'); if(!v('arm_awb')) faltam.push('AWB'); if(!v('arm_data')) faltam.push('data da retirada'); if(dm && !v('arm_chave')) faltam.push('chave de acesso'); if(calc && !v('arm_det')) faltam.push('detalhamento'); if(!v('arm_cnpj')) faltam.push('CNPJ'); if(!v('arm_razao')) faltam.push('razão social'); if(!sol.cpf) faltam.push('seu CPF (em "Seus dados")');
+  if(faltam.length){ armMsg('⚠ Falta preencher: '+faltam.join(', ')+'.'); return; }
+  const awb = v('arm_awb').replace(/[\s\-]/g,'');
+  const o = {k:'arm', sol, tipo, num:v('arm_num').replace(/[\s\-]/g,''), chave:v('arm_chave'), awb, hawb:(v('arm_hawb').replace(/[\s\-]/g,'')||awb), calc:v('arm_calc'), det:v('arm_det'), data:v('arm_data'), cnpj:v('arm_cnpj'), razao:v('arm_razao'), anexo:ARM.nomeDoc};
+  (navigator.clipboard?navigator.clipboard.writeText(JSON.stringify(o)):Promise.reject()).then(()=>armMsg('📋 Pedido copiado. Agora abra o formulário do VCP e clique no favorito "Preencher VCP".')).catch(()=>{ armMsg('Não consegui copiar automaticamente. Copie este texto e cole quando o favorito pedir:\n'+JSON.stringify(o)); });
+}
+document.getElementById('btnArmLer').addEventListener('click', armLer);
+document.getElementById('btnArmCopiar').addEventListener('click', armCopiar);
 </script>
 </body>
 </html>
