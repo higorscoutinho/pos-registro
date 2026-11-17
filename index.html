@@ -868,7 +868,7 @@
       </div>
       <div class="card" style="padding:16px 18px;max-width:760px;">
         <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
-          <div class="field" style="margin:0;"><label>Referência</label><input id="sx_ref" type="text" inputmode="numeric" placeholder="ex: 14128" style="width:130px;"></div>
+          <div class="field" style="margin:0;"><label>Referência</label><input id="sx_ref" type="text" inputmode="numeric" placeholder="ex: 14128 ou 14200-IT" style="width:150px;"></div>
           <div class="field" style="margin:0;flex:1;min-width:200px;"><label>Cliente</label><input id="sx_cli" type="text" list="sx_clis" placeholder="nome do cliente"></div>
           <datalist id="sx_clis"></datalist>
           <button class="btn btn-gold" id="btnSxGerar">Gerar documentos</button>
@@ -5750,13 +5750,14 @@ async function sxGravar(dir, nome, b64){
 }
 async function sxGerar(){
   const ref = document.getElementById('sx_ref').value.trim(), cli = document.getElementById('sx_cli').value.trim();
-  if(!/^\d{3,8}$/.test(ref)){ sxMsg('Digite a referência do processo (só números).'); return; }
+  if(!/^[0-9A-Za-z][0-9A-Za-z\-. \/]{2,20}$/.test(ref)){ sxMsg('Digite a referência do processo (ex: 14128 ou 14200-IT).'); return; }
   if(!API_URL){ sxMsg('Conecte o Google Sheets (API_URL) primeiro.'); return; }
   const btn = document.getElementById('btnSxGerar'); btn.disabled = true;
   try{
     sxMsg('Escolhendo a pasta…');
     const root = await fatPegarPasta();
-    const pasta = await fatAchaPastaProcesso(root, ref, 0);
+    let pasta = await fatAchaPastaProcesso(root, ref, 0);
+    if(!pasta && /^\d+/.test(ref) && /\D/.test(ref)) pasta = await fatAchaPastaProcesso(root, ref.match(/^\d+/)[0], 0);
     if(!pasta){ sxMsg('Não achei a pasta do processo '+ref+' dentro de "'+root.name+'". Crie a pasta e tente de novo.'); return; }
     sxMsg('Buscando no Sicoex… (leva alguns segundos)');
     const resp = await fetch(API_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({action:'sicoexDocs', ref, dare: document.getElementById('sx_dare').checked})});
@@ -5776,7 +5777,7 @@ async function sxGerar(){
     let obsTxt = '';
     if(d.numero){
       const rotulo = d.tipo==='DUIMP' ? 'DUIMP' : 'DI';
-      const p = state.processes.filter(x=>String(x.codigo)===ref).sort((a,b)=>(a.archived?1:0)-(b.archived?1:0))[0];
+      const p = state.processes.filter(x=>String(x.codigo).trim().toUpperCase()===ref.toUpperCase()).sort((a,b)=>(a.archived?1:0)-(b.archived?1:0))[0];
       if(p){
         const linha = rotulo+' '+d.numero;
         if(!String(p.observacao||'').includes(d.numero)){ p.observacao = (p.observacao ? p.observacao+' / ' : '')+linha; save(); obsTxt = '\n📝 '+linha+' escrito nas observações do processo.'; }
