@@ -5567,7 +5567,7 @@ function retInterpretaCCT(t){
   const x = String(t).replace(/\s+/g,' '), out = {};
   const awb = /\b(\d{3})[-\s]?(\d{8})\b/;
   let m = x.match(/(?:master|mawb|conhecimento\s+(?:a[eé]reo\s+)?(?:m[aã]e|master))[^0-9]{0,40}(\d{3}[-\s]?\d{8})/i); if(m) out.mawb = m[1].replace(/\s/g,'-').replace(/^(\d{3})(\d{8})$/,'$1-$2');
-  m = x.match(/(?:house|hawb|filhote|conhecimento\s+(?:a[eé]reo\s+)?(?:house|filho))[^A-Za-z0-9]{0,40}([A-Z0-9][A-Z0-9\-]{5,24})/i); if(m && !/^(?:MASTER|HOUSE|CONHECIMENTO)$/i.test(m[1])) out.hawb = m[1];
+  { const re = /(?:house|hawb|filhote|conhecimento\s+(?:a[eé]reo\s+)?(?:house|filho))[^A-Za-z0-9]{0,40}([A-Z0-9][A-Z0-9\-]{5,24})/ig; let h; while((h = re.exec(x)) !== null){ if(/\d/.test(h[1]) && !/^(?:MASTER|HOUSE|CONHECIMENTO)$/i.test(h[1])){ out.hawb = h[1]; break; } } }
   if(!out.mawb){ const k = x.match(awb); if(k) out.mawb = k[1]+'-'+k[2]; }
   m = x.match(/agente\s+de\s+carga[^A-Za-z0-9]{0,20}(?:\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}\s*[-–]?\s*)?([A-Z0-9][A-Za-z0-9ÀÁÂÃÇÉÊÍÓÔÕÚàáâãçéêíóôõú&.,'()\/ \-]{3,80}?)(?=\s+(?:CNPJ|CPF|Consignat|Embarcador|Porto|Aeroporto|Recinto|Data|Tipo|Situa|Pa[ií]s|\d{2}\.\d{3}\.)|$)/i);
   if(m) out.agente = m[1].trim();
@@ -5887,6 +5887,26 @@ function armAcharRazao(T, cnpj){
   const i = x.search(/IMPORTADOR/i); const rest = i>=0 ? x.slice(i, i+800) : x.slice(0, 4000);
   const g = rest.match(new RegExp(nome)); return g ? g[0].trim() : '';
 }
+function armDetalhe(T){
+  const x = String(T).replace(/\s+/g,' ');
+  const STOP = new Set(['DE','DA','DO','DAS','DOS','PARA','COM','SEM','EM','E','OU','A','O','AS','OS','UM','UMA','NO','NA','POR','TIPO','MODELO','MARCA','NOVO','NOVA','USADO','PECA','PECAS','PARTE','PARTES','PN','P/N','REF','COD','CODIGO','NCM','ITEM','QTD','QUANTIDADE','UNIDADE','UNID','PAIS','ORIGEM','VALOR','DESCRICAO','DETALHADA','DETALHAMENTO','MERCADORIA','PRODUTO','DENOMINACAO','COMPLEMENTAR','FABRICANTE','CONDICAO','VENDA','INCOTERM','SERIE','LOTE']);
+  const norm = w => w.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase();
+  const duas = txt => {
+    const ws = (txt.match(/[A-Za-zÀ-ú]{3,}/g)||[]).filter(w=>!STOP.has(norm(w)));
+    if(ws.length<1) return '';
+    const r = ws.slice(0,2).map(w=>w.toLowerCase()).join(' ');
+    return r.charAt(0).toUpperCase()+r.slice(1);
+  };
+  const rotulos = [/DENOMINA[ÇC][ÃA]O\s+DO\s+PRODUTO/i, /DESCRI[ÇC][ÃA]O\s+DETALHADA(?:\s+DA\s+MERCADORIA)?/i, /DESCRI[ÇC][ÃA]O\s+DA\s+MERCADORIA/i, /DESCRI[ÇC][ÃA]O\s+DO\s+PRODUTO/i, /DESCRI[ÇC][ÃA]O\s+COMPLEMENTAR/i, /DETALHAMENTO\s+DO\s+PRODUTO/i, /\bMERCADORIA\b/i];
+  for(const re of rotulos){
+    const m = re.exec(x); if(!m) continue;
+    const r = duas(x.slice(m.index+m[0].length, m.index+m[0].length+160));
+    if(r) return r;
+  }
+  const n = x.match(/\b\d{4}\.\d{2}\.\d{2}\b/);
+  if(n){ const r = duas(x.slice(n.index+n[0].length, n.index+n[0].length+140)); if(r) return r; }
+  return '';
+}
 async function armLer(){
   const ref = document.getElementById('arm_ref').value.trim();
   if(!/^[0-9A-Za-z][0-9A-Za-z\-. \/]{2,20}$/.test(ref)){ armMsg('Digite a referência do processo.'); return; }
@@ -5912,11 +5932,10 @@ async function armLer(){
     const cct = await retLerCCT(pasta);
     const cp = state.processes.find(x=>String(x.codigo).trim().toUpperCase()===ref.toUpperCase());
     const rd = (state.retirada && state.retirada.processos || []).find(x=>String(x.ref).trim().toUpperCase()===ref.toUpperCase()) || {};
-    let awb = String((cct&&cct.mawb)||rd.mawb||'').replace(/[^0-9A-Za-z]/g,''), hawb = String((cct&&cct.hawb)||rd.hawb||'').replace(/[\s\-]/g,'');
+    let awb = String((cct&&cct.mawb)||rd.mawb||'').replace(/[^0-9A-Za-z]/g,''), hawb = String((cct&&cct.hawb)||rd.hawb||'').replace(/[\s\-]/g,''); if(hawb && !/\d/.test(hawb)) hawb = '';
     let fonteAwb = cct&&cct.mawb ? 'CCT "'+cct.doc+'"' : (rd.mawb ? 'Retirada Documental' : '');
     if(!awb){ const m = T.match(/\b(\d{3})\s*-?\s*(\d{8})\b/); if(m){ awb = m[1]+m[2]; fonteAwb = 'DUIMP/DI'; } }
-    const dm = T.match(/(?:DESCRI[ÇC][ÃA]O\s+DETALHADA\s+DA\s+MERCADORIA|DESCRI[ÇC][ÃA]O\s+DA\s+MERCADORIA|DENOMINA[ÇC][ÃA]O\s+DO\s+PRODUTO|DESCRI[ÇC][ÃA]O\s+DO\s+PRODUTO)[:\s]+([A-Za-zÀ-ú][^.;|]{3,80})/i);
-    const det = dm ? dm[1].trim().split(/\s+/).slice(0,2).join(' ').toLowerCase().replace(/^./,c=>c.toUpperCase()) : '';
+    const det = armDetalhe(T);
     ARM.nomeDoc = doc.nome; ARM.pasta = pasta.name;
     document.getElementById('arm_tipo').value = ehDuimp ? 'DUIMP' : 'DI';
     document.getElementById('arm_num').value = num; document.getElementById('arm_awb').value = awb; document.getElementById('arm_hawb').value = hawb;
@@ -5925,7 +5944,7 @@ async function armLer(){
     document.getElementById('arm_anexo').textContent = doc.nome+'  (pasta "'+pasta.name+'")';
     document.getElementById('armForm').style.display = ''; armTipoUI();
     const falta = []; if(!num) falta.push('número'); if(!awb) falta.push('AWB'); if(!cnpj) falta.push('CNPJ'); if(ehDuimp) falta.push('chave de acesso'); falta.push('data da retirada');
-    armMsg('✅ Li "'+doc.nome+'"'+(cct?' e o CCT "'+cct.doc+'"':' (não achei o CCT/Extrato de conhecimento na pasta)')+'. '+(awb?'AWB de '+fonteAwb+'. ':'')+(razao?'':'Razão social não reconhecida: digite. ')+'Confira e preencha: '+falta.join(', ')+'.');
+    armMsg('✅ Li "'+doc.nome+'"'+(cct?' e o CCT "'+cct.doc+'"':' (não achei o CCT/Extrato de conhecimento na pasta)')+'. '+(awb?'AWB de '+fonteAwb+'. ':'')+(razao?'':'Razão social não reconhecida: digite. ')+(det?'Detalhamento sugerido: "'+det+'". ':'Detalhamento não reconhecido: digite. ')+'Confira e preencha: '+falta.join(', ')+'.');
   }catch(e){ armMsg('⚠ '+((e&&e.name==='AbortError')?'Seleção de pasta cancelada.':(e&&e.message)||e)); }
   finally{ btn.disabled = false; }
 }
