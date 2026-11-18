@@ -5572,6 +5572,7 @@ function retInterpretaCCT(t){
   m = x.match(/agente\s+de\s+carga[^A-Za-z0-9]{0,20}(?:\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}\s*[-–]?\s*)?([A-Z0-9][A-Za-z0-9ÀÁÂÃÇÉÊÍÓÔÕÚàáâãçéêíóôõú&.,'()\/ \-]{3,80}?)(?=\s+(?:CNPJ|CPF|Consignat|Embarcador|Porto|Aeroporto|Recinto|Data|Tipo|Situa|Pa[ií]s|\d{2}\.\d{3}\.)|$)/i);
   if(m) out.agente = m[1].trim();
   if(/viracopos|campinas|\bvcp\b|sbkp/i.test(x)) out.local = 'VIRACOPOS'; else if(/guarulhos|cumbica|\bgru\b|sbgr/i.test(x)) out.local = 'GUARULHOS';
+  out.txt = x.slice(0,30000);
   return out;
 }
 async function retLerCCT(pasta){
@@ -5591,13 +5592,21 @@ function retAplicarCCT(c){
   if(c.mawb && !f.mawb){ f.mawb = c.mawb; achou.push('AWB '+c.mawb); }
   if(c.hawb && !f.hawb){ f.hawb = c.hawb; achou.push('HAWB '+c.hawb); }
   if(c.local) achou.push('aeroporto '+c.local);
-  if(c.agente){
-    const ag = retAgentesDoLocal(f.local), n = retNorm(c.agente);
-    const hit = ag.find(a=>a.agente.split('/').some(p=>{ const q = retNorm(p).trim(); return q && (n.includes(q) || q.includes(n)); }));
-    if(hit && !f.retirar.trim()){ retAplicarAgente(hit.agente); achou.push('agente '+hit.agente); if(/dhl/i.test(hit.agente)) f.dhl = true; }
-    else achou.push('agente "'+c.agente+'"'+(hit?'':' (não está nas Instruções de Retirada — escolha na lista)'));
+  {
+    const ag = retAgentesDoLocal(f.local); let hit = null;
+    if(c.agente){ const n = retNorm(c.agente); hit = ag.find(a=>a.agente.split('/').some(p=>{ const q = retNorm(p).trim(); return q && (n.includes(q) || q.includes(n)); })) || null; }
+    if(!hit && c.txt){
+      const tx = ' '+retNorm(c.txt)+' '; let melhor = 0;
+      ag.forEach(a=>a.agente.split('/').forEach(p=>{ const q = retNorm(p).trim(); if(q.length>=3 && tx.includes(q) && q.length>melhor){ melhor = q.length; hit = a; } }));
+    }
+    if(hit){
+      if(!f.retirar.trim() || !f.agente){ retAplicarAgente(hit.agente); if(/dhl/i.test(hit.agente)) f.dhl = true; }
+      achou.push('agente '+hit.agente+' → endereço de retirada preenchido');
+    } else {
+      achou.push(c.agente ? 'agente "'+c.agente+'" (não está nas Instruções de Retirada de '+f.local+' — escolha na lista)' : 'agente não reconhecido no CCT — escolha na lista (cadastrados em '+f.local+': '+(ag.map(a=>a.agente).join(', ')||'nenhum')+')');
+    }
   }
-  f.cctMsg = c.mawb||c.hawb||c.agente||c.local ? 'Lido de "'+c.doc+'": '+achou.join(' · ') : 'Achei "'+c.doc+'" mas não consegui reconhecer os campos — preencha à mão.';
+  f.cctMsg = achou.length ? 'Lido de "'+c.doc+'": '+achou.join(' · ') : 'Achei "'+c.doc+'" mas não consegui reconhecer os campos — preencha à mão.';
 }
 async function retCarregarTudo(){
   const f = RET.f, ref = f.ref; RET.lendo = true; RET.files = RET.files.filter(x=>x.tipo==='procuracao'||x.fonte==='anexado agora'); f.pastaMsg = ''; f.empMsg = ''; f.cctMsg = ''; retRender();
