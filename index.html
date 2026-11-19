@@ -4655,10 +4655,12 @@ async function fatPegarPasta(forcarNova){
   fatIdbSet(fatRootHandle);
   return fatRootHandle;
 }
+let FAT_DEADLINE = 0;
 async function fatAchaPastaProcesso(dir, ref, nivel){
+  if(FAT_DEADLINE && Date.now()>FAT_DEADLINE) return null;
   const re = new RegExp('^'+String(ref).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'(?!\\d)');
   const subs = [];
-  for await (const [nome,h] of dir.entries()){ if(h.kind==='directory') subs.push([nome,h]); }
+  for await (const [nome,h] of dir.entries()){ if(h.kind==='directory') subs.push([nome,h]); if(FAT_DEADLINE && Date.now()>FAT_DEADLINE) return null; }
   const hit = subs.find(([n])=>re.test(n.trim()));
   if(hit) return hit[1];
   if(nivel>=3) return null;
@@ -5821,13 +5823,18 @@ async function sxGerar(){
   if(!API_URL){ sxMsg('Conecte o Google Sheets (API_URL) primeiro.'); return; }
   const btn = document.getElementById('btnSxGerar'); btn.disabled = true;
   try{
-    sxMsg('Escolhendo a pasta…');
-    const root = await fatPegarPasta();
+    sxMsg('1/3 Abrindo a pasta Processos… (se o Chrome perguntar, clique em "Permitir")');
+    const root = await Promise.race([fatPegarPasta(), new Promise((_,rej)=>setTimeout(()=>rej(new Error('O Chrome não liberou a pasta. Clique em "Gerar documentos" de novo e, na janela que aparecer, escolha a pasta Processos e permita o acesso.')),30000))]);
+    sxMsg('2/3 Procurando a pasta do processo '+ref+' em "'+root.name+'"…');
+    FAT_DEADLINE = Date.now()+60000;
     let pasta = await fatAchaPastaProcesso(root, ref, 0);
     if(!pasta && /^\d+/.test(ref) && /\D/.test(ref)) pasta = await fatAchaPastaProcesso(root, ref.match(/^\d+/)[0], 0);
+    const estourou = Date.now()>FAT_DEADLINE; FAT_DEADLINE = 0;
+    if(!pasta && estourou){ sxMsg('A busca da pasta do processo '+ref+' passou de 1 minuto (a pasta "'+root.name+'" é muito grande ou está em nuvem). Confira se existe uma pasta que comece com '+ref+' e tente de novo.'); return; }
     if(!pasta){ sxMsg('Não achei a pasta do processo '+ref+' dentro de "'+root.name+'". Crie a pasta e tente de novo.'); return; }
-    sxMsg('Buscando no Sicoex… (leva alguns segundos)');
-    const resp = await fetch(API_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({action:'sicoexDocs', ref, dare: document.getElementById('sx_dare').checked})});
+    sxMsg('3/3 Pasta achada: "'+pasta.name+'". Buscando no Sicoex… (leva alguns segundos)');
+    const ac = new AbortController(); const to = setTimeout(()=>ac.abort(), 180000);
+    const resp = await fetch(API_URL, {method:'POST', signal:ac.signal, headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({action:'sicoexDocs', ref, dare: document.getElementById('sx_dare').checked})}).finally(()=>clearTimeout(to));
     const d = await resp.json();
     if(!d.ok){ sxMsg('⚠ '+(d.error||'Erro ao buscar no Sicoex.')); return; }
     if(String(d.versao)!=='10'){ sxMsg('⚠ O Apps Script está desatualizado. Cole o Code.gs novo e faça Implantar → Gerenciar implantações → lápis → Nova versão.'); return; }
@@ -5853,7 +5860,7 @@ async function sxGerar(){
     }
     sxMsg('✅ '+d.tipo+' '+ref+(cli?' — '+cli:'')+': '+salvos.length+' arquivo(s) salvos em "'+pasta.name+'":\n• '+salvos.join('\n• ')+obsTxt+(d.avisos&&d.avisos.length?'\n\n⚠ Avisos:\n• '+d.avisos.join('\n• '):''));
   }catch(e){
-    sxMsg('⚠ '+(e && e.name==='AbortError' ? 'Seleção de pasta cancelada.' : (e && e.message ? e.message : e)));
+    sxMsg('⚠ '+(e && e.name==='AbortError' ? 'Demorou demais ou foi cancelado (3 min). Tente de novo.' : (e && e.message ? e.message : e)));
   }finally{ btn.disabled = false; }
 }
 document.getElementById('btnSxGerar').addEventListener('click', sxGerar);
