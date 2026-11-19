@@ -5597,6 +5597,8 @@ async function retLerCCT(pasta){
     const r = retInterpretaCCT(t); r.doc = doc.nome; r.texto = t.length; return r;
   }catch(e){ return null; }
 }
+/* nomes que aparecem no CCT e como o agente está cadastrado nas Instruções de Retirada */
+const RET_ALIAS = [[/\bKLN\b/i, 'KERRY']];
 function retAplicarCCT(c){
   const f = RET.f; if(!c) return; const achou = [];
   if(c.local && f.local!==c.local){ f.local = c.local; f.modelo = retIsGru(c.local)?'GRU':'VCP'; if(!RET.f.paraEdit){ const dp = retDestPadrao(f); f.saud = dp.saud; f.para = dp.para.join('; '); } }
@@ -5606,6 +5608,7 @@ function retAplicarCCT(c){
   {
     const ag = retAgentesDoLocal(f.local); let hit = null;
     if(c.agente){ const n = retNorm(c.agente); hit = ag.find(a=>a.agente.split('/').some(p=>{ const q = retNorm(p).trim(); return q && (n.includes(q) || q.includes(n)); })) || null; }
+    if(!hit){ for(const [re, alvo] of RET_ALIAS){ if(re.test(c.agente||'') || re.test(c.txt||'')){ hit = ag.find(a=>retNorm(a.agente).includes(retNorm(alvo))) || null; if(hit) break; } } }
     if(!hit && c.txt){
       const tx = ' '+retNorm(c.txt)+' '; let melhor = 0;
       ag.forEach(a=>a.agente.split('/').forEach(p=>{ const q = retNorm(p).trim(); if(q.length>=3 && tx.includes(q) && q.length>melhor){ melhor = q.length; hit = a; } }));
