@@ -4669,7 +4669,8 @@ async function fatAchaPastaProcesso(dir, ref, nivel){
   const meses = subs.map(([n,h])=>({n,h,ini:(n.match(/de\s+(\d+)\s+at[eé]/i)||[])[1]})).filter(x=>x.ini);
   let cand = subs.map(([n,h])=>h);
   if(meses.length){
-    const ok = meses.filter(x=>+x.ini<=+ref).sort((a,b)=>b.ini-a.ini);
+    const refNum = parseInt(String(ref).replace(/\D.*$/,''),10);
+    const ok = isNaN(refNum) ? [] : meses.filter(x=>+x.ini<=refNum).sort((a,b)=>b.ini-a.ini);
     cand = ok.length ? [ok[0].h] : meses.map(x=>x.h);
   } else if(nivel>=1) { cand = subs.map(([n,h])=>h); }
   for(const h of cand){ const r = await fatAchaPastaProcesso(h, ref, nivel+1); if(r) return r; }
@@ -4746,7 +4747,8 @@ async function fatBuscarDocs(forcarNova){
   fat.docsMsg = 'Procurando a pasta do processo…'; fat.docs = null; fatRender();
   try{
     const root = await fatPegarPasta(forcarNova);
-    const pasta = await fatAchaPastaProcesso(root, String(fat.p.codigo).trim(), 0);
+    let pasta = await fatAchaPastaProcesso(root, String(fat.p.codigo).trim(), 0);
+    { const c0 = String(fat.p.codigo).trim(); if(!pasta && /^\d+/.test(c0) && /\D/.test(c0)) pasta = await fatAchaPastaProcesso(root, c0.match(/^\d+/)[0], 0); }
     if(!pasta){ fat.docsMsg = 'Não achei a pasta do processo '+fat.p.codigo+' dentro de "'+root.name+'". Escolha a pasta "Processos" (ou a do ano) em "Trocar pasta".'; fatRender(); return; }
     fat.pastaNome = pasta.name;
     let fd = null;
@@ -5319,8 +5321,12 @@ async function sdaAbrir(id){
   sdaGerOverlay.classList.add('show'); sdaRender();
   try{
     const root = await fatPegarPasta(false);
-    const pasta = await fatAchaPastaProcesso(root, String(p.codigo).trim(), 0);
-    if(!pasta){ SX.pastaMsg = 'Não achei a pasta do processo '+p.codigo+' em "'+root.name+'". Preencha os campos à mão; o PDF será baixado.'; }
+    FAT_DEADLINE = Date.now()+45000;
+    const cod = String(p.codigo).trim();
+    let pasta = await fatAchaPastaProcesso(root, cod, 0);
+    if(!pasta && /^\d+/.test(cod) && /\D/.test(cod)) pasta = await fatAchaPastaProcesso(root, cod.match(/^\d+/)[0], 0);
+    const estourou = Date.now()>FAT_DEADLINE; FAT_DEADLINE = 0;
+    if(!pasta){ SX.pastaMsg = (estourou ? 'A busca da pasta do processo '+p.codigo+' passou de 45 segundos. ' : 'Não achei a pasta do processo '+p.codigo+' em "'+root.name+'". ')+'Preencha os campos à mão; o PDF será baixado.'; }
     else{
       for await (const [n,h] of pasta.entries()){ if(h.kind==='directory' && /^faturamento$/i.test(n.trim())) SX.docsDir = h; }
       if(!SX.docsDir) SX.pastaMsg = 'A pasta '+pasta.name+' não tem a subpasta FATURAMENTO; o PDF será baixado.';
@@ -5617,7 +5623,8 @@ async function retCarregarTudo(){
   const f = RET.f, ref = f.ref; RET.lendo = true; RET.files = RET.files.filter(x=>x.tipo==='procuracao'||x.fonte==='anexado agora'); f.pastaMsg = ''; f.empMsg = ''; f.cctMsg = ''; retRender();
   try{
     const root = await fatPegarPasta(false);
-    const pasta = await fatAchaPastaProcesso(root, ref, 0);
+    let pasta = await fatAchaPastaProcesso(root, ref, 0);
+    if(!pasta && /^\d+/.test(ref) && /\D/.test(ref)) pasta = await fatAchaPastaProcesso(root, ref.match(/^\d+/)[0], 0);
     if(!pasta) f.pastaMsg = 'Não achei a pasta do processo '+ref+' em "'+root.name+'". Anexe os arquivos à mão; a autorização será baixada.';
     else{
       RET.dir = pasta;
