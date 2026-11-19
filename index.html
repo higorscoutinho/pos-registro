@@ -5182,7 +5182,7 @@ async function sdaConferir(){
   s.busy = true; s.msg = 'Consultando o SINDASP… (não grava nada)'; s.conf = null; sdaRender();
   try{
     const d = await vcpApi('sdaConferir', {cnpj:s.cnpj});
-    if(String(d.versao)!=='8'){ s.conf = null; s.msg = '⚠ O Apps Script está DESATUALIZADO (versão '+(d.versao||'antiga')+'). Cole o Code.gs novo e faça Implantar → Gerenciar implantações → lápis → Versão: Nova versão → Implantar. Por segurança, não deixo gerar até atualizar.\n\nDiagnóstico (me mande um print disto): o sistema chama o final «…'+String(API_URL).slice(-14)+'» e recebeu: '+JSON.stringify(d).slice(0,260); s.busy = false; sdaRender(); return; }
+    if(!(parseInt(d.versao,10)>=8)){ s.conf = null; s.msg = '⚠ O Apps Script está DESATUALIZADO (versão '+(d.versao||'antiga')+'). Cole o Code.gs novo e faça Implantar → Gerenciar implantações → lápis → Versão: Nova versão → Implantar. Por segurança, não deixo gerar até atualizar.\n\nDiagnóstico (me mande um print disto): o sistema chama o final «…'+String(API_URL).slice(-14)+'» e recebeu: '+JSON.stringify(d).slice(0,260); s.busy = false; sdaRender(); return; }
     s.conf = {importador:d.importador, cnpj:d.cnpj}; s.msg = '';
   }catch(e){ s.msg = '❌ '+(e.message||e); }
   s.busy = false; sdaRender();
@@ -5840,7 +5840,7 @@ async function sxGerar(){
     const resp = await fetch(API_URL, {method:'POST', signal:ac.signal, headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({action:'sicoexDocs', ref, dare: document.getElementById('sx_dare').checked})}).finally(()=>clearTimeout(to));
     const d = await resp.json();
     if(!d.ok){ sxMsg('⚠ '+(d.error||'Erro ao buscar no Sicoex.')); return; }
-    if(String(d.versao)!=='10'){ sxMsg('⚠ O Apps Script está desatualizado. Cole o Code.gs novo e faça Implantar → Gerenciar implantações → lápis → Nova versão.'); return; }
+    if(!(parseInt(d.versao,10)>=10)){ sxMsg('⚠ O Apps Script está desatualizado. Cole o Code.gs novo e faça Implantar → Gerenciar implantações → lápis → Nova versão.'); return; }
     let fat = null; const salvos = [];
     for(const a of d.arquivos){
       let dir = pasta;
